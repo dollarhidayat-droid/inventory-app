@@ -160,6 +160,9 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 <!-- RIWAYAT -->
 <h2>Riwayat Transaksi</h2>
 <div class="card">
+    <div class="row">
+        <button onclick="downloadRiwayatExcel()">Download Excel</button>
+    </div>
     <table>
         <thead>
             <tr>
@@ -180,6 +183,9 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 <!-- SISA STOCK -->
 <h2>Sisa Stock</h2>
 <div class="card">
+    <div class="row">
+        <button onclick="downloadStockExcel()">Download Excel</button>
+    </div>
     <table id="stockTable">
         <thead>
             <tr>
@@ -199,6 +205,7 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 </div>
 
 <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script>
 // ===== CONFIG =====
 const API_URL = "https://script.google.com/macros/s/AKfycbx.../exec"; // ganti dengan Web App kamu
@@ -403,6 +410,47 @@ function exportCSV(){
     let blob=new Blob([csv],{type:"text/csv"});
     let url=URL.createObjectURL(blob);
     let a=document.createElement("a"); a.href=url; a.download="transaksi.csv"; a.click();
+}
+
+// ===== EXPORT TO EXCEL =====
+function downloadRiwayatExcel() {
+    let transaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
+    if(transaksi.length===0){alert("Belum ada data transaksi."); return;}
+    let ws_data = [["Waktu","Kode","Nama","Kategori","Line","PIC","Qty","Jenis"]];
+    transaksi.forEach(t=>{
+        ws_data.push([t.waktu,t.kode,t.nama,t.kategori,t.line,t.pic,t.qty,t.jenis]);
+    });
+    let wb = XLSX.utils.book_new();
+    let ws = XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Transaksi");
+    XLSX.writeFile(wb, "Riwayat_Transaksi.xlsx");
+}
+
+function downloadStockExcel() {
+    let stockMap = {};
+    let transaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
+    let master = JSON.parse(localStorage.getItem("masterData")) || [];
+    transaksi.forEach(t=>{
+        if(!stockMap[t.kode]){
+            let m = master.find(x=>x.barcode==t.kode)||{};
+            stockMap[t.kode]={kode:t.kode,nama:t.nama||m.nama||"",kategori:t.kategori||m.kategori||"",line:t.line||m.line||"",minimal:m.minimal||0,sisa:0};
+        }
+        if(t.jenis==="Masuk") stockMap[t.kode].sisa+=Number(t.qty);
+        else stockMap[t.kode].sisa-=Number(t.qty);
+    });
+    master.forEach(m=>{if(!stockMap[m.barcode]) stockMap[m.barcode]={kode:m.barcode,nama:m.nama,kategori:m.kategori||"",line:m.line||"",minimal:m.minimal||0,sisa:0};});
+    let stockArray=Object.values(stockMap).sort((a,b)=>a.sisa-b.sisa);
+
+    let ws_data = [["Kode","Nama","Kategori","Line","Sisa Stok","Minimal","Status"]];
+    stockArray.forEach(item=>{
+        let status = item.sisa<=0?"Habis":(item.sisa<item.minimal?"Hampir Habis":"Aman");
+        ws_data.push([item.kode,item.nama,item.kategori,item.line,item.sisa,item.minimal,status]);
+    });
+
+    let wb = XLSX.utils.book_new();
+    let ws = XLSX.utils.aoa_to_sheet(ws_data);
+    XLSX.utils.book_append_sheet(wb, ws, "Sisa Stock");
+    XLSX.writeFile(wb, "Sisa_Stock.xlsx");
 }
 
 // ===== LOAD MASTER & TRANSAKSI DARI SHEETS =====
