@@ -1,9 +1,11 @@
+
+You said:
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory Stock HR-GA - Multi-user</title>
+<title>Inventory Stock HR-GA - Lengkap</title>
 
 <style>
 body { font-family: Arial, sans-serif; margin: 0; background: #f5f6fa; }
@@ -67,6 +69,9 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 
     <label>PIC Ambil Barang</label>
     <input id="picAmbil" placeholder="Nama pengambil barang" />
+
+    <label>Sisa Stok (opsional)</label>
+    <input id="sisaStok" />
 
     <label>Qty</label>
     <input id="qty" type="number" value="1" />
@@ -157,9 +162,6 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 <!-- RIWAYAT -->
 <h2>Riwayat Transaksi</h2>
 <div class="card">
-    <div class="row">
-        <button onclick="exportRiwayatExcel()">Export Excel</button>
-    </div>
     <table>
         <thead>
             <tr>
@@ -180,9 +182,6 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 <!-- SISA STOCK -->
 <h2>Sisa Stock</h2>
 <div class="card">
-    <div class="row">
-        <button onclick="exportStockExcel()">Export Excel</button>
-    </div>
     <table id="stockTable">
         <thead>
             <tr>
@@ -202,11 +201,9 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 </div>
 
 <script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
 <script>
 // ===== CONFIG =====
-const API_URL = "https://script.google.com/macros/s/AKfycbz3iOx8XiPxXiyFCeo7Yrq4-hCZ0CkCemChhNtlsQBurvGsfEmLdhxAGoIm7OAnBRuQ/exec";
+const API_URL = "https://script.google.com/macros/s/AKfycbx.../exec"; // ganti dengan Web App kamu
 
 // ===== SCANNER =====
 let scanner;
@@ -226,15 +223,17 @@ function startScanner() {
         });
     } catch(e){ alert("Scanner error: "+e); }
 }
+
 function focusManual(){ document.getElementById("kodeBarang").focus(); }
 function showScanNotif(){ const n=document.getElementById("scanNotif"); n.style.display="block"; setTimeout(()=>{n.style.display="none";},1200); }
 
-// ===== AUTO-FILL =====
-let masterDataGlobal = [];
+// ===== AUTO-FILL NAMA + SATUAN dari masterData =====
 function isiOtomatisDariMaster() {
     const kode = document.getElementById("kodeBarang").value.trim();
     if (kode === "") { document.getElementById("namaBarang").value=""; document.getElementById("satuan").value=""; return; }
-    const item = masterDataGlobal.find(m => m.barcode == kode);
+
+    const master = JSON.parse(localStorage.getItem("masterData")) || [];
+    const item = master.find(m => m.barcode == kode);
     document.getElementById("namaBarang").value = item ? item.nama : "";
     document.getElementById("satuan").value = item ? item.satuan : "";
 }
@@ -253,26 +252,73 @@ document.getElementById("saveTransaksi").addEventListener("click", async functio
         jenis: document.getElementById("jenis").value
     };
     if(data.kode==="" || data.qty===0){ alert("Kode dan Qty wajib diisi!"); return; }
+    let transaksi = JSON.parse(localStorage.getItem("transaksi"))||[];
+    transaksi.unshift(data); localStorage.setItem("transaksi", JSON.stringify(transaksi));
 
     try{
         await fetch(API_URL,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"simpanTransaksi",...data})});
-        alert("Transaksi tersimpan!");
-    } catch(err){ console.warn("Gagal kirim ke Sheets:",err); alert("Tetap tersimpan di browser, tapi Sheets gagal."); }
+    } catch(err){ console.warn("Gagal kirim ke Sheets:",err); }
 
-    document.getElementById("kodeBarang").value=""; document.getElementById("namaBarang").value="";
-    document.getElementById("satuan").value=""; document.getElementById("qty").value=1;
-    document.getElementById("kategoriBarang").value=""; document.getElementById("lineDept").value="";
+    alert("Transaksi tersimpan!");
+    clearTransaksiForm(); tampilkanRiwayat(); updateStock();
+});
+
+function clearTransaksiForm(){
+    document.getElementById("kodeBarang").value="";
+    document.getElementById("namaBarang").value="";
+    document.getElementById("satuan").value="";
+    document.getElementById("qty").value=1;
+    document.getElementById("kategoriBarang").value="";
+    document.getElementById("lineDept").value="";
     document.getElementById("picAmbil").value="";
-    await loadAllData();
+}
+
+// ===== MASTER DATA =====
+document.getElementById("addMaster").addEventListener("click",function(){
+    let master={barcode:document.getElementById("mBarcode").value,
+        nama:document.getElementById("mNama").value,
+        satuan:document.getElementById("mSatuan").value,
+        minimal:Number(document.getElementById("mMinimal").value)||0,
+        kategori:document.getElementById("mKategori").value,
+        line:document.getElementById("mLine").value,
+        pic:document.getElementById("mPic").value};
+    if(master.barcode===""||master.nama===""){ alert("Barcode & Nama wajib diisi!"); return; }
+    let masterData=JSON.parse(localStorage.getItem("masterData"))||[];
+    const idx = masterData.findIndex(m=>m.barcode==master.barcode);
+    if(idx>=0) masterData[idx]=master; else masterData.push(master);
+    localStorage.setItem("masterData", JSON.stringify(masterData));
+    alert("Master Data tersimpan lokal!");
+    tampilkanMaster();
+    updateStock();
+});
+
+document.getElementById("pushMaster").addEventListener("click",async function(){
+    let master={barcode:document.getElementById("mBarcode").value,
+        nama:document.getElementById("mNama").value,
+        satuan:document.getElementById("mSatuan").value,
+        minimal:Number(document.getElementById("mMinimal").value)||0,
+        kategori:document.getElementById("mKategori").value,
+        line:document.getElementById("mLine").value,
+        pic:document.getElementById("mPic").value};
+    let masterData=JSON.parse(localStorage.getItem("masterData"))||[];
+    const idx = masterData.findIndex(m=>m.barcode==master.barcode);
+    if(idx>=0) masterData[idx]=master; else masterData.push(master);
+    localStorage.setItem("masterData", JSON.stringify(masterData));
+    try{
+        await fetch(API_URL,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"simpanMaster",...master})});
+        alert("Master data dipush ke spreadsheet.");
+    } catch(err){ console.warn("Push Master gagal:",err); alert("Master tersimpan lokal."); }
+    tampilkanMaster();
 });
 
 // ===== MASTER DATA TABLE =====
-function tampilkanMaster(master){
+function tampilkanMaster(){
+    let master=JSON.parse(localStorage.getItem("masterData"))||[];
     let tbody=document.getElementById("masterBody");
     tbody.innerHTML="";
     master.forEach((m,i)=>{
         let bg = i%2===0 ? "#f5f5f5" : "#ffffff";
-        tbody.innerHTML+=`<tr style="background:${bg}">
+        tbody.innerHTML+=<tr style="background:${bg}">
             <td>${m.barcode}</td>
             <td>${m.nama}</td>
             <td>${m.satuan}</td>
@@ -284,98 +330,58 @@ function tampilkanMaster(master){
                 <button class="edit-btn" onclick="editMaster('${m.barcode}')">Edit</button>
                 <button class="remove-btn" onclick="removeMaster('${m.barcode}')">Hapus</button>
             </td>
-        </tr>`;
+        </tr>;
     });
 }
 
-// ===== EXPORT EXCEL =====
-function exportRiwayatExcel(){
-    const rows = [];
-    document.querySelectorAll("#riwayatBody tr").forEach(tr=>{
-        const cells = tr.querySelectorAll("td");
-        rows.push({
-            Waktu: cells[0].innerText,
-            Kode: cells[1].innerText,
-            Nama: cells[2].innerText,
-            Kategori: cells[3].innerText,
-            Line: cells[4].innerText,
-            PIC: cells[5].innerText,
-            Qty: cells[6].innerText,
-            Jenis: cells[7].innerText
-        });
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Riwayat Transaksi");
-    XLSX.writeFile(wb, "Riwayat_Transaksi.xlsx");
-}
-function exportStockExcel(){
-    const rows = [];
-    document.querySelectorAll("#stockBody tr").forEach(tr=>{
-        const cells = tr.querySelectorAll("td");
-        rows.push({
-            Kode: cells[0].innerText,
-            Nama: cells[1].innerText,
-            Kategori: cells[2].innerText,
-            Line: cells[3].innerText,
-            "Sisa Stok": cells[4].innerText,
-            Minimal: cells[5].innerText,
-            Status: cells[6].innerText
-        });
-    });
-    const ws = XLSX.utils.json_to_sheet(rows);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "Sisa Stock");
-    XLSX.writeFile(wb, "Sisa_Stock.xlsx");
+function editMaster(barcode){
+    let master=JSON.parse(localStorage.getItem("masterData"))||[];
+    const m=master.find(x=>x.barcode===barcode);
+    if(!m) return;
+    document.getElementById("mBarcode").value=m.barcode;
+    document.getElementById("mNama").value=m.nama;
+    document.getElementById("mSatuan").value=m.satuan;
+    document.getElementById("mMinimal").value=m.minimal;
+    document.getElementById("mKategori").value=m.kategori;
+    document.getElementById("mLine").value=m.line;
+    document.getElementById("mPic").value=m.pic;
 }
 
-// ===== LOAD DATA =====
-async function loadMasterFromSheets(){
-    try{
-        const res = await fetch(API_URL,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"getMasterData"})});
-        const data = await res.json();
-        if(Array.isArray(data)){
-            masterDataGlobal = data.map(r=>({barcode:r.kode||r.barcode,nama:r.nama||"",satuan:r.satuan||"",minimal:Number(r.min||0),kategori:r.kategori||"",line:r.line||"",pic:r.pic||""}));
-            tampilkanMaster(masterDataGlobal);
-        }
-    }catch(err){ console.warn("Gagal load master:",err);}
-}
-let transaksiGlobal = [];
-async function loadTransaksiFromSheets(){
-    try{
-        const res = await fetch(API_URL,{method:"POST", headers:{"Content-Type":"application/json"}, body:JSON.stringify({action:"getTransaksi"})});
-        const data = await res.json();
-        if(Array.isArray(data)){
-            transaksiGlobal = data;
-            tampilkanRiwayat();
-            updateStock();
-        }
-    }catch(err){ console.warn("Gagal load transaksi:",err);}
+function removeMaster(barcode){
+    if(!confirm("Hapus data ini?")) return;
+    let master=JSON.parse(localStorage.getItem("masterData"))||[];
+    master = master.filter(x=>x.barcode!==barcode);
+    localStorage.setItem("masterData",JSON.stringify(master));
+    tampilkanMaster();
+    updateStock();
 }
 
-// ===== DISPLAY =====
+// ===== RIWAYAT & STOCK =====
 function tampilkanRiwayat(){
+    let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
     let tbody=document.getElementById("riwayatBody");
     tbody.innerHTML="";
-    transaksiGlobal.forEach((t,i)=>{
-        let bg = i%2===0 ? "#f5f5f5" : "#ffffff";
-        tbody.innerHTML+=`<tr style="background:${bg}">
+    transaksi.forEach((t,i)=>{
+        let bg = i % 2 === 0 ? "#f5f5f5" : "#ffffff";
+        tbody.innerHTML+=<tr style="background:${bg}">
         <td>${t.waktu}</td><td>${t.kode}</td><td>${t.nama}</td><td>${t.kategori}</td><td>${t.line}</td><td>${t.pic}</td><td>${t.qty}</td><td>${t.jenis}</td>
-        </tr>`;
+        </tr>;
     });
 }
 
 function updateStock(){
+    let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
+    let master=JSON.parse(localStorage.getItem("masterData"))||[];
     let stockMap={};
-    transaksiGlobal.forEach(t=>{
+    transaksi.forEach(t=>{
         if(!stockMap[t.kode]){
-            let m=masterDataGlobal.find(x=>x.barcode==t.kode)||{};
+            let m=master.find(x=>x.barcode==t.kode)||{};
             stockMap[t.kode]={kode:t.kode,nama:t.nama||m.nama||"",kategori:t.kategori||m.kategori||"",line:t.line||m.line||"",minimal:m.minimal||0,sisa:0};
         }
         if(t.jenis==="Masuk") stockMap[t.kode].sisa+=Number(t.qty);
         else stockMap[t.kode].sisa-=Number(t.qty);
     });
-    masterDataGlobal.forEach(m=>{if(!stockMap[m.barcode]) stockMap[m.barcode]={kode:m.barcode,nama:m.nama,kategori:m.kategori||"",line:m.line||"",minimal:m.minimal||0,sisa:0};});
+    master.forEach(m=>{if(!stockMap[m.barcode]) stockMap[m.barcode]={kode:m.barcode,nama:m.nama,kategori:m.kategori||"",line:m.line||"",minimal:m.minimal||0,sisa:0};});
     let stockArray=Object.values(stockMap).sort((a,b)=>a.sisa-b.sisa);
     let tbody=document.getElementById("stockBody"); tbody.innerHTML="";
     stockArray.forEach((item,i)=>{
@@ -384,18 +390,56 @@ function updateStock(){
         else if(item.sisa<item.minimal){statusText="Hampir Habis"; cls="status-hampir";}
         else{statusText="Aman"; cls="status-aman";}
         let bg = i%2===0 ? "#f5f5f5" : "#ffffff";
-        tbody.innerHTML+=`<tr style="background:${bg}">
+        tbody.innerHTML+=<tr style="background:${bg}">
         <td>${item.kode}</td><td>${item.nama}</td><td>${item.kategori}</td><td>${item.line}</td><td>${item.sisa}</td><td>${item.minimal}</td><td class="${cls}">${statusText}</td>
-        </tr>`;
+        </tr>;
     });
 }
 
-// ===== AUTO REFRESH =====
-async function loadAllData(){ await loadMasterFromSheets(); await loadTransaksiFromSheets(); }
-loadAllData();
-setInterval(loadAllData,5000);
-</script>
+// ===== EXPORT CSV =====
+function exportCSV(){
+    let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
+    if(transaksi.length===0){alert("Belum ada data transaksi."); return;}
+    let csv="Waktu,Kode,Nama,Kategori,Line,PIC,Qty,Jenis\n";
+    transaksi.forEach(t=>{csv+=${t.waktu},${t.kode},${t.nama},${t.kategori},${t.line},${t.pic},${t.qty},${t.jenis}\n;});
+    let blob=new Blob([csv],{type:"text/csv"});
+    let url=URL.createObjectURL(blob);
+    let a=document.createElement("a"); a.href=url; a.download="transaksi.csv"; a.click();
+}
 
+// ===== LOAD MASTER & TRANSAKSI DARI SHEETS =====
+async function loadMasterFromSheets(){
+    try{
+        const res=await fetch(API_URL,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({action:"getMasterData"})});
+        const data = await res.json();
+        if(Array.isArray(data)){
+            const cleaned=data.map(r=>({barcode:r.kode||r.barcode,nama:r.nama||"",satuan:r.satuan||"",minimal:Number(r.min||0),kategori:r.kategori||"",line:r.line||"",pic:r.pic||""}));
+            localStorage.setItem("masterData",JSON.stringify(cleaned));
+        }
+    }catch(err){console.warn("Gagal load master dari Sheets:",err);}
+    tampilkanMaster(); tampilkanRiwayat(); updateStock();
+}
+
+// Transaksi dari Sheets (multi-user)
+async function loadTransaksiFromSheets(){
+    try{
+        const res = await fetch(API_URL,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"getTransaksi"})
+        });
+        const data = await res.json();
+        if(Array.isArray(data)){
+            localStorage.setItem("transaksi",JSON.stringify(data));
+            tampilkanRiwayat();
+            updateStock();
+        }
+    }catch(err){console.warn("Gagal load transaksi:",err);}
+}
+
+// ===== INITIAL LOAD =====
+loadMasterFromSheets();
+loadTransaksiFromSheets();
+</script>
 </body>
 </html>
-
