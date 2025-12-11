@@ -17,24 +17,15 @@ button { width: 48%; padding: 12px; margin-top: 10px; border: none; border-radiu
 table { width: 100%; border-collapse: collapse; margin-top: 10px; }
 table th, table td { padding: 8px; border-bottom: 1px solid #ddd; font-size: 14px; text-align: left; }
 .status-aman { color: #085f00; font-weight: 600; }
-
-/* === PERMINTAAN KAMU → Status Warning warna kuning tua + bold === */
-.status-hampir { 
-    color: #b8860b; 
-    font-weight: 700; 
-}
-
+.status-hampir { color: #b8860b; font-weight: 700; }
 .status-habis { color: #a40000; font-weight: 600; }
 .scanner-area { display: none; margin-top: 10px; position: relative; }
 #scanNotif { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); background: #4caf50; color: #fff; padding: 6px 12px; border-radius: 6px; display: none; font-weight: bold; }
 button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 12px; margin-right: 5px; }
-
-/* LOGIN OVERLAY */
 #loginOverlay { position: fixed; inset: 0; background: rgba(0,0,0,0.6); display: flex; align-items: center; justify-content: center; z-index: 9999; }
 #loginPanel { width: 360px; background: #fff; padding: 22px; border-radius: 10px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
 #loginPanel h2 { margin-top: 0; text-align: center; }
 #logoutBtn { position: fixed; top: 12px; right: 12px; background: #d32f2f; color: #fff; border: none; padding: 8px 12px; border-radius: 6px; cursor: pointer; z-index: 1000; display: none; }
-
 </style>
 </head>
 
@@ -124,7 +115,6 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
     <video id="preview" style="width:100%; border-radius:10px;"></video>
 </div>
 
-<!-- MASTER DATA -->
 <h2>Master Data</h2>
 <div class="card">
     <label>Barcode</label>
@@ -163,13 +153,17 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
     <label>PIC Input</label>
     <input id="mPic">
 
+    <!-- UPLOAD EXCEL -->
+    <label style="margin-top:10px">Upload Excel Master Data</label>
+    <input type="file" id="uploadExcel" accept=".xlsx,.xls" />
+
     <div class="row">
         <button id="addMaster">Tambah</button>
         <button id="pushMaster" class="btn-small">Push Master → Spreadsheet</button>
+        <button class="btn-small" onclick="uploadMasterExcel()">Upload Excel</button>
     </div>
 </div>
 
-<!-- TABEL MASTER DATA -->
 <h2>Daftar Master Data</h2>
 <div class="card">
     <table id="masterTable">
@@ -189,7 +183,6 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
     </table>
 </div>
 
-<!-- RIWAYAT -->
 <h2>Riwayat Transaksi</h2>
 <div class="card">
     <div class="row">
@@ -213,7 +206,6 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
     </table>
 </div>
 
-<!-- SISA STOCK -->
 <h2>Sisa Stock</h2>
 <div class="card">
     <div class="row">
@@ -241,9 +233,7 @@ button.edit-btn, button.remove-btn { width: auto; padding: 4px 8px; font-size: 1
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
 <script>
-/* ==========================================================
-   CONFIG + LOGIN
-=========================================================== */
+// --- LOGIN & CONFIG ---
 const API_URL = "https://script.google.com/macros/s/AKfycbx.../exec";
 const USERS = { admin:{pass:"admin123",role:"admin"}, user:{pass:"user123",role:"user"} };
 let currentRole = localStorage.getItem('role') || null;
@@ -288,9 +278,7 @@ function applyRoleVisibility(){
 
 if(currentRole) showAppAfterLogin();
 
-/* ==========================================================
-   QR SCANNER
-=========================================================== */
+// --- SCANNER ---
 let scanner;
 function startScanner(){
     try{
@@ -312,16 +300,9 @@ function startScanner(){
 }
 
 function focusManual(){ document.getElementById("kodeBarang").focus(); }
+function showScanNotif(){ const n=document.getElementById("scanNotif"); n.style.display="block"; setTimeout(()=>{n.style.display="none";},1200); }
 
-function showScanNotif(){
-    const n=document.getElementById("scanNotif"); 
-    n.style.display="block"; 
-    setTimeout(()=>{n.style.display="none";},1200);
-}
-
-/* ==========================================================
-   AUTO-FILL MASTER → TRANSAKSI
-=========================================================== */
+// --- AUTO-FILL MASTER ---
 function isiOtomatisDariMaster(){
   const kode=document.getElementById("kodeBarang").value.trim();
   if(kode===""){ 
@@ -335,9 +316,7 @@ function isiOtomatisDariMaster(){
   document.getElementById("satuan").value=item?item.satuan:"";
 }
 
-/* ==========================================================
-   SIMPAN TRANSAKSI
-=========================================================== */
+// --- SIMPAN TRANSAKSI ---
 document.getElementById("saveTransaksi").addEventListener("click", async function(){
   const data={
     waktu: new Date().toLocaleString(),
@@ -380,9 +359,7 @@ function clearTransaksiForm(){
   document.getElementById("picAmbil").value="";
 }
 
-/* ==========================================================
-   MASTER DATA
-=========================================================== */
+// --- MASTER DATA TAMBAH & PUSH ---
 document.getElementById("addMaster").addEventListener("click",function(){
   let master={
       barcode:document.getElementById("mBarcode").value,
@@ -441,9 +418,44 @@ document.getElementById("pushMaster").addEventListener("click",async function(){
   tampilkanMaster();
 });
 
-/* ==========================================================
-   TAMPILKAN MASTER
-=========================================================== */
+// --- UPLOAD EXCEL MASTER ---
+function uploadMasterExcel(){
+    const fileInput = document.getElementById('uploadExcel');
+    const file = fileInput.files[0];
+    if(!file){ alert("Pilih file Excel terlebih dahulu."); return; }
+
+    const reader = new FileReader();
+    reader.onload = function(e){
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data,{type:'array'});
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const jsonData = XLSX.utils.sheet_to_json(ws,{defval:""});
+
+        let masterData = JSON.parse(localStorage.getItem("masterData"))||[];
+        jsonData.forEach(r=>{
+            if(!r.Barcode || !r.Nama) return;
+            const idx = masterData.findIndex(m=>m.barcode==r.Barcode);
+            const obj = {
+                barcode: r.Barcode,
+                nama: r.Nama,
+                satuan: r.Satuan||"",
+                minimal: Number(r.Minimal)||0,
+                kategori: r.Kategori||"",
+                line: r.Line||"",
+                pic: r.PIC||""
+            };
+            if(idx>=0) masterData[idx]=obj; else masterData.push(obj);
+        });
+
+        localStorage.setItem("masterData",JSON.stringify(masterData));
+        alert("Master Data berhasil di-upload dari Excel.");
+        tampilkanMaster();
+        updateStock();
+    };
+    reader.readAsArrayBuffer(file);
+}
+
+// --- TAMPILKAN MASTER ---
 function tampilkanMaster(){
   let master=JSON.parse(localStorage.getItem("masterData"))||[];
   let tbody=document.getElementById("masterBody");
@@ -470,6 +482,7 @@ function tampilkanMaster(){
   applyRoleVisibility();
 }
 
+// --- EDIT & REMOVE MASTER ---
 function editMaster(barcode){
   let master=JSON.parse(localStorage.getItem("masterData"))||[];
   const m=master.find(x=>x.barcode===barcode); 
@@ -486,18 +499,14 @@ function editMaster(barcode){
 
 function removeMaster(barcode){
   if(!confirm("Hapus data ini?")) return;
-
   let master=JSON.parse(localStorage.getItem("masterData"))||[];
   master=master.filter(x=>x.barcode!==barcode);
-
   localStorage.setItem("masterData",JSON.stringify(master));
   tampilkanMaster();
   updateStock();
 }
 
-/* ==========================================================
-   RIWAYAT TRANSAKSI
-=========================================================== */
+// --- RIWAYAT ---
 function tampilkanRiwayat(){
   let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
   let tbody=document.getElementById("riwayatBody");
@@ -558,9 +567,7 @@ function hapusRiwayat(i){
   updateStock();
 }
 
-/* ==========================================================
-   UPDATE SISA STOCK
-=========================================================== */
+// --- UPDATE STOCK ---
 function updateStock(){
   let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
   let master=JSON.parse(localStorage.getItem("masterData"))||[];
@@ -603,14 +610,11 @@ function updateStock(){
   stockArray.forEach((item,i)=>{
     let statusText="",cls="";
     if(item.sisa<=0){
-        statusText="Habis"; 
-        cls="status-habis";
+        statusText="Habis"; cls="status-habis";
     } else if(item.sisa<item.minimal){
-        statusText="Warning"; 
-        cls="status-hampir";
+        statusText="Warning"; cls="status-hampir";
     } else {
-        statusText="Aman"; 
-        cls="status-aman";
+        statusText="Aman"; cls="status-aman";
     }
 
     let bg=i%2===0?"#f5f5f5":"#ffffff";
@@ -628,9 +632,7 @@ function updateStock(){
   });
 }
 
-/* ==========================================================
-   EXPORT CSV & EXCEL
-=========================================================== */
+// --- EXPORT ---
 function exportCSV(){
   let transaksi=JSON.parse(localStorage.getItem("transaksi"))||[];
   if(transaksi.length===0){alert("Belum ada data transaksi."); return;}
@@ -707,14 +709,11 @@ function downloadStockExcel(){
 
   let wb=XLSX.utils.book_new();
   let ws=XLSX.utils.aoa_to_sheet(ws_data);
-
   XLSX.utils.book_append_sheet(wb,ws,"Sisa Stock");
   XLSX.writeFile(wb,"Sisa_Stock.xlsx");
 }
 
-/* ==========================================================
-   LOAD FROM SHEETS
-=========================================================== */
+// --- LOAD SHEETS ---
 async function loadMasterFromSheets(){
   try{
     const res=await fetch(API_URL,{
@@ -761,13 +760,10 @@ async function loadTransaksiFromSheets(){
   }catch(err){ console.warn("Gagal load transaksi:",err); }
 }
 
-/* ==========================================================
-   INITIAL LOAD
-=========================================================== */
+// --- INITIAL LOAD ---
 loadMasterFromSheets();
 loadTransaksiFromSheets();
 setTimeout(applyRoleVisibility,300);
-
 </script>
 
 </body>
