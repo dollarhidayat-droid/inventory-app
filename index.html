@@ -1,837 +1,414 @@
-<!-- ====================================================================== -->
-<!-- ====================== INVENTORY STOCK HR-GA ========================= -->
-<!-- ====================== FULL EXTENDED VERSION ========================= -->
-<!-- ====================== PART 1 (BARIS 1 - ±800) ======================== -->
-<!-- ====================================================================== -->
-
 <!DOCTYPE html>
 <html lang="id">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory Stock HR-GA - Lengkap + Login Overlay</title>
-
+<title>Inventory Stock HR-GA - FINAL</title>
 <style>
+body{font-family:Arial;margin:0;background:#f5f6fa}
+.container{max-width:1000px;margin:auto;padding:15px}
+h2{color:#2c3e50}
+input,select{width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:6px}
+button{padding:10px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
+.btn-small{padding:6px 10px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.card{background:#fff;padding:15px;border-radius:10px;margin-top:15px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
+table{width:100%;border-collapse:collapse;margin-top:10px}
+th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
+.status-aman{color:green;font-weight:bold}
+.status-warning{color:#b8860b;font-weight:bold;background:#fff8dc}
+.status-habis{color:red;font-weight:bold;background:#ffe4e1}
 
-/* ====================================================================== */
-/* ============================ GLOBAL STYLE ============================= */
-/* ====================================================================== */
+/* LOGIN */
+#loginOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999}
+#loginPanel{background:#fff;width:350px;padding:20px;border-radius:10px}
+#logoutBtn{position:fixed;top:10px;right:10px;background:#d32f2f;display:none}
 
-body {
-  font-family: Arial, sans-serif;
-  margin: 0;
-  background: #f5f6fa;
-}
+/* SCANNER */
+.scanner-area{display:none;margin-top:10px}
 
-.container {
-  padding: 15px;
-  max-width: 1000px;
-  margin: auto;
-}
+/* FILTER & SEARCH */
+#stockFilterRow, #reportFilterRow{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
 
-h2 {
-  margin-top: 20px;
-  color: #2c3e50;
-}
-
-input,
-select {
-  width: 100%;
-  padding: 10px;
-  margin-top: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-button {
-  width: 48%;
-  padding: 12px;
-  margin-top: 10px;
-  border: none;
-  border-radius: 6px;
-  background: #2563eb;
-  color: #fff;
-  font-size: 15px;
-  cursor: pointer;
-}
-
-.btn-small {
-  width: auto;
-  padding: 8px 14px;
-}
-
-.row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.card {
-  background: white;
-  padding: 15px;
-  margin-top: 15px;
-  border-radius: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-}
-
-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-}
-
-table th,
-table td {
-  padding: 8px;
-  border-bottom: 1px solid #ddd;
-  font-size: 14px;
-  text-align: left;
-}
-
-.status-aman {
-  color: #085f00;
-  font-weight: 600;
-}
-
-.status-hampir {
-  color: #b8860b;
-  font-weight: 700;
-}
-
-.status-habis {
-  color: #a40000;
-  font-weight: 600;
-}
-
-/* ====================================================================== */
-/* ============================ LOGIN OVERLAY ============================ */
-/* ====================================================================== */
-
-#loginOverlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 9999;
-}
-
-#loginPanel {
-  width: 360px;
-  background: #fff;
-  padding: 22px;
-  border-radius: 10px;
-  box-shadow: 0 6px 18px rgba(0,0,0,0.2);
-}
-
-#loginPanel h2 {
-  margin-top: 0;
-  text-align: center;
-}
-
-#logoutBtn {
-  position: fixed;
-  top: 12px;
-  right: 12px;
-  background: #d32f2f;
-  color: #fff;
-  border: none;
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  z-index: 1000;
-  display: none;
-}
-
-/* ====================================================================== */
-/* ============================ SCANNER AREA ============================= */
-/* ====================================================================== */
-
-.scanner-area {
-  display: none;
-  margin-top: 10px;
-  position: relative;
-}
-
-#scanNotif {
-  position: absolute;
-  top: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #4caf50;
-  color: #fff;
-  padding: 6px 12px;
-  border-radius: 6px;
-  display: none;
-  font-weight: bold;
-}
-
-/* ====================================================================== */
-/* ============================ FILTER STOCK ============================= */
-/* ====================================================================== */
-
-.filter-stock {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  margin-bottom: 12px;
-}
-
-.filter-stock input,
-.filter-stock select {
-  flex: 1;
-}
-
-.info-box {
-  display: flex;
-  gap: 10px;
-  margin-bottom: 10px;
-  flex-wrap: wrap;
-}
-
-.info-box div {
-  background: #eef2ff;
-  padding: 8px 12px;
-  border-radius: 6px;
-  font-size: 13px;
-  font-weight: bold;
-}
-
-/* ====================================================================== */
-/* ============================ END STYLE ================================ */
-/* ====================================================================== */
-
+/* DONE MESSAGE */
+#doneMsg{font-size:14px;color:green;margin-bottom:5px;font-weight:bold}
 </style>
 </head>
-
 <body>
 
-<!-- ====================================================================== -->
-<!-- ============================ LOGIN UI ================================ -->
-<!-- ====================================================================== -->
-
+<!-- LOGIN -->
 <div id="loginOverlay">
   <div id="loginPanel">
     <h2>Login</h2>
     <label>Username</label>
-    <input id="loginUser" placeholder="admin / user">
-
-    <label style="margin-top:8px">Password</label>
+    <input id="loginUser">
+    <label>Password</label>
     <input id="loginPass" type="password">
-
     <div class="row">
       <button onclick="doLogin()">Masuk</button>
-      <button style="background:#6b7280" onclick="fillDemo()">Demo</button>
+      <button onclick="fillDemo()" style="background:#6b7280">Demo</button>
     </div>
-
-    <p style="margin-top:12px;font-size:13px;color:#555">
-      Admin: <b>admin</b> / admin123<br>
-      User: <b>user</b> / user123
+    <p style="font-size:13px">
+      Admin: admin / admin123<br>
+      User: user / user123
     </p>
   </div>
 </div>
 
 <button id="logoutBtn" onclick="doLogout()">Logout</button>
 
-<div id="appRoot" class="container" style="display:none;">
+<div id="appRoot" class="container" style="display:none">
 
-<!-- ====================================================================== -->
-<!-- ============================ TRANSAKSI =============================== -->
-<!-- ====================================================================== -->
+<!-- DONE MESSAGE -->
+<div id="doneMsg"></div>
 
+<!-- ================= TRANSAKSI ================= -->
 <h2>Transaksi Stok</h2>
-
 <div class="card">
-
-  <div class="row">
-    <button onclick="startScanner()" class="btn-small">Scan (Camera)</button>
-    <button class="btn-small" onclick="focusManual()">Manual</button>
-  </div>
-
-  <label>Kode Barang</label>
-  <input id="kodeBarang" oninput="isiOtomatisDariMaster()">
-
-  <label>Nama Barang</label>
-  <input id="namaBarang">
-
-  <label>Satuan</label>
-  <input id="satuan">
-
-  <label>Kategori</label>
-  <select id="kategoriBarang">
-    <option value="">-- Pilih --</option>
-    <option>ATK</option>
-    <option>LAB</option>
-    <option>PROD</option>
-    <option>APD</option>
-    <option>DAPUR</option>
-  </select>
-
-  <label>Line / Dept</label>
-  <select id="lineDept">
-    <option value="">-- Pilih --</option>
-    <option>Production</option>
-    <option>Logistic</option>
-    <option>QC/QA</option>
-    <option>HR</option>
-    <option>Engineering</option>
-    <option>Technical</option>
-  </select>
-
-  <label>PIC Ambil</label>
-  <input id="picAmbil">
-
-  <label>Qty</label>
-  <input id="qty" type="number" value="1">
-
-  <label>Jenis</label>
-  <select id="jenis">
-    <option>Masuk</option>
-    <option>Keluar</option>
-  </select>
-
-  <div class="row">
-    <button id="saveTransaksi">Simpan</button>
-    <button onclick="exportCSV()">Export CSV</button>
-  </div>
-
+<div class="row">
+  <button class="btn-small" onclick="startScanner()">Scan</button>
+  <button class="btn-small" onclick="kodeBarang.focus()">Manual</button>
 </div>
 
-<!-- ====================================================================== -->
-<!-- ============================ MASTER DATA ============================== -->
-<!-- ====================================================================== -->
+<div class="scanner-area" id="scannerArea">
+  <video id="preview" style="width:100%;border-radius:8px"></video>
+</div>
 
+<label>Kode</label>
+<input id="kodeBarang" oninput="isiOtomatis()">
+<label>Nama</label>
+<input id="namaBarang">
+<label>Satuan</label>
+<input id="satuan">
+<label>Kategori</label>
+<input id="kategoriBarang">
+<label>Line</label>
+<input id="lineDept">
+<label>PIC</label>
+<input id="picAmbil">
+<label>Qty</label>
+<input id="qty" type="number" value="1">
+<label>Jenis</label>
+<select id="jenis">
+  <option>Masuk</option>
+  <option>Keluar</option>
+</select>
+
+<div class="row">
+  <button onclick="simpanTransaksi()">Simpan</button>
+</div>
+
+<hr>
+
+<label>Upload Excel Transaksi</label>
+<input type="file" id="uploadTransaksi" accept=".xls,.xlsx">
+<button class="btn-small" onclick="uploadTransaksiExcel()">Upload Excel</button>
+</div>
+
+<!-- ================= MASTER ================= -->
 <h2>Master Data</h2>
-
-<div class="card">
-
-  <label>Barcode</label>
-  <input id="mBarcode">
-
-  <label>Nama Barang</label>
-  <input id="mNama">
-
-  <label>Satuan</label>
-  <input id="mSatuan">
-
-  <label>Minimal Stok</label>
-  <input id="mMinimal" type="number">
-
-  <label>Kategori</label>
-  <select id="mKategori">
-    <option value="">-- Pilih --</option>
-    <option>ATK</option>
-    <option>LAB</option>
-    <option>PROD</option>
-    <option>APD</option>
-    <option>DAPUR</option>
-  </select>
-
-  <label>Line</label>
-  <select id="mLine">
-    <option value="">-- Pilih --</option>
-    <option>Production</option>
-    <option>Logistic</option>
-    <option>QC/QA</option>
-    <option>HR</option>
-    <option>Engineering</option>
-    <option>Technical</option>
-  </select>
-
-  <label>PIC Input</label>
-  <input id="mPic">
-
-  <label>Upload Excel Master</label>
-  <input type="file" id="uploadExcel" accept=".xls,.xlsx">
-
-  <div class="row">
-    <button id="addMaster">Tambah</button>
-    <button id="pushMaster" class="btn-small">Push Master</button>
-    <button class="btn-small" onclick="uploadMasterExcel()">Upload Excel</button>
-  </div>
-
+<div class="card admin-only">
+<input id="mBarcode" placeholder="Barcode">
+<input id="mNama" placeholder="Nama">
+<input id="mSatuan" placeholder="Satuan">
+<input id="mMinimal" type="number" placeholder="Minimal">
+<input id="mKategori" placeholder="Kategori">
+<input id="mLine" placeholder="Line">
+<input id="mPic" placeholder="PIC">
+<input type="file" id="uploadExcel" accept=".xls,.xlsx">
+<div class="row">
+  <button onclick="tambahMaster()">Tambah</button>
+  <button onclick="uploadMasterExcel()" class="btn-small">Upload Excel</button>
+</div>
 </div>
 
-<!-- ====================================================================== -->
-<!-- ============================ LANJUT PART 2 ============================ -->
-<!-- ====================================================================== -->
-<!-- ====================================================================== -->
-<!-- ============================ DAFTAR MASTER ============================ -->
-<!-- ====================================================================== -->
-
-<h2>Daftar Master Data</h2>
-
+<!-- ================= TABLE MASTER ================= -->
 <div class="card">
-  <table id="masterTable">
-    <thead>
-      <tr>
-        <th>Barcode</th>
-        <th>Nama</th>
-        <th>Satuan</th>
-        <th>Minimal</th>
-        <th>Kategori</th>
-        <th>Line</th>
-        <th>PIC</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="masterBody"></tbody>
-  </table>
+<table>
+<thead>
+<tr>
+<th>Barcode</th><th>Nama</th><th>Satuan</th><th>Min</th><th>Kategori</th><th>Line</th><th class="admin-only">Aksi</th>
+</tr>
+</thead>
+<tbody id="masterBody"></tbody>
+</table>
 </div>
 
-<!-- ====================================================================== -->
-<!-- ============================ RIWAYAT TRANSAKSI ======================== -->
-<!-- ====================================================================== -->
-
-<h2>Riwayat Transaksi</h2>
-
-<div class="card">
-  <div class="row">
-    <button onclick="downloadRiwayatExcel()">Download Excel</button>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Waktu</th>
-        <th>Kode</th>
-        <th>Nama</th>
-        <th>Kategori</th>
-        <th>Line</th>
-        <th>PIC</th>
-        <th>Qty</th>
-        <th>Jenis</th>
-        <th>Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="riwayatBody"></tbody>
-  </table>
-</div>
-
-<!-- ====================================================================== -->
-<!-- ============================ SISA STOCK =============================== -->
-<!-- ====================================================================== -->
-
+<!-- ================= STOCK ================= -->
 <h2>Sisa Stock</h2>
-
 <div class="card">
+<div id="stockFilterRow">
+  <select id="filterKategori" onchange="renderStock()">
+    <option value="">-- Semua Kategori --</option>
+  </select>
+  <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()">
+</div>
+<table>
+<thead>
+<tr><th>Kode</th><th>Nama</th><th>Sisa</th><th>Min</th><th>Status</th></tr>
+</thead>
+<tbody id="stockBody"></tbody>
+</table>
+</div>
 
-  <!-- FILTER LANJUTAN -->
-  <div class="info-box">
-    <div>Total: <span id="infoTotal">0</span></div>
-    <div>Aman: <span id="infoAman">0</span></div>
-    <div>Warning: <span id="infoWarning">0</span></div>
-    <div>Habis: <span id="infoHabis">0</span></div>
-  </div>
-
-  <div class="filter-stock">
-    <input id="searchStock" placeholder="Cari kode / nama..." oninput="renderStockAdvanced()">
-
-    <select id="filterKategoriStock" onchange="renderStockAdvanced()">
-      <option value="">Semua Kategori</option>
-      <option>ATK</option>
-      <option>LAB</option>
-      <option>PROD</option>
-      <option>APD</option>
-      <option>DAPUR</option>
-    </select>
-
-    <select id="filterLineStock" onchange="renderStockAdvanced()">
-      <option value="">Semua Line</option>
-      <option>Production</option>
-      <option>Logistic</option>
-      <option>QC/QA</option>
-      <option>HR</option>
-      <option>Engineering</option>
-      <option>Technical</option>
-    </select>
-  </div>
-
-  <table>
-    <thead>
-      <tr>
-        <th>Kode</th>
-        <th>Nama</th>
-        <th>Kategori</th>
-        <th>Line</th>
-        <th>Sisa</th>
-        <th>Minimal</th>
-        <th>Status</th>
-      </tr>
-    </thead>
-    <tbody id="stockBody"></tbody>
-  </table>
+<!-- ================= REPORT TRANSAKSI ================= -->
+<h2>Report Transaksi</h2>
+<div class="card">
+<div id="reportFilterRow" class="row">
+  <input type="date" id="reportTanggal" onchange="renderReport()">
+  <select id="reportJenis" onchange="renderReport()">
+    <option value="">-- Semua Jenis --</option>
+    <option value="Masuk">Masuk</option>
+    <option value="Keluar">Keluar</option>
+  </select>
+  <input id="searchReport" placeholder="Cari Kode/Nama" oninput="renderReport()">
+  <button class="btn-small" onclick="downloadReportExcel()">Download Excel</button>
+</div>
+<table>
+<thead>
+<tr><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Qty</th><th>Jenis</th></tr>
+</thead>
+<tbody id="reportBody"></tbody>
+</table>
+</div>
 
 </div>
 
-</div> <!-- END appRoot -->
-
-<!-- ====================================================================== -->
-<!-- ============================ SCRIPT AREA ============================== -->
-<!-- ====================================================================== -->
-
-<script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-
+<script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
 <script>
-/* ====================================================================== */
-/* ============================ LOGIN SYSTEM ============================= */
-/* ====================================================================== */
+// ambil elemen DOM
+const loginUser = document.getElementById("loginUser");
+const loginPass = document.getElementById("loginPass");
+const loginOverlay = document.getElementById("loginOverlay");
+const appRoot = document.getElementById("appRoot");
+const logoutBtn = document.getElementById("logoutBtn");
 
-const USERS = {
-  admin:{pass:"admin123",role:"admin"},
-  user:{pass:"user123",role:"user"}
-};
+// USERS
+const USERS={admin:{pass:"admin123",role:"admin"},user:{pass:"user123",role:"user"}}
+let currentRole=null
 
-let currentRole = localStorage.getItem("role");
-
+/* ================= LOGIN ================= */
 function doLogin(){
   const u = loginUser.value.trim();
   const p = loginPass.value.trim();
   if(USERS[u] && USERS[u].pass === p){
     currentRole = USERS[u].role;
-    localStorage.setItem("role", currentRole);
-    loginOverlay.style.display="none";
-    appRoot.style.display="block";
-    logoutBtn.style.display="block";
+    loginOverlay.style.display = "none";
+    appRoot.style.display = "block";
+    logoutBtn.style.display = "block";
+    applyRole();
     loadAll();
   } else {
-    alert("Login gagal");
+    alert("Login gagal: username atau password salah");
   }
 }
 
-function fillDemo(){
-  loginUser.value="user";
-  loginPass.value="user123";
+function fillDemo(){loginUser.value="user"; loginPass.value="user123";}
+function doLogout(){location.reload()}
+
+/* ================= ROLE ================= */
+function applyRole(){document.querySelectorAll(".admin-only").forEach(el=>el.style.display=currentRole==="admin"?"":"none");}
+
+/* ================= DONE MESSAGE ================= */
+function showDoneMessage(msg){
+  const div=document.getElementById("doneMsg");
+  div.innerText=msg;
+  div.style.color="green";
+  setTimeout(()=>{div.innerText=""},3000);
 }
 
-function doLogout(){
-  localStorage.clear();
-  location.reload();
-}
-
-if(currentRole){
-  loginOverlay.style.display="none";
-  appRoot.style.display="block";
-  logoutBtn.style.display="block";
-  loadAll();
-}
-
-/* ====================================================================== */
-/* ============================ SCANNER ================================= */
-/* ====================================================================== */
-
-let scanner;
-function startScanner(){
-  scanner = new Instascan.Scanner({ video: document.getElementById('preview') });
-  scanner.addListener('scan', function (content) {
-    kodeBarang.value = content;
-    isiOtomatisDariMaster();
-    scanner.stop();
+/* ================= MASTER ================= */
+function tambahMaster(){
+  let data=JSON.parse(localStorage.masterData||"[]");
+  data.push({
+    barcode:mBarcode.value,nama:mNama.value,satuan:mSatuan.value,
+    minimal:+mMinimal.value||0,kategori:mKategori.value,line:mLine.value,pic:mPic.value
   });
-  Instascan.Camera.getCameras().then(function (cameras) {
-    if (cameras.length > 0) {
-      scanner.start(cameras[0]);
-    } else {
-      alert('Camera not found');
-    }
-  });
+  localStorage.masterData=JSON.stringify(data);
+  tampilMaster();
+  showDoneMessage("Transaksi Sukses");
 }
-
-function focusManual(){
-  kodeBarang.focus();
-}
-
-/* ====================================================================== */
-/* ============================ MASTER DATA =============================== */
-/* ====================================================================== */
-
-function isiOtomatisDariMaster(){
-  let kode = kodeBarang.value;
-  let master = JSON.parse(localStorage.getItem("masterData")) || [];
-  let m = master.find(x=>x.barcode===kode);
-  namaBarang.value = m ? m.nama : "";
-  satuan.value = m ? m.satuan : "";
-}
-
-addMaster.onclick = function(){
-  let master = {
-    barcode: mBarcode.value,
-    nama: mNama.value,
-    satuan: mSatuan.value,
-    minimal: Number(mMinimal.value)||0,
-    kategori: mKategori.value,
-    line: mLine.value,
-    pic: mPic.value
-  };
-  if(!master.barcode || !master.nama){
-    alert("Barcode & Nama wajib");
-    return;
-  }
-  let data = JSON.parse(localStorage.getItem("masterData")) || [];
-  let idx = data.findIndex(x=>x.barcode===master.barcode);
-  if(idx>=0) data[idx]=master; else data.push(master);
-  localStorage.setItem("masterData",JSON.stringify(data));
-  tampilkanMaster();
-  renderStockAdvanced();
-};
 
 function uploadMasterExcel(){
-  const file = uploadExcel.files[0];
-  if(!file) return alert("Pilih file Excel");
-  const reader = new FileReader();
-  reader.onload = e=>{
-    const wb = XLSX.read(e.target.result,{type:"array"});
-    const ws = wb.Sheets[wb.SheetNames[0]];
-    const json = XLSX.utils.sheet_to_json(ws,{defval:""});
-    let master=[];
-    json.forEach(r=>{
-      if(!r.Barcode) return;
-      master.push({
-        barcode:r.Barcode,
-        nama:r.Nama||"",
-        satuan:r.Satuan||"",
-        minimal:Number(r.Minimal)||0,
-        kategori:r.Kategori||"",
-        line:r.Line||"",
-        pic:r.PIC||""
-      });
-    });
-    localStorage.setItem("masterData",JSON.stringify(master));
-    tampilkanMaster();
-    renderStockAdvanced();
-  };
-  reader.readAsArrayBuffer(file);
+  const f=uploadExcel.files[0];if(!f)return;
+  const r=new FileReader();
+  r.onload=e=>{
+    const wb=XLSX.read(e.target.result,{type:"array"});
+    const ws=XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    localStorage.masterData=JSON.stringify(ws.map(r=>({
+      barcode:r.Barcode,nama:r.Nama,satuan:r.Satuan,
+      minimal:+r.Minimal||0,kategori:r.Kategori,line:r.Line,pic:r.PIC
+    })));
+    localStorage.transaksi="[]";
+    localStorage.stockMap="{}";
+    tampilMaster();
+    renderStock();
+    renderReport();
+    showDoneMessage("Transaksi Sukses");
+  }
+  r.readAsArrayBuffer(f);
 }
 
-function tampilkanMaster(){
-  let data = JSON.parse(localStorage.getItem("masterData")) || [];
+function tampilMaster(){
+  const d=JSON.parse(localStorage.masterData||"[]");
   masterBody.innerHTML="";
-  data.forEach(m=>{
-    masterBody.innerHTML+=`
-      <tr>
-        <td>${m.barcode}</td>
-        <td>${m.nama}</td>
-        <td>${m.satuan}</td>
-        <td>${m.minimal}</td>
-        <td>${m.kategori}</td>
-        <td>${m.line}</td>
-        <td>${m.pic}</td>
-        <td>
-          <button onclick="editMaster('${m.barcode}')">Edit</button>
-          <button onclick="hapusMaster('${m.barcode}')">Hapus</button>
-        </td>
-      </tr>`;
+  d.forEach(m=>{
+    masterBody.innerHTML+=`<tr>
+      <td>${m.barcode}</td><td>${m.nama}</td><td>${m.satuan}</td>
+      <td>${m.minimal}</td><td>${m.kategori}</td><td>${m.line}</td>
+      <td class="admin-only"><button onclick="hapusMaster('${m.barcode}')">Hapus</button></td>
+    </tr>`;
   });
+  applyRole();
+  updateKategoriFilter();
 }
 
-function editMaster(barcode){
-  let data = JSON.parse(localStorage.getItem("masterData")) || [];
-  let m = data.find(x=>x.barcode===barcode);
-  if(!m) return;
-  mBarcode.value=m.barcode;
-  mNama.value=m.nama;
-  mSatuan.value=m.satuan;
-  mMinimal.value=m.minimal;
-  mKategori.value=m.kategori;
-  mLine.value=m.line;
-  mPic.value=m.pic;
+function hapusMaster(b){
+  let d=JSON.parse(localStorage.masterData||"[]");
+  localStorage.masterData=JSON.stringify(d.filter(x=>x.barcode!==b));
+  tampilMaster();
+  showDoneMessage("Transaksi Sukses");
 }
 
-function hapusMaster(barcode){
-  if(!confirm("Hapus data?")) return;
-  let data = JSON.parse(localStorage.getItem("masterData")) || [];
-  data = data.filter(x=>x.barcode!==barcode);
-  localStorage.setItem("masterData",JSON.stringify(data));
-  tampilkanMaster();
-  renderStockAdvanced();
+/* ================= TRANSAKSI ================= */
+function isiOtomatis(){
+  const m=JSON.parse(localStorage.masterData||"[]").find(x=>x.barcode===kodeBarang.value);
+  if(m){namaBarang.value=m.nama;satuan.value=m.satuan;kategoriBarang.value=m.kategori;lineDept.value=m.line;}
 }
 
-/* ====================================================================== */
-/* ============================ TRANSAKSI ================================ */
-/* ====================================================================== */
-
-saveTransaksi.onclick = function(){
-  let trx = {
-    waktu: new Date().toLocaleString(),
-    kode: kodeBarang.value,
-    nama: namaBarang.value,
-    kategori: kategoriBarang.value,
-    line: lineDept.value,
-    pic: picAmbil.value,
-    qty: Number(qty.value),
-    jenis: jenis.value
-  };
-  if(!trx.kode || trx.qty<=0) return alert("Kode & Qty wajib");
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  data.unshift(trx);
-  localStorage.setItem("transaksi",JSON.stringify(data));
-  tampilkanRiwayat();
-  renderStockAdvanced();
-};
-
-function tampilkanRiwayat(){
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  riwayatBody.innerHTML="";
-  data.forEach((t,i)=>{
-    riwayatBody.innerHTML+=`
-      <tr>
-        <td>${t.waktu}</td>
-        <td>${t.kode}</td>
-        <td>${t.nama}</td>
-        <td>${t.kategori}</td>
-        <td>${t.line}</td>
-        <td>${t.pic}</td>
-        <td>${t.qty}</td>
-        <td>${t.jenis}</td>
-        <td>
-          <button onclick="editRiwayat(${i})">Edit</button>
-          <button onclick="hapusRiwayat(${i})">Hapus</button>
-        </td>
-      </tr>`;
-  });
+function simpanTransaksi(){
+  const m=JSON.parse(localStorage.masterData||"[]").find(x=>x.barcode===kodeBarang.value);
+  if(!m){alert("Barang tidak ada di master!"); return;}
+  let d=JSON.parse(localStorage.transaksi||"[]");
+  const tgl=new Date().toISOString().split("T")[0];
+  d.unshift({kode:kodeBarang.value,nama:m.nama,qty:+qty.value,jenis:jenis.value,tanggal:tgl});
+  localStorage.transaksi=JSON.stringify(d);
+  renderStock();
+  renderReport();
+  showDoneMessage("Transaksi Sukses");
 }
 
-function editRiwayat(i){
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  let t = data[i];
-  if(!t) return;
-  kodeBarang.value=t.kode;
-  namaBarang.value=t.nama;
-  kategoriBarang.value=t.kategori;
-  lineDept.value=t.line;
-  picAmbil.value=t.pic;
-  qty.value=t.qty;
-  jenis.value=t.jenis;
-  data.splice(i,1);
-  localStorage.setItem("transaksi",JSON.stringify(data));
-  tampilkanRiwayat();
-  renderStockAdvanced();
+function uploadTransaksiExcel(){
+  const f=uploadTransaksi.files[0]; if(!f) return;
+  const r=new FileReader();
+  r.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: "array" });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+    const master = JSON.parse(localStorage.masterData || "[]");
+    let stockMap = {};
+    let d = [];
+    rows.forEach(r => {
+      const m = master.find(x => x.barcode==r.Barcode);
+      if(m){
+        const tgl = r.Tanggal ? new Date(r.Tanggal).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
+        const qty = +r.Qty;
+        d.push({ kode: m.barcode, nama: m.nama, qty: qty, jenis: r.Jenis, tanggal: tgl });
+        stockMap[m.barcode] = stockMap[m.barcode]||0;
+        stockMap[m.barcode] += r.Jenis === "Masuk"? qty : -qty;
+      }
+    });
+    localStorage.transaksi = JSON.stringify(d);
+    localStorage.stockMap = JSON.stringify(stockMap);
+    renderStock();
+    renderReport();
+    showDoneMessage("Transaksi Sukses");
+  }
+  r.readAsArrayBuffer(f);
 }
 
-function hapusRiwayat(i){
-  if(!confirm("Hapus transaksi?")) return;
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  data.splice(i,1);
-  localStorage.setItem("transaksi",JSON.stringify(data));
-  tampilkanRiwayat();
-  renderStockAdvanced();
-}
+/* ================= STOCK ================= */
+function renderStock(){
+  const master = JSON.parse(localStorage.masterData||"[]");
+  const trx = JSON.parse(localStorage.transaksi||"[]");
+  const filterKategori = document.getElementById("filterKategori").value.toLowerCase();
+  const search = document.getElementById("searchStock").value.toLowerCase();
+  let stockMap = JSON.parse(localStorage.stockMap||"{}");
+  trx.forEach(t=>{stockMap[t.kode] = stockMap[t.kode]||0; stockMap[t.kode] += t.jenis==="Masuk"?t.qty:-t.qty;});
 
-/* ====================================================================== */
-/* ============================ STOCK =================================== */
-/* ====================================================================== */
+  const stockArr = master.map(m=>{
+    const k = m.barcode;
+    if(filterKategori && m.kategori.toLowerCase() !== filterKategori) return null;
+    if(search && !(m.nama.toLowerCase().includes(search) || k.toLowerCase().includes(search))) return null;
+    const sisa = stockMap[k]||0;
+    let statusClass="", statusText="";
+    if(sisa<=0){statusClass="status-habis"; statusText="Habis";}
+    else if(sisa<=m.minimal){statusClass="status-warning"; statusText="Warning";}
+    else{statusClass="status-aman"; statusText="Aman";}
+    return {kode:k,nama:m.nama,sisa,minimal:m.minimal,statusClass,statusText};
+  }).filter(x=>x!==null);
 
-function renderStockAdvanced(){
-  let transaksi = JSON.parse(localStorage.getItem("transaksi")) || [];
-  let master = JSON.parse(localStorage.getItem("masterData")) || [];
-  let map = {};
-
-  transaksi.forEach(t=>{
-    if(!map[t.kode]){
-      let m = master.find(x=>x.barcode===t.kode) || {};
-      map[t.kode]={
-        kode:t.kode,
-        nama:t.nama||m.nama||"",
-        kategori:t.kategori||m.kategori||"",
-        line:t.line||m.line||"",
-        minimal:m.minimal||0,
-        sisa:0
-      };
-    }
-    map[t.kode].sisa += t.jenis==="Masuk"?t.qty:-t.qty;
+  stockArr.sort((a,b)=>{
+    const order = { "status-habis":0, "status-warning":1, "status-aman":2 };
+    return order[a.statusClass]-order[b.statusClass];
   });
 
-  master.forEach(m=>{
-    if(!map[m.barcode]){
-      map[m.barcode]={
-        kode:m.barcode,
-        nama:m.nama,
-        kategori:m.kategori||"",
-        line:m.line||"",
-        minimal:m.minimal||0,
-        sisa:0
-      };
-    }
-  });
-
-  let search = searchStock.value.toLowerCase();
-  let fk = filterKategoriStock.value;
-  let fl = filterLineStock.value;
-
-  let total=0, aman=0, warn=0, habis=0;
   stockBody.innerHTML="";
-
-  Object.values(map).forEach(i=>{
-    if(search && !(i.kode+i.nama).toLowerCase().includes(search)) return;
-    if(fk && i.kategori!==fk) return;
-    if(fl && i.line!==fl) return;
-
-    total++;
-    let status="Aman", cls="status-aman";
-    if(i.sisa<=0){status="Habis";cls="status-habis";habis++;}
-    else if(i.sisa<i.minimal){status="Warning";cls="status-hampir";warn++;}
-    else aman++;
-
-    stockBody.innerHTML+=`
-      <tr>
-        <td>${i.kode}</td>
-        <td>${i.nama}</td>
-        <td>${i.kategori}</td>
-        <td>${i.line}</td>
-        <td>${i.sisa}</td>
-        <td>${i.minimal}</td>
-        <td class="${cls}">${status}</td>
-      </tr>`;
+  stockArr.forEach(s=>{
+    stockBody.innerHTML+=`<tr>
+      <td>${s.kode}</td><td>${s.nama}</td><td>${s.sisa}</td><td>${s.minimal}</td>
+      <td class="${s.statusClass}">${s.statusText}</td>
+    </tr>`;
   });
-
-  infoTotal.textContent=total;
-  infoAman.textContent=aman;
-  infoWarning.textContent=warn;
-  infoHabis.textContent=habis;
 }
 
-/* ====================================================================== */
-/* ============================ EXPORT ================================== */
-/* ====================================================================== */
+function updateKategoriFilter(){
+  const master=JSON.parse(localStorage.masterData||"[]");
+  const sel=document.getElementById("filterKategori");
+  const categories=new Set();
+  master.forEach(x=>{if(x.kategori) categories.add(x.kategori.trim());});
+  sel.innerHTML='<option value="">-- Semua Kategori --</option>';
+  Array.from(categories).sort().forEach(c=>{sel.innerHTML+=`<option value="${c}">${c}</option>`;});
+}
 
-function exportCSV(){
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  let csv="Waktu,Kode,Nama,Kategori,Line,PIC,Qty,Jenis\n";
-  data.forEach(t=>{
-    csv+=`${t.waktu},${t.kode},${t.nama},${t.kategori},${t.line},${t.pic},${t.qty},${t.jenis}\n`;
+/* ================= REPORT ================= */
+function renderReport(){
+  const trx=JSON.parse(localStorage.transaksi||"[]");
+  const tglFilter=document.getElementById("reportTanggal").value;
+  const jenisFilter=document.getElementById("reportJenis").value;
+  const search=document.getElementById("searchReport").value.toLowerCase();
+  const sorted=trx.sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
+  reportBody.innerHTML="";
+  sorted.forEach(t=>{
+    if(tglFilter && t.tanggal!==tglFilter) return;
+    if(jenisFilter && t.jenis!==jenisFilter) return;
+    if(search && !(t.kode.toLowerCase().includes(search) || t.nama.toLowerCase().includes(search))) return;
+    reportBody.innerHTML+=`<tr>
+      <td>${t.tanggal}</td><td>${t.kode}</td><td>${t.nama}</td><td>${t.qty}</td><td>${t.jenis}</td>
+    </tr>`;
   });
-  let blob=new Blob([csv],{type:"text/csv"});
-  let a=document.createElement("a");
-  a.href=URL.createObjectURL(blob);
-  a.download="transaksi.csv";
-  a.click();
 }
 
-function downloadRiwayatExcel(){
-  let data = JSON.parse(localStorage.getItem("transaksi")) || [];
-  let ws_data=[["Waktu","Kode","Nama","Kategori","Line","PIC","Qty","Jenis"]];
-  data.forEach(t=>ws_data.push([t.waktu,t.kode,t.nama,t.kategori,t.line,t.pic,t.qty,t.jenis]));
-  let wb=XLSX.utils.book_new();
-  let ws=XLSX.utils.aoa_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb,ws,"Riwayat");
-  XLSX.writeFile(wb,"Riwayat_Transaksi.xlsx");
+function downloadReportExcel(){
+  const trx=JSON.parse(localStorage.transaksi||"[]");
+  if(!trx.length){alert("Tidak ada data untuk di download"); return;}
+  const wb=XLSX.utils.book_new();
+  const ws_data=trx.map(t=>({Tanggal:t.tanggal,Kode:t.kode,Nama:t.nama,Qty:t.qty,Jenis:t.jenis}));
+  const ws=XLSX.utils.json_to_sheet(ws_data);
+  XLSX.utils.book_append_sheet(wb,ws,"Report");
+  XLSX.writeFile(wb,"Report_Transaksi.xlsx");
 }
 
-/* ====================================================================== */
-/* ============================ INIT ==================================== */
-/* ====================================================================== */
-
-function loadAll(){
-  tampilkanMaster();
-  tampilkanRiwayat();
-  renderStockAdvanced();
+/* ================= SCANNER ================= */
+let scanner;
+function startScanner(){
+  const scannerArea=document.getElementById("scannerArea");
+  scannerArea.style.display="block";
+  if(scanner) return;
+  scanner=new Instascan.Scanner({video:document.getElementById('preview')});
+  scanner.addListener('scan', function(content){
+    kodeBarang.value=content;
+    isiOtomatis();
+    scanner.stop();
+    scannerArea.style.display="none";
+  });
+  Instascan.Camera.getCameras().then(function(cameras){
+    if(cameras.length>0) scanner.start(cameras[0]);
+    else alert('Tidak ada kamera ditemukan');
+  }).catch(function(e){console.error(e);alert('Gagal mengakses kamera: '+e)});
 }
 
-loadAll();
-
+function loadAll(){tampilMaster();renderStock();renderReport();}
 </script>
-
 </body>
 </html>
