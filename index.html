@@ -32,6 +32,32 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 
 /* DONE MESSAGE */
 #doneMsg{font-size:14px;color:green;margin-bottom:5px;font-weight:bold}
+  
+/* ================= STOCK TABLE ZEBRA STRIPES ================= */
+#stockBody tr:nth-child(even) {
+  background-color: #f9f9f9; /* abu-abu tipis */
+}
+#stockBody tr:nth-child(odd) {
+  background-color: #ffffff; /* putih */
+}
+
+/* ================= MASTER TABLE ZEBRA STRIPES ================= */
+#masterBody tr:nth-child(even) {
+  background-color: #f9f9f9; /* abu-abu tipis */
+}
+#masterBody tr:nth-child(odd) {
+  background-color: #ffffff; /* putih */
+}
+
+/* ================= TRANSAKSI REPORT TABLE ZEBRA STRIPES ================= */
+#reportBody tr:nth-child(even) {
+  background-color: #f9f9f9; /* abu-abu tipis */
+}
+#reportBody tr:nth-child(odd) {
+  background-color: #ffffff; /* putih */
+}
+
+</style>
 </style>
 </head>
 <body>
@@ -106,32 +132,39 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 </div>
 
 <!-- ================= MASTER ================= -->
-<h2>Master Data</h2>
+<h2 class="admin-only">Master Data</h2>
 <div class="card admin-only">
-<input id="mBarcode" placeholder="Barcode">
-<input id="mNama" placeholder="Nama">
-<input id="mSatuan" placeholder="Satuan">
-<input id="mMinimal" type="number" placeholder="Minimal">
-<input id="mKategori" placeholder="Kategori">
-<input id="mLine" placeholder="Line">
-<input id="mPic" placeholder="PIC">
-<input type="file" id="uploadExcel" accept=".xls,.xlsx">
-<div class="row">
-  <button onclick="tambahMaster()">Tambah</button>
-  <button onclick="uploadMasterExcel()" class="btn-small">Upload Excel</button>
-</div>
+  <input class="admin-only" id="mBarcode" placeholder="Barcode">
+  <input class="admin-only" id="mNama" placeholder="Nama">
+  <input class="admin-only" id="mSatuan" placeholder="Satuan">
+  <input class="admin-only" id="mMinimal" type="number" placeholder="Minimal">
+  <input class="admin-only" id="mKategori" placeholder="Kategori">
+  <input class="admin-only" id="mLine" placeholder="Line">
+  <input class="admin-only" id="mPic" placeholder="PIC">
+  <input class="admin-only" type="file" id="uploadExcel" accept=".xls,.xlsx">
+  <div class="row">
+    <button class="admin-only" onclick="tambahMaster()">Tambah</button>
+    <button class="admin-only btn-small" onclick="uploadMasterExcel()">Upload Excel</button>
+  </div>
 </div>
 
+
 <!-- ================= TABLE MASTER ================= -->
-<div class="card">
-<table>
-<thead>
-<tr>
-<th>Barcode</th><th>Nama</th><th>Satuan</th><th>Min</th><th>Kategori</th><th>Line</th><th class="admin-only">Aksi</th>
-</tr>
-</thead>
-<tbody id="masterBody"></tbody>
-</table>
+<div class="card admin-only">
+  <table>
+    <thead>
+      <tr>
+        <th>Barcode</th>
+        <th>Nama</th>
+        <th>Satuan</th>
+        <th>Min</th>
+        <th>Kategori</th>
+        <th>Line</th>
+        <th class="admin-only">Aksi</th>
+      </tr>
+    </thead>
+    <tbody id="masterBody"></tbody>
+  </table>
 </div>
 
 <!-- ================= STOCK ================= -->
@@ -208,10 +241,37 @@ function doLogin(){
 }
 
 function fillDemo(){loginUser.value="user"; loginPass.value="user123";}
-function doLogout(){location.reload()}
+function doLogout(){
+  // reset role
+  currentRole = null;
+
+  // sembunyikan app root & logout button
+  appRoot.style.display = "none";
+  logoutBtn.style.display = "none";
+
+  // tampilkan login overlay
+  loginOverlay.style.display = "flex";
+
+  // reset input login
+  loginUser.value = "";
+  loginPass.value = "";
+
+  // sembunyikan semua elemen admin-only
+  document.querySelectorAll(".admin-only").forEach(el => el.style.display = "none");
+}
+
 
 /* ================= ROLE ================= */
-function applyRole(){document.querySelectorAll(".admin-only").forEach(el=>el.style.display=currentRole==="admin"?"":"none");}
+function applyRole(){
+  // Tampilkan elemen admin-only hanya jika role admin
+  document.querySelectorAll(".admin-only").forEach(el => {
+    if(currentRole === "admin"){
+      el.style.display = ""; // tampilkan untuk admin
+    } else {
+      el.style.display = "none"; // sembunyikan untuk user
+    }
+  });
+}
 
 /* ================= DONE MESSAGE ================= */
 function showDoneMessage(msg){
