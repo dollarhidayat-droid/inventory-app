@@ -138,6 +138,9 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 <h2>Sisa Stock</h2>
 <div class="card">
 <div id="stockFilterRow">
+  <button class="btn-small admin-only" onclick="downloadStockExcel()">
+  Download Sisa Stok
+</button>
   <select id="filterKategori" onchange="renderStock()">
     <option value="">-- Semua Kategori --</option>
   </select>
@@ -273,49 +276,59 @@ function hapusMaster(b){
 
 /* ================= TRANSAKSI ================= */
 function isiOtomatis(){
-  const m=JSON.parse(localStorage.masterData||"[]").find(x=>x.barcode===kodeBarang.value);
-  if(m){namaBarang.value=m.nama;satuan.value=m.satuan;kategoriBarang.value=m.kategori;lineDept.value=m.line;}
+  const m = JSON.parse(localStorage.masterData || "[]")
+              .find(x => x.barcode === kodeBarang.value);
+
+  if(m){
+    namaBarang.value = m.nama || "";
+    satuan.value = m.satuan || "";
+    kategoriBarang.value = m.kategori || "";
+    lineDept.value = m.line || "";
+  }
 }
 
 function simpanTransaksi(){
-  const m=JSON.parse(localStorage.masterData||"[]").find(x=>x.barcode===kodeBarang.value);
-  if(!m){alert("Barang tidak ada di master!"); return;}
-  let d=JSON.parse(localStorage.transaksi||"[]");
-  const tgl=new Date().toISOString().split("T")[0];
-  d.unshift({kode:kodeBarang.value,nama:m.nama,qty:+qty.value,jenis:jenis.value,tanggal:tgl});
-  localStorage.transaksi=JSON.stringify(d);
+  const m = JSON.parse(localStorage.masterData || "[]")
+              .find(x => x.barcode === kodeBarang.value);
+
+  if(!m){
+    alert("Barang tidak ada di master!");
+    return;
+  }
+
+  let d = JSON.parse(localStorage.transaksi || "[]");
+
+  const tgl = new Date().toISOString(); // tanggal + jam
+
+  d.unshift({
+    kode: kodeBarang.value.trim(),
+    nama: m.nama,
+    qty: Number(qty.value) || 0,
+    jenis: jenis.value,
+    tanggal: tgl
+  });
+
+  localStorage.transaksi = JSON.stringify(d);
+
   renderStock();
   renderReport();
-  showDoneMessage("Transaksi Sukses");
+
+  /* ================= RESET FORM ================= */
+  kodeBarang.value = "";
+  namaBarang.value = "";
+  satuan.value = "";
+  kategoriBarang.value = "";
+  lineDept.value = "";
+  picAmbil.value = "";
+  qty.value = 1;
+  jenis.value = "Masuk";
+
+  /* ================= PESAN SUKSES ================= */
+  showDoneMessage("✅ Transaksi berhasil disimpan");
+
+  kodeBarang.focus();
 }
 
-function uploadTransaksiExcel(){
-  const f=uploadTransaksi.files[0]; if(!f) return;
-  const r=new FileReader();
-  r.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-    const master = JSON.parse(localStorage.masterData || "[]");
-    let stockMap = {};
-    let d = [];
-    rows.forEach(r => {
-      const m = master.find(x => x.barcode==r.Barcode);
-      if(m){
-        const tgl = r.Tanggal ? new Date(r.Tanggal).toISOString().split("T")[0] : new Date().toISOString().split("T")[0];
-        const qty = +r.Qty;
-        d.push({ kode: m.barcode, nama: m.nama, qty: qty, jenis: r.Jenis, tanggal: tgl });
-        stockMap[m.barcode] = stockMap[m.barcode]||0;
-        stockMap[m.barcode] += r.Jenis === "Masuk"? qty : -qty;
-      }
-    });
-    localStorage.transaksi = JSON.stringify(d);
-    localStorage.stockMap = JSON.stringify(stockMap);
-    renderStock();
-    renderReport();
-    showDoneMessage("Transaksi Sukses");
-  }
-  r.readAsArrayBuffer(f);
-}
 
 /* ================= STOCK ================= */
 function renderStock(){
@@ -373,9 +386,14 @@ function renderReport(){
     if(tglFilter && t.tanggal!==tglFilter) return;
     if(jenisFilter && t.jenis!==jenisFilter) return;
     if(search && !(t.kode.toLowerCase().includes(search) || t.nama.toLowerCase().includes(search))) return;
-    reportBody.innerHTML+=`<tr>
-      <td>${t.tanggal}</td><td>${t.kode}</td><td>${t.nama}</td><td>${t.qty}</td><td>${t.jenis}</td>
-    </tr>`;
+  reportBody.innerHTML+=`<tr>
+  <td>${formatTanggalJam(t.tanggal)}</td>
+  <td>${t.kode}</td>
+  <td>${t.nama}</td>
+  <td>${t.qty}</td>
+  <td>${t.jenis}</td>
+</tr>`;
+
   });
 }
 
@@ -387,6 +405,46 @@ function downloadReportExcel(){
   const ws=XLSX.utils.json_to_sheet(ws_data);
   XLSX.utils.book_append_sheet(wb,ws,"Report");
   XLSX.writeFile(wb,"Report_Transaksi.xlsx");
+}
+
+  /* ================= DOWNLOAD STOCK ================= */
+function downloadStockExcel(){
+  const master = JSON.parse(localStorage.masterData || "[]");
+  const trx = JSON.parse(localStorage.transaksi || "[]");
+
+  let stockMap = {};
+  trx.forEach(t=>{
+    stockMap[t.kode] = stockMap[t.kode] || 0;
+    stockMap[t.kode] += t.jenis === "Masuk" ? t.qty : -t.qty;
+  });
+
+  const data = master.map(m=>{
+    const sisa = stockMap[m.barcode] || 0;
+    let status = "Aman";
+    if(sisa <= 0) status = "Habis";
+    else if(sisa <= m.minimal) status = "Warning";
+
+    return {
+      Kode: m.barcode,
+      Nama: m.nama,
+      Satuan: m.satuan,
+      Kategori: m.kategori,
+      Line: m.line,
+      Sisa: sisa,
+      Minimal: m.minimal,
+      Status: status
+    };
+  });
+
+  if(!data.length){
+    alert("Data stok kosong");
+    return;
+  }
+
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.json_to_sheet(data);
+  XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok");
+  XLSX.writeFile(wb, "Sisa_Stock.xlsx");
 }
 
 /* ================= SCANNER ================= */
@@ -405,10 +463,30 @@ function startScanner(){
   Instascan.Camera.getCameras().then(function(cameras){
     if(cameras.length>0) scanner.start(cameras[0]);
     else alert('Tidak ada kamera ditemukan');
-  }).catch(function(e){console.error(e);alert('Gagal mengakses kamera: '+e)});
+  }).catch(function(e){
+    console.error(e);
+    alert('Gagal mengakses kamera: '+e);
+  });
 }
 
-function loadAll(){tampilMaster();renderStock();renderReport();}
+/* ================= LOAD AWAL ================= */
+function loadAll(){
+  tampilMaster();
+  renderStock();
+  renderReport();
+}
+
+/* ================= FORMAT TANGGAL + JAM ================= */
+function formatTanggalJam(iso){
+  const d = new Date(iso);
+  return d.toLocaleString("id-ID", {
+    day: "2-digit",
+    month: "long",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit"
+  });
+}
 </script>
 </body>
 </html>
