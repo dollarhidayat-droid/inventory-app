@@ -134,7 +134,7 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 <!-- ================= MASTER ================= -->
 <h2 class="admin-only">Master Data</h2>
 <div class="card admin-only">
-  <input class="admin-only" id="mBarcode" placeholder="Barcode">
+  <input class="admin-only" id="mBarcode" placeholder="Barcode" oninput="isiMasterOtomatis()">
   <input class="admin-only" id="mNama" placeholder="Nama">
   <input class="admin-only" id="mSatuan" placeholder="Satuan">
   <input class="admin-only" id="mMinimal" type="number" placeholder="Minimal">
@@ -148,6 +148,29 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
   </div>
 </div>
 
+<script>
+// ================= AUTO FILL MASTER =================
+function isiMasterOtomatis(){
+  const master = JSON.parse(localStorage.masterData || "[]");
+  const m = master.find(x => x.barcode === mBarcode.value.trim());
+
+  if(m){
+    mNama.value = m.nama || "";
+    mSatuan.value = m.satuan || "";
+    mMinimal.value = m.minimal || 0;
+    mKategori.value = m.kategori || "";
+    mLine.value = m.line || "";
+    mPic.value = m.pic || "";
+  } else {
+    mNama.value = "";
+    mSatuan.value = "";
+    mMinimal.value = "";
+    mKategori.value = "";
+    mLine.value = "";
+    mPic.value = "";
+  }
+}
+</script>
 
 <!-- ================= TABLE MASTER ================= -->
 <div class="card admin-only">
