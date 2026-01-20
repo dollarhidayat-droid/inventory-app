@@ -58,7 +58,6 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 }
 
 </style>
-</style>
 </head>
 <body>
 
@@ -330,7 +329,7 @@ function uploadMasterExcel(){
     const wb = XLSX.read(e.target.result, { type: "array" });
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-    let masterData = []; // reset master lama
+    let masterData = [];
 
     rows.forEach(r => {
       masterData.push({
@@ -344,22 +343,16 @@ function uploadMasterExcel(){
       });
     });
 
-    // simpan master baru dan reset transaksi & stock
     localStorage.masterData = JSON.stringify(masterData);
     localStorage.transaksi = "[]";
-    localStorage.stockMap = "{}";
 
     tampilMaster();
     renderStock();
     renderReport();
 
-    // reset input file setelah upload
     uploadExcel.value = "";
-
-    // tampilkan pesan sukses
     showDoneMessage("✅ Upload master sukses dan data lama direset");
-  }
-
+  };
   r.readAsArrayBuffer(f);
 }
 
@@ -368,13 +361,19 @@ function tampilMaster(){
   masterBody.innerHTML = "";
   d.forEach(m => {
     masterBody.innerHTML += `<tr>
-      <td>${m.barcode}</td><td>${m.nama}</td><td>${m.satuan}</td>
-      <td>${m.minimal}</td><td>${m.kategori}</td><td>${m.line}</td>
-      <td class="admin-only"><button onclick="hapusMaster('${m.barcode}')">Hapus</button></td>
+      <td>${m.barcode}</td>
+      <td>${m.nama}</td>
+      <td>${m.satuan}</td>
+      <td>${m.minimal}</td>
+      <td>${m.kategori}</td>
+      <td>${m.line}</td>
+      <td class="admin-only">
+        <button onclick="hapusMaster('${m.barcode}')">Hapus</button>
+      </td>
     </tr>`;
   });
   applyRole();
-  updateKategoriFilter();
+  updateKategoriFilter(); // ✅ refresh filter kategori otomatis
 }
 
 function hapusMaster(b){
@@ -384,7 +383,31 @@ function hapusMaster(b){
   showDoneMessage("✅ Master berhasil dihapus");
 }
 
+/* ================= UPDATE FILTER KATEGORI ================= */
+function updateKategoriFilter(){
+  const master = JSON.parse(localStorage.masterData || "[]");
+  const select = document.getElementById("filterKategori");
+  if(!select) return;
+
+  const current = select.value;
+  select.innerHTML = `<option value="">-- Semua Kategori --</option>`;
+
+  const kategoriUnik = [...new Set(
+    master.map(m => m.kategori).filter(k => k && k.trim() !== "")
+  )];
+
+  kategoriUnik.forEach(k => {
+    const opt = document.createElement("option");
+    opt.value = k.toLowerCase();
+    opt.textContent = k;
+    select.appendChild(opt);
+  });
+
+  select.value = current;
+}
+
 /* ================= TRANSAKSI ================= */
+
 function isiOtomatis(){
   const master = JSON.parse(localStorage.masterData || "[]");
   const m = master.find(x => x.barcode === kodeBarang.value.trim());
@@ -455,134 +478,80 @@ function uploadTransaksiExcel(){
     const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
     const master = JSON.parse(localStorage.masterData || "[]");
-    let transaksi = [];       // reset transaksi lama
-    let stockMap = {};        // reset stock map
+    let transaksi = []; // ✅ RESET TOTAL
 
     rows.forEach(r => {
       const m = master.find(x => x.barcode == r.Barcode);
       if(m){
-        const tgl = r.Tanggal 
-                    ? new Date(r.Tanggal).toISOString()
-                    : new Date().toISOString();
-        const qty = Number(r.Qty) || 0;
         transaksi.push({
           kode: m.barcode,
           nama: m.nama,
-          qty: qty,
+          qty: Number(r.Qty) || 0,
           jenis: r.Jenis,
-          tanggal: tgl
+          tanggal: r.Tanggal
+            ? new Date(r.Tanggal).toISOString()
+            : new Date().toISOString()
         });
-        stockMap[m.barcode] = stockMap[m.barcode] || 0;
-        stockMap[m.barcode] += r.Jenis === "Masuk" ? qty : -qty;
       }
     });
 
-    // simpan transaksi baru
     localStorage.transaksi = JSON.stringify(transaksi);
-    localStorage.stockMap = JSON.stringify(stockMap);
 
     renderStock();
     renderReport();
-
-    // reset input file setelah upload
+    showDoneMessage("✅ Upload transaksi sukses & stok dihitung ulang");
     uploadTransaksi.value = "";
-
-    // tampilkan pesan sukses
-    showDoneMessage("✅ Upload transaksi sukses dan data lama direset");
-  }
-
-  r.readAsArrayBuffer(f);
-}
-
-/* ================= UPLOAD EXCEL TRANSAKSI ================= */
-function uploadTransaksiExcel(){
-  const f = uploadTransaksi.files[0];
-  if(!f) return;
-
-  const r = new FileReader();
-  r.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
-    const master = JSON.parse(localStorage.masterData || "[]");
-    let transaksi = [];       // reset transaksi lama
-    let stockMap = {};        // reset stock map
-
-    rows.forEach(r => {
-      const m = master.find(x => x.barcode == r.Barcode);
-      if(m){
-        const tgl = r.Tanggal 
-                    ? new Date(r.Tanggal).toISOString()
-                    : new Date().toISOString();
-        const qty = Number(r.Qty) || 0;
-        transaksi.push({
-          kode: m.barcode,
-          nama: m.nama,
-          qty: qty,
-          jenis: r.Jenis,
-          tanggal: tgl
-        });
-        stockMap[m.barcode] = stockMap[m.barcode] || 0;
-        stockMap[m.barcode] += r.Jenis === "Masuk" ? qty : -qty;
-      }
-    });
-
-    // simpan transaksi baru
-    localStorage.transaksi = JSON.stringify(transaksi);
-    localStorage.stockMap = JSON.stringify(stockMap);
-
-    renderStock();
-    renderReport();
-
-    showDoneMessage("✅ Upload transaksi sukses dan data lama direset");
-  }
-
+  };
   r.readAsArrayBuffer(f);
 }
 
 /* ================= STOCK ================= */
 function renderStock(){
-  const master = JSON.parse(localStorage.masterData||"[]");
-  const trx = JSON.parse(localStorage.transaksi||"[]");
+  const master = JSON.parse(localStorage.masterData || "[]");
+  const trx = JSON.parse(localStorage.transaksi || "[]");
+
   const filterKategori = document.getElementById("filterKategori").value.toLowerCase();
   const search = document.getElementById("searchStock").value.toLowerCase();
-  let stockMap = JSON.parse(localStorage.stockMap||"{}");
-  trx.forEach(t=>{stockMap[t.kode] = stockMap[t.kode]||0; stockMap[t.kode] += t.jenis==="Masuk"?t.qty:-t.qty;});
 
-  const stockArr = master.map(m=>{
+  // ✅ HITUNG STOK MURNI DARI TRANSAKSI
+  let stockMap = {};
+  trx.forEach(t=>{
+    stockMap[t.kode] = stockMap[t.kode] || 0;
+    stockMap[t.kode] += t.jenis === "Masuk" ? t.qty : -t.qty;
+  });
+
+  stockBody.innerHTML = "";
+
+  master.forEach(m=>{
     const k = m.barcode;
-    if(filterKategori && m.kategori.toLowerCase() !== filterKategori) return null;
-    if(search && !(m.nama.toLowerCase().includes(search) || k.toLowerCase().includes(search))) return null;
-    const sisa = stockMap[k]||0;
-    let statusClass="", statusText="";
-    if(sisa<=0){statusClass="status-habis"; statusText="Habis";}
-    else if(sisa<=m.minimal){statusClass="status-warning"; statusText="Warning";}
-    else{statusClass="status-aman"; statusText="Aman";}
-    return {kode:k,nama:m.nama,sisa,minimal:m.minimal,statusClass,statusText};
-  }).filter(x=>x!==null);
 
-  stockArr.sort((a,b)=>{
-    const order = { "status-habis":0, "status-warning":1, "status-aman":2 };
-    return order[a.statusClass]-order[b.statusClass];
-  });
+    if(filterKategori && m.kategori.toLowerCase() !== filterKategori) return;
+    if(search && !(m.nama.toLowerCase().includes(search) || k.toLowerCase().includes(search))) return;
 
-  stockBody.innerHTML="";
-  stockArr.forEach(s=>{
-    stockBody.innerHTML+=`<tr>
-      <td>${s.kode}</td><td>${s.nama}</td><td>${s.sisa}</td><td>${s.minimal}</td>
-      <td class="${s.statusClass}">${s.statusText}</td>
-    </tr>`;
+    const sisa = stockMap[k] || 0;
+
+    let statusClass = "status-aman";
+    let statusText = "Aman";
+    if(sisa <= 0){
+      statusClass = "status-habis";
+      statusText = "Habis";
+    } else if(sisa <= m.minimal){
+      statusClass = "status-warning";
+      statusText = "Warning";
+    }
+
+    stockBody.innerHTML += `
+      <tr>
+        <td>${k}</td>
+        <td>${m.nama}</td>
+        <td>${sisa}</td>
+        <td>${m.minimal}</td>
+        <td class="${statusClass}">${statusText}</td>
+      </tr>
+    `;
   });
 }
 
-function updateKategoriFilter(){
-  const master=JSON.parse(localStorage.masterData||"[]");
-  const sel=document.getElementById("filterKategori");
-  const categories=new Set();
-  master.forEach(x=>{if(x.kategori) categories.add(x.kategori.trim());});
-  sel.innerHTML='<option value="">-- Semua Kategori --</option>';
-  Array.from(categories).sort().forEach(c=>{sel.innerHTML+=`<option value="${c}">${c}</option>`;});
-}
 
 /* ================= REPORT ================= */
 function renderReport(){
@@ -593,7 +562,7 @@ function renderReport(){
   const sorted=trx.sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
   reportBody.innerHTML="";
   sorted.forEach(t=>{
-    if(tglFilter && t.tanggal!==tglFilter) return;
+   if(tglFilter && !t.tanggal.startsWith(tglFilter)) return;
     if(jenisFilter && t.jenis!==jenisFilter) return;
     if(search && !(t.kode.toLowerCase().includes(search) || t.nama.toLowerCase().includes(search))) return;
   reportBody.innerHTML+=`<tr>
