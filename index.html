@@ -148,26 +148,127 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 </div>
 
 <script>
-// ================= AUTO FILL MASTER =================
-function isiMasterOtomatis(){
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const m = master.find(x => x.barcode === mBarcode.value.trim());
+const API_URL = "https://script.google.com/macros/s/AKfycbxeBW3JTiDBqi6xTtxGxdrXSlZGkMxW908jWb_recGlF0aXmjoRITAs8xdX4as_-Cr8yg/exec";
 
-  if(m){
-    mNama.value = m.nama || "";
-    mSatuan.value = m.satuan || "";
-    mMinimal.value = m.minimal || 0;
-    mKategori.value = m.kategori || "";
-    mLine.value = m.line || "";
-    mPic.value = m.pic || "";
-  } else {
-    mNama.value = "";
-    mSatuan.value = "";
-    mMinimal.value = "";
-    mKategori.value = "";
-    mLine.value = "";
-    mPic.value = "";
-  }
+// ================= MASTER DATA API FUNCTIONS =================
+
+// Auto-fill master data
+function isiMasterOtomatis(){
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(master => {
+      const m = master.find(x => x.barcode === mBarcode.value.trim());
+      if(m){
+        mNama.value = m.nama || "";
+        mSatuan.value = m.satuan || "";
+        mMinimal.value = m.minimal || 0;
+        mKategori.value = m.kategori || "";
+        mLine.value = m.line || "";
+        mPic.value = m.pic || "";
+      } else {
+        mNama.value = "";
+        mSatuan.value = "";
+        mMinimal.value = "";
+        mKategori.value = "";
+        mLine.value = "";
+        mPic.value = "";
+      }
+    })
+    .catch(err => console.error("Gagal fetch master:", err));
+}
+
+// Tambah master
+function tambahMaster(){
+  const data = {
+    mode: "addMaster",
+    barcode: mBarcode.value.trim(),
+    nama: mNama.value.trim(),
+    satuan: mSatuan.value.trim(),
+    minimal: Number(mMinimal.value) || 0,
+    kategori: mKategori.value.trim(),
+    line: mLine.value.trim(),
+    pic: mPic.value.trim()
+  };
+
+  if(!data.barcode || !data.nama) return alert("Barcode dan Nama wajib diisi!");
+
+  fetch(API_URL, {
+    method: "POST",
+    headers: {"Content-Type":"application/json"},
+    body: JSON.stringify(data)
+  })
+  .then(res => res.json())
+  .then(() => {
+    showDoneMessage("✅ Master berhasil ditambahkan");
+    tampilMaster();
+    mBarcode.value = mNama.value = mSatuan.value = mMinimal.value = mKategori.value = mLine.value = mPic.value = "";
+  })
+  .catch(err => alert("Gagal menambahkan master: " + err));
+}
+
+// Tampil master
+function tampilMaster(){
+  fetch(API_URL)
+    .then(res => res.json())
+    .then(master => {
+      const masterBody = document.getElementById("masterBody");
+      masterBody.innerHTML = "";
+      master.forEach(m => {
+        masterBody.innerHTML += `<tr>
+          <td>${m.barcode}</td>
+          <td>${m.nama}</td>
+          <td>${m.satuan}</td>
+          <td>${m.minimal}</td>
+          <td>${m.kategori}</td>
+          <td>${m.line}</td>
+          <td class="admin-only">
+            <button onclick="hapusMaster('${m.barcode}')">Hapus</button>
+          </td>
+        </tr>`;
+      });
+      applyRole();
+      updateKategoriFilter();
+    })
+    .catch(err => console.error("Gagal tampil master:", err));
+}
+
+// Hapus master (dummy)
+function hapusMaster(barcode){
+  alert("Fungsi hapus belum terhubung API. Bisa ditambahkan di Apps Script jika perlu.");
+}
+
+// Upload Excel master
+function uploadMasterExcel(){
+  const f = uploadExcel.files[0];
+  if(!f) return alert("Pilih file Excel terlebih dahulu!");
+  const reader = new FileReader();
+  reader.onload = e => {
+    const wb = XLSX.read(e.target.result, { type: "array" });
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+
+    rows.forEach(r => {
+      const data = {
+        mode: "addMaster",
+        barcode: r.Barcode,
+        nama: r.Nama,
+        satuan: r.Satuan,
+        minimal: Number(r.Minimal) || 0,
+        kategori: r.Kategori,
+        line: r.Line,
+        pic: r.PIC
+      };
+      fetch(API_URL, {
+        method: "POST",
+        headers: {"Content-Type":"application/json"},
+        body: JSON.stringify(data)
+      }).catch(err => console.error("Gagal upload row:", err));
+    });
+
+    showDoneMessage("✅ Upload Excel master berhasil");
+    uploadExcel.value = "";
+    tampilMaster();
+  };
+  reader.readAsArrayBuffer(f);
 }
 </script>
 
@@ -647,9 +748,31 @@ function startScanner(){
     alert('Gagal mengakses kamera: '+e);
   });
 }
+/* ================= AUTO DELETE HISTORY > 2 BULAN ================= */
+function cleanupOldTransactions(){
+  let trx = JSON.parse(localStorage.transaksi || "[]");
 
+  // tanggal hari ini
+  const today = new Date();
+
+  // batas 2 bulan ke belakang
+  const limitDate = new Date();
+  limitDate.setMonth(today.getMonth() - 2);
+
+  // filter transaksi yang masih <= 2 bulan
+  trx = trx.filter(t => {
+    const trxDate = new Date(t.tanggal);
+    return trxDate >= limitDate;
+  });
+
+  // simpan ulang ke localStorage
+  localStorage.transaksi = JSON.stringify(trx);
+
+  console.log("History transaksi >2 bulan sudah dibersihkan");
+}
 /* ================= LOAD AWAL ================= */
 function loadAll(){
+  cleanupOldTransactions(); // auto hapus history > 2 bulan
   tampilMaster();
   renderStock();
   renderReport();
