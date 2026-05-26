@@ -115,10 +115,9 @@ th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
 <input id="qty" type="number" value="1">
 <label>Jenis</label>
 <select id="jenis">
+  <option selected>Keluar</option>
   <option>Masuk</option>
-  <option>Keluar</option>
 </select>
-
 <div class="row">
   <button onclick="simpanTransaksi()">Simpan</button>
 </div>
@@ -325,7 +324,18 @@ function uploadMasterExcel(){
 </div>
 <table>
 <thead>
-<tr><th>Tanggal</th><th>Kode</th><th>Nama</th><th>Qty</th><th>Jenis</th></tr>
+<tr>
+  <th>Tanggal</th>
+  <th>Kode</th>
+  <th>Nama</th>
+  <th>Kategori</th>
+  <th>Line</th>
+  <th>PIC</th>
+  <th>Qty</th>
+  <th>Satuan</th>
+  <th>Jenis</th>
+<th>Status</th>
+</tr>
 </thead>
 <tbody id="reportBody"></tbody>
 </table>
@@ -517,10 +527,11 @@ function isiOtomatis(){
     namaBarang.value = m.nama || "";
     satuan.value = m.satuan || "";
     kategoriBarang.value = m.kategori || "";
-    lineDept.value = m.line || "";
+
+    // LINE TIDAK OTOMATIS
+    lineDept.value = "";
   }
 }
-
 function simpanTransaksi(){
   const master = JSON.parse(localStorage.masterData || "[]");
   const m = master.find(x => x.barcode === kodeBarang.value.trim());
@@ -539,14 +550,17 @@ function simpanTransaksi(){
 
   const tgl = new Date().toISOString(); // tanggal + jam
 
-  transaksi.unshift({
-    kode: kodeBarang.value.trim(),
-    nama: m.nama,
-    qty: Number(qty.value),
-    jenis: jenis.value,
-    tanggal: tgl
-  });
-
+transaksi.unshift({
+  kode: kodeBarang.value.trim(),
+  nama: m.nama,
+  satuan: m.satuan || "",
+  kategori: m.kategori || "",
+  line: lineDept.value.trim() || "-",
+  pic: picAmbil.value.trim() || m.pic || "",
+  qty: Number(qty.value),
+  jenis: jenis.value,
+  tanggal: tgl
+});
   localStorage.transaksi = JSON.stringify(transaksi);
 
   renderStock();
@@ -570,163 +584,371 @@ function simpanTransaksi(){
 
 /* ================= UPLOAD EXCEL TRANSAKSI ================= */
 function uploadTransaksiExcel(){
+
   const f = uploadTransaksi.files[0];
   if(!f) return;
 
   const r = new FileReader();
-  r.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
 
-    const master = JSON.parse(localStorage.masterData || "[]");
-    let transaksi = []; // ✅ RESET TOTAL
+  r.onload = e => {
+
+    const wb =
+    XLSX.read(
+      e.target.result,
+      { type: "array" }
+    );
+
+    const rows =
+    XLSX.utils.sheet_to_json(
+      wb.Sheets[
+        wb.SheetNames[0]
+      ]
+    );
+
+    const master =
+    JSON.parse(
+      localStorage.masterData || "[]"
+    );
+
+    let transaksi = [];
 
     rows.forEach(r => {
-      const m = master.find(x => x.barcode == r.Barcode);
+
+      const m =
+      master.find(
+        x =>
+        x.barcode ==
+        r.Barcode
+      );
+
       if(m){
+
         transaksi.push({
-          kode: m.barcode,
-          nama: m.nama,
-          qty: Number(r.Qty) || 0,
-          jenis: r.Jenis,
-          tanggal: r.Tanggal
-            ? new Date(r.Tanggal).toISOString()
-            : new Date().toISOString()
+
+          kode:
+          m.barcode,
+
+          nama:
+          m.nama,
+
+          satuan:
+          m.satuan || "",
+
+          kategori:
+          m.kategori || "",
+
+          line:
+          m.line || "",
+
+          pic:
+          r.PIC ||
+          m.pic ||
+          "",
+
+          qty:
+          Number(
+            r.Qty
+          ) || 0,
+
+          jenis:
+          r.Jenis || "Masuk",
+
+          tanggal:
+          r.Tanggal
+          ? new Date(
+              r.Tanggal
+            ).toISOString()
+          : new Date()
+            .toISOString()
+
         });
+
       }
     });
 
-    localStorage.transaksi = JSON.stringify(transaksi);
+    localStorage.transaksi =
+    JSON.stringify(
+      transaksi
+    );
 
     renderStock();
     renderReport();
-    showDoneMessage("✅ Upload transaksi sukses & stok dihitung ulang");
-    uploadTransaksi.value = "";
+
+    showDoneMessage(
+      "✅ Upload transaksi sukses & stok dihitung ulang"
+    );
+
+    uploadTransaksi.value =
+    "";
+
   };
+
   r.readAsArrayBuffer(f);
 }
-
 /* ================= STOCK ================= */
-function renderStock(){
+function renderStock() {
   const master = JSON.parse(localStorage.masterData || "[]");
   const trx = JSON.parse(localStorage.transaksi || "[]");
 
-  const filterKategori = document.getElementById("filterKategori").value.toLowerCase();
-  const search = document.getElementById("searchStock").value.toLowerCase();
+  const filterKategori =
+    document.getElementById("filterKategori")
+    .value.toLowerCase();
 
-  // ✅ HITUNG STOK MURNI DARI TRANSAKSI
+  const search =
+    document.getElementById("searchStock")
+    .value.toLowerCase();
+
+  // Hitung stok dari transaksi
   let stockMap = {};
-  trx.forEach(t=>{
-    stockMap[t.kode] = stockMap[t.kode] || 0;
-    stockMap[t.kode] += t.jenis === "Masuk" ? t.qty : -t.qty;
+
+  trx.forEach(t => {
+    stockMap[t.kode] =
+      stockMap[t.kode] || 0;
+
+    stockMap[t.kode] +=
+      t.jenis === "Masuk"
+      ? t.qty
+      : -t.qty;
   });
+
+  // Gabungkan master + stok
+  let stockData =
+  master.map(m => {
+
+    const sisa =
+      stockMap[m.barcode] || 0;
+
+    return {
+      ...m,
+      sisa
+    };
+  });
+
+  // Filter kategori + search
+  stockData =
+  stockData.filter(m => {
+
+    if (
+      filterKategori &&
+      m.kategori.toLowerCase()
+      !== filterKategori
+    ) return false;
+
+    if (
+      search &&
+      !(
+        m.nama.toLowerCase()
+        .includes(search)
+        ||
+        m.barcode.toLowerCase()
+        .includes(search)
+      )
+    ) return false;
+
+    return true;
+  });
+
+  // PARETO: stok terkecil di atas
+  stockData.sort(
+    (a, b) => a.sisa - b.sisa
+  );
 
   stockBody.innerHTML = "";
 
-  master.forEach(m=>{
-    const k = m.barcode;
+  stockData.forEach(m => {
 
-    if(filterKategori && m.kategori.toLowerCase() !== filterKategori) return;
-    if(search && !(m.nama.toLowerCase().includes(search) || k.toLowerCase().includes(search))) return;
+    let statusClass =
+      "status-aman";
 
-    const sisa = stockMap[k] || 0;
+    let statusText =
+      "Aman";
 
-    let statusClass = "status-aman";
-    let statusText = "Aman";
-    if(sisa <= 0){
-      statusClass = "status-habis";
-      statusText = "Habis";
-    } else if(sisa <= m.minimal){
-      statusClass = "status-warning";
-      statusText = "Warning";
+    if (m.sisa <= 0) {
+      statusClass =
+        "status-habis";
+      statusText =
+        "Habis";
+    }
+    else if (
+      m.sisa <= m.minimal
+    ) {
+      statusClass =
+        "status-warning";
+      statusText =
+        "Warning";
     }
 
     stockBody.innerHTML += `
       <tr>
-        <td>${k}</td>
+        <td>${m.barcode}</td>
         <td>${m.nama}</td>
-        <td>${sisa}</td>
+        <td>${m.sisa}</td>
         <td>${m.minimal}</td>
-        <td class="${statusClass}">${statusText}</td>
+        <td class="${statusClass}">
+          ${statusText}
+        </td>
       </tr>
     `;
   });
 }
-
-
 /* ================= REPORT ================= */
 function renderReport(){
-  const trx=JSON.parse(localStorage.transaksi||"[]");
-  const tglFilter=document.getElementById("reportTanggal").value;
-  const jenisFilter=document.getElementById("reportJenis").value;
-  const search=document.getElementById("searchReport").value.toLowerCase();
-  const sorted=trx.sort((a,b)=>new Date(b.tanggal)-new Date(a.tanggal));
-  reportBody.innerHTML="";
+
+  const trx =
+  JSON.parse(localStorage.transaksi || "[]");
+
+  const tglFilter =
+  document.getElementById(
+    "reportTanggal"
+  ).value;
+
+  const jenisFilter =
+  document.getElementById(
+    "reportJenis"
+  ).value;
+
+  const search =
+  document.getElementById(
+    "searchReport"
+  ).value.toLowerCase();
+
+  const sorted =
+  trx.sort((a,b)=>
+    new Date(b.tanggal)
+    - new Date(a.tanggal)
+  );
+
+  reportBody.innerHTML = "";
+
   sorted.forEach(t=>{
-   if(tglFilter && !t.tanggal.startsWith(tglFilter)) return;
-    if(jenisFilter && t.jenis!==jenisFilter) return;
-    if(search && !(t.kode.toLowerCase().includes(search) || t.nama.toLowerCase().includes(search))) return;
-  reportBody.innerHTML+=`<tr>
-  <td>${formatTanggalJam(t.tanggal)}</td>
-  <td>${t.kode}</td>
-  <td>${t.nama}</td>
-  <td>${t.qty}</td>
-  <td>${t.jenis}</td>
-</tr>`;
 
+    if(
+      tglFilter &&
+      !t.tanggal.startsWith(
+        tglFilter
+      )
+    ) return;
+
+    if(
+      jenisFilter &&
+      t.jenis !== jenisFilter
+    ) return;
+
+    if(
+      search &&
+      !(
+        t.kode.toLowerCase()
+        .includes(search)
+        ||
+        t.nama.toLowerCase()
+        .includes(search)
+      )
+    ) return;
+
+    reportBody.innerHTML += `
+    <tr>
+      <td>${formatTanggalJam(t.tanggal)}</td>
+      <td>${t.kode}</td>
+      <td>${t.nama}</td>
+      <td>${t.kategori || "-"}</td>
+      <td>${t.line || "-"}</td>
+      <td>${t.pic || "-"}</td>
+      <td>${t.qty}</td>
+      <td>${t.satuan || "-"}</td>
+      <td>${t.jenis}</td>
+
+<td>
+  <span style="
+    padding:4px 8px;
+    border-radius:6px;
+    font-size:12px;
+    font-weight:bold;
+    background:
+    ${t.jenis === 'Keluar'
+      ? '#dcfce7'
+      : '#dbeafe'};
+    color:
+    ${t.jenis === 'Keluar'
+      ? '#166534'
+      : '#1e40af'};
+  ">
+    ${
+      t.jenis === 'Keluar'
+      ? 'Delivered'
+      : 'Received'
+    }
+  </span>
+</td>
+    </tr>`;
   });
 }
-
-function downloadReportExcel(){
-  const trx=JSON.parse(localStorage.transaksi||"[]");
-  if(!trx.length){alert("Tidak ada data untuk di download"); return;}
-  const wb=XLSX.utils.book_new();
-  const ws_data=trx.map(t=>({Tanggal:t.tanggal,Kode:t.kode,Nama:t.nama,Qty:t.qty,Jenis:t.jenis}));
-  const ws=XLSX.utils.json_to_sheet(ws_data);
-  XLSX.utils.book_append_sheet(wb,ws,"Report");
-  XLSX.writeFile(wb,"Report_Transaksi.xlsx");
-}
-
   /* ================= DOWNLOAD STOCK ================= */
-function downloadStockExcel(){
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const trx = JSON.parse(localStorage.transaksi || "[]");
+function downloadReportExcel(){
 
-  let stockMap = {};
-  trx.forEach(t=>{
-    stockMap[t.kode] = stockMap[t.kode] || 0;
-    stockMap[t.kode] += t.jenis === "Masuk" ? t.qty : -t.qty;
-  });
+  const trx =
+  JSON.parse(
+    localStorage.transaksi || "[]"
+  );
 
-  const data = master.map(m=>{
-    const sisa = stockMap[m.barcode] || 0;
-    let status = "Aman";
-    if(sisa <= 0) status = "Habis";
-    else if(sisa <= m.minimal) status = "Warning";
-
-    return {
-      Kode: m.barcode,
-      Nama: m.nama,
-      Satuan: m.satuan,
-      Kategori: m.kategori,
-      Line: m.line,
-      Sisa: sisa,
-      Minimal: m.minimal,
-      Status: status
-    };
-  });
-
-  if(!data.length){
-    alert("Data stok kosong");
+  if(!trx.length){
+    alert(
+      "Tidak ada data untuk di download"
+    );
     return;
   }
 
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.json_to_sheet(data);
-  XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok");
-  XLSX.writeFile(wb, "Sisa_Stock.xlsx");
-}
+  const wb =
+  XLSX.utils.book_new();
 
+  const ws_data =
+  trx.map(t => ({
+
+    Tanggal:
+    formatTanggalJam(
+      t.tanggal
+    ),
+
+    Kode:
+    t.kode,
+
+    Nama:
+    t.nama,
+
+    Kategori:
+    t.kategori || "-",
+
+    Line:
+    t.line || "-",
+
+    PIC:
+    t.pic || "-",
+
+    Qty:
+    t.qty,
+
+    Satuan:
+    t.satuan || "-",
+
+    Jenis:
+    t.jenis
+  }));
+
+  const ws =
+  XLSX.utils.json_to_sheet(
+    ws_data
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws,
+    "Report"
+  );
+
+  XLSX.writeFile(
+    wb,
+    "Report_Transaksi.xlsx"
+  );
+}
 /* ================= SCANNER ================= */
 let scanner;
 function startScanner(){
