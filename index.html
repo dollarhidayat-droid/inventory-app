@@ -718,7 +718,6 @@ function uploadTransaksiExcel(){
 }
 /* ================= STOCK ================= */
   /* ================= UPLOAD STOCK OPNAME ================= */
-
 function uploadStockExcel(){
 
   const f =
@@ -749,26 +748,37 @@ function uploadStockExcel(){
       ]
     );
 
-    let saldoAwal = {};
+    let stockAwal = {};
 
     rows.forEach(r => {
 
-      saldoAwal[
-        String(r.Kode).trim()
-      ] =
-      Number(r.Sisa) || 0;
+      const kode =
+      String(
+        r.Kode || ""
+      ).trim();
+
+      stockAwal[kode] =
+      Number(
+        r.Sisa
+      ) || 0;
 
     });
 
+    // GANTI stok lama
     localStorage.stockAwal =
     JSON.stringify(
-      saldoAwal
+      stockAwal
     );
 
+    // RESET transaksi lama
+    localStorage.transaksi =
+    JSON.stringify([]);
+
     renderStock();
+    renderReport();
 
     showDoneMessage(
-      "✅ Stock opname berhasil diupload"
+      "✅ Stock opname berhasil diperbarui"
     );
 
     document.getElementById(
@@ -777,6 +787,7 @@ function uploadStockExcel(){
 
   };
 
+  // WAJIB DI LUAR reader.onload
   reader.readAsArrayBuffer(f);
 }
 function renderStock() {
