@@ -293,6 +293,37 @@ function uploadMasterExcel(){
 <h2>Sisa Stock</h2>
 <div class="card">
 <div id="stockFilterRow">
+
+<button class="btn-small admin-only"
+onclick="downloadStockExcel()">
+Download Sisa Stok
+</button>
+
+<input
+type="file"
+id="uploadStock"
+accept=".xls,.xlsx"
+class="admin-only">
+
+<button
+class="btn-small admin-only"
+onclick="uploadStockExcel()">
+Upload Stock Opname
+</button>
+
+<select id="filterKategori"
+onchange="renderStock()">
+<option value="">
+-- Semua Kategori --
+</option>
+</select>
+
+<input
+id="searchStock"
+placeholder="Cari Nama / Kode"
+oninput="renderStock()">
+
+</div>
   <button class="btn-small admin-only" onclick="downloadStockExcel()">
   Download Sisa Stok
 </button>
@@ -686,6 +717,68 @@ function uploadTransaksiExcel(){
   r.readAsArrayBuffer(f);
 }
 /* ================= STOCK ================= */
+  /* ================= UPLOAD STOCK OPNAME ================= */
+
+function uploadStockExcel(){
+
+  const f =
+  document.getElementById(
+    "uploadStock"
+  ).files[0];
+
+  if(!f){
+    alert("Pilih file stock opname");
+    return;
+  }
+
+  const reader =
+  new FileReader();
+
+  reader.onload = e => {
+
+    const wb =
+    XLSX.read(
+      e.target.result,
+      { type:"array" }
+    );
+
+    const rows =
+    XLSX.utils.sheet_to_json(
+      wb.Sheets[
+        wb.SheetNames[0]
+      ]
+    );
+
+    let saldoAwal = {};
+
+    rows.forEach(r => {
+
+      saldoAwal[
+        String(r.Kode).trim()
+      ] =
+      Number(r.Sisa) || 0;
+
+    });
+
+    localStorage.stockAwal =
+    JSON.stringify(
+      saldoAwal
+    );
+
+    renderStock();
+
+    showDoneMessage(
+      "✅ Stock opname berhasil diupload"
+    );
+
+    document.getElementById(
+      "uploadStock"
+    ).value = "";
+
+  };
+
+  reader.readAsArrayBuffer(f);
+}
 function renderStock() {
   const master = JSON.parse(localStorage.masterData || "[]");
   const trx = JSON.parse(localStorage.transaksi || "[]");
@@ -698,19 +791,39 @@ function renderStock() {
     document.getElementById("searchStock")
     .value.toLowerCase();
 
-  // Hitung stok dari transaksi
-  let stockMap = {};
+  // Ambil saldo awal stock opname
+const stockAwal =
+JSON.parse(
+  localStorage.stockAwal || "{}"
+);
 
-  trx.forEach(t => {
-    stockMap[t.kode] =
-      stockMap[t.kode] || 0;
+// Hitung stok
+let stockMap = {};
 
-    stockMap[t.kode] +=
-      t.jenis === "Masuk"
-      ? t.qty
-      : -t.qty;
-  });
+// mulai dari saldo opname
+master.forEach(m => {
 
+  stockMap[m.barcode] =
+  Number(
+    stockAwal[
+      m.barcode
+    ]
+  ) || 0;
+
+});
+
+// tambah / kurang transaksi
+trx.forEach(t => {
+
+  stockMap[t.kode] =
+  stockMap[t.kode] || 0;
+
+  stockMap[t.kode] +=
+    t.jenis === "Masuk"
+    ? Number(t.qty)
+    : -Number(t.qty);
+
+});
   // Gabungkan master + stok
   let stockData =
   master.map(m => {
