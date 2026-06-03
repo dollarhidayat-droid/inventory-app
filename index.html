@@ -1050,51 +1050,43 @@ function downloadStockExcel(){
   });
 
   // Susun data export
-  const ws_data =
-  master.map(m => {
+  const stockData =
+master.map(m => {
 
-    const sisa =
-    stockMap[m.barcode] || 0;
+  const sisa =
+  stockMap[m.barcode] || 0;
 
-    let status = "Aman";
+  let status = "Aman";
 
-    if(sisa <= 0){
-      status = "Habis";
-    }
-    else if(sisa <= m.minimal){
-      status = "Warning";
-    }
+  if(sisa <= 0){
+    status = "Habis";
+  }
+  else if(sisa <= m.minimal){
+    status = "Warning";
+  }
 
-    return {
+  return {
 
-      Kode:
-      m.barcode,
+    Kode: m.barcode,
+    Nama: m.nama,
+    Kategori: m.kategori || "-",
+    Line: m.line || "-",
+    Satuan: m.satuan || "-",
+    Sisa_Stok: sisa,
+    Minimal: m.minimal || 0,
+    Status: status
 
-      Nama:
-      m.nama,
+  };
 
-      Kategori:
-      m.kategori || "-",
+});
 
-      Line:
-      m.line || "-",
+// URUTKAN DARI STOK TERKECIL
+stockData.sort(
+  (a,b) =>
+  a.Sisa_Stok - b.Sisa_Stok
+);
 
-      Satuan:
-      m.satuan || "-",
-
-      Sisa_Stok:
-      sisa,
-
-      Minimal:
-      m.minimal || 0,
-
-      Status:
-      status
-
-    };
-
-  });
-
+const ws_data = stockData;
   const wb =
   XLSX.utils.book_new();
 const now = new Date();
