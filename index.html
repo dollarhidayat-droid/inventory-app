@@ -1007,6 +1007,139 @@ function renderReport(){
   });
 }
   /* ================= DOWNLOAD STOCK ================= */
+function downloadStockExcel(){
+
+  const master =
+  JSON.parse(
+    localStorage.masterData || "[]"
+  );
+
+  const trx =
+  JSON.parse(
+    localStorage.transaksi || "[]"
+  );
+
+  const stockAwal =
+  JSON.parse(
+    localStorage.stockAwal || "{}"
+  );
+
+  let stockMap = {};
+
+  // Ambil saldo awal stock opname
+  master.forEach(m => {
+
+    stockMap[m.barcode] =
+    Number(
+      stockAwal[m.barcode]
+    ) || 0;
+
+  });
+
+  // Hitung transaksi masuk & keluar
+  trx.forEach(t => {
+
+    stockMap[t.kode] =
+    stockMap[t.kode] || 0;
+
+    stockMap[t.kode] +=
+      t.jenis === "Masuk"
+      ? Number(t.qty)
+      : -Number(t.qty);
+
+  });
+
+  // Susun data export
+  const ws_data =
+  master.map(m => {
+
+    const sisa =
+    stockMap[m.barcode] || 0;
+
+    let status = "Aman";
+
+    if(sisa <= 0){
+      status = "Habis";
+    }
+    else if(sisa <= m.minimal){
+      status = "Warning";
+    }
+
+    return {
+
+      Kode:
+      m.barcode,
+
+      Nama:
+      m.nama,
+
+      Kategori:
+      m.kategori || "-",
+
+      Line:
+      m.line || "-",
+
+      Satuan:
+      m.satuan || "-",
+
+      Sisa_Stok:
+      sisa,
+
+      Minimal:
+      m.minimal || 0,
+
+      Status:
+      status
+
+    };
+
+  });
+
+  const wb =
+  XLSX.utils.book_new();
+const now = new Date();
+
+ws_data.unshift({
+  Kode: "Tanggal Download",
+  Nama: now.toLocaleDateString("id-ID"),
+  Kategori: "",
+  Line: "",
+  Satuan: "",
+  Sisa_Stok: "",
+  Minimal: "",
+  Status: ""
+});
+
+ws_data.unshift({
+  Kode: "Jam Download",
+  Nama: now.toLocaleTimeString("id-ID"),
+  Kategori: "",
+  Line: "",
+  Satuan: "",
+  Sisa_Stok: "",
+  Minimal: "",
+  Status: ""
+});
+  
+  const ws =
+  XLSX.utils.json_to_sheet(
+    ws_data
+  );
+
+  XLSX.utils.book_append_sheet(
+    wb,
+    ws,
+    "Sisa Stock"
+  );
+
+  XLSX.writeFile(
+    wb,
+    "Sisa_Stock.xlsx"
+  );
+
+}
+  
+/* ================= DOWNLOAD REPORT ================= */
 function downloadReportExcel(){
 
   const trx =
@@ -1021,8 +1154,8 @@ function downloadReportExcel(){
     return;
   }
 
-  const wb =
-  XLSX.utils.book_new();
+  const now =
+  new Date();
 
   const ws_data =
   trx.map(t => ({
@@ -1055,7 +1188,40 @@ function downloadReportExcel(){
 
     Jenis:
     t.jenis
+
   }));
+
+  // Tambah info download
+  ws_data.unshift({
+    Tanggal:
+    "Tanggal Download",
+    Kode:
+    now.toLocaleDateString("id-ID"),
+    Nama:"",
+    Kategori:"",
+    Line:"",
+    PIC:"",
+    Qty:"",
+    Satuan:"",
+    Jenis:""
+  });
+
+  ws_data.unshift({
+    Tanggal:
+    "Jam Download",
+    Kode:
+    now.toLocaleTimeString("id-ID"),
+    Nama:"",
+    Kategori:"",
+    Line:"",
+    PIC:"",
+    Qty:"",
+    Satuan:"",
+    Jenis:""
+  });
+
+  const wb =
+  XLSX.utils.book_new();
 
   const ws =
   XLSX.utils.json_to_sheet(
@@ -1065,13 +1231,14 @@ function downloadReportExcel(){
   XLSX.utils.book_append_sheet(
     wb,
     ws,
-    "Report"
+    "Report Transaksi"
   );
 
   XLSX.writeFile(
     wb,
     "Report_Transaksi.xlsx"
   );
+
 }
 /* ================= SCANNER ================= */
 let scanner;
