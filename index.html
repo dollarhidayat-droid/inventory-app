@@ -752,18 +752,23 @@ function uploadStockExcel(){
 
     rows.forEach(r => {
 
-      const kode =
-      String(
-        r.Kode || ""
-      ).trim();
+  const kode =
+  String(
+    r.Barcode ||
+    r.Kode ||
+    ""
+  ).trim();
 
-      stockAwal[kode] =
-      Number(
-        r.Sisa
-      ) || 0;
+  if(!kode) return;
 
-    });
+  stockAwal[kode] =
+  Number(
+    r.Sisa_Stok ||
+    r.Sisa ||
+    0
+  );
 
+});
     // GANTI stok lama
     localStorage.stockAwal =
     JSON.stringify(
