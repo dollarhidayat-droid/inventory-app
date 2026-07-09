@@ -3,1301 +3,1448 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Inventory Stock HR-GA - FINAL</title>
+<title>Inventory Stok HR-GA PT Argapura</title>
 <style>
-body{font-family:Arial;margin:0;background:#f5f6fa}
-.container{max-width:1000px;margin:auto;padding:15px}
-h2{color:#2c3e50}
-input,select{width:100%;padding:8px;margin-top:6px;border:1px solid #ccc;border-radius:6px}
-button{padding:10px 14px;border:none;border-radius:6px;background:#2563eb;color:#fff;cursor:pointer}
-.btn-small{padding:6px 10px}
-.row{display:flex;gap:10px;flex-wrap:wrap}
-.card{background:#fff;padding:15px;border-radius:10px;margin-top:15px;box-shadow:0 2px 6px rgba(0,0,0,.1)}
-table{width:100%;border-collapse:collapse;margin-top:10px}
-th,td{padding:8px;border-bottom:1px solid #ddd;font-size:14px}
-.status-aman{color:green;font-weight:bold}
-.status-warning{color:#b8860b;font-weight:bold;background:#fff8dc}
-.status-habis{color:red;font-weight:bold;background:#ffe4e1}
+body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;margin:0;background:#f1f5f9;color:#334155;line-height:1.5}
+.container{max-width:1200px;margin:30px auto;padding:0 20px}
 
-/* LOGIN */
-#loginOverlay{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:999}
-#loginPanel{background:#fff;width:350px;padding:20px;border-radius:10px}
-#logoutBtn{position:fixed;top:10px;right:10px;background:#d32f2f;display:none}
+/* DASHBOARD HEADER & CARDS */
+.main-header {background:#fff; padding:24px; border-radius:16px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom:25px; border-left:6px solid #1e40af; display:flex; justify-content:space-between; align-items:center}
+.main-header h1 {margin:0; color:#1e3a8a; font-size:26px; font-weight:700; letter-spacing:-0.5px}
+.main-header p {margin:4px 0 0 0; color:#64748b; font-size:14px}
 
-/* SCANNER */
+h2{color:#0f172a;margin-top:35px;font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+h2::before{content:''; display:inline-block; width:4px; height:20px; background:#2563eb; border-radius:2px}
+h3{color:#1e40af; font-size:16px; margin-top:0; margin-bottom:15px; font-weight:600}
+
+input,select{width:100%;padding:10px 14px;margin-top:6px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:14px;background:#fff;transition:all 0.2s}
+input:focus,select:focus{border-color:#2563eb;outline:none;box-shadow:0 0 0 3px rgba(37,99,235,0.15)}
+button{padding:10px 18px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center}
+button:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(37,99,235,0.2)}
+button:disabled{background:#cbd5e1 !important; color:#94a3b8 !important; cursor:not-allowed; transform:none !important; box-shadow:none !important;}
+
+.btn-mini{padding:4px 8px; font-size:11px; border-radius:4px; font-weight:600}
+.btn-small{padding:8px 14px;font-size:13px}
+.btn-danger{background:#ef4444}.btn-danger:hover{background:#dc2626}
+.btn-success{background:#10b981}.btn-success:hover{background:#059669}
+.btn-warning{background:#f59e0b;color:#fff}.btn-warning:hover{background:#d97706}
+.btn-orange{background:#f97316;color:#fff}.btn-orange:hover{background:#ea580c}
+
+.row{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+.card{background:#fff;padding:24px;border-radius:16px;margin-top:15px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.03);border:1px solid #e2e8f0}
+
+/* TABEL */
+table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}
+th,td{padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;text-align:left}
+th{background:#f8fafc;color:#475569;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+tr:hover {background-color:#f8fafc}
+
+/* STATUS BADGES */
+.status-aman{color:#15803d;font-weight:bold;background:#dcfce7;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+.status-warning{color:#b45309;font-weight:bold;background:#fef3c7;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+.status-habis{color:#b91c1c;font-weight:bold;background:#fee2e2;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+
+.badge-normal{background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-over{background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-open {background:#ffedd5; color:#c2410c; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
+.badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
+
+/* LOGIN OVERLAY */
+#loginOverlay {position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); display: flex; align-items: center; justify-content: center; z-index: 999;}
+#loginPanel {background: #ffffff; width: 440px; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);}
+.login-header h2 { margin: 0; color: #1e3a8a; font-size: 26px; font-weight: 800; display:flex; align-items:center; gap:8px;}
+.login-header p { margin: 5px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600; }
+.input-group { text-align: left; margin-bottom: 20px; }
+.input-group label { font-size: 13px; font-weight: 600; color: #475569; }
+
+#logoutBtn{background:#ef4444; font-size:13px; padding:8px 14px}
 .scanner-area{display:none;margin-top:10px}
+#doneMsg{font-size:14px;color:#10b981;margin-bottom:10px;font-weight:bold}
+tr:nth-child(even) { background-color: #fcfdfe; }
 
-/* FILTER & SEARCH */
-#stockFilterRow, #reportFilterRow{margin-top:10px;display:flex;gap:10px;flex-wrap:wrap}
+/* LOADING SCREEN */
+#loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.8); z-index:2000; align-items:center; justify-content:center; flex-direction:column; font-weight:bold; color:#1e3a8a; font-size:16px;}
+.spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom:10px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-/* DONE MESSAGE */
-#doneMsg{font-size:14px;color:green;margin-bottom:5px;font-weight:bold}
-  
-/* ================= STOCK TABLE ZEBRA STRIPES ================= */
-#stockBody tr:nth-child(even) {
-  background-color: #f9f9f9; /* abu-abu tipis */
-}
-#stockBody tr:nth-child(odd) {
-  background-color: #ffffff; /* putih */
-}
-
-/* ================= MASTER TABLE ZEBRA STRIPES ================= */
-#masterBody tr:nth-child(even) {
-  background-color: #f9f9f9; /* abu-abu tipis */
-}
-#masterBody tr:nth-child(odd) {
-  background-color: #ffffff; /* putih */
-}
-
-/* ================= TRANSAKSI REPORT TABLE ZEBRA STRIPES ================= */
-#reportBody tr:nth-child(even) {
-  background-color: #f9f9f9; /* abu-abu tipis */
-}
-#reportBody tr:nth-child(odd) {
-  background-color: #ffffff; /* putih */
-}
-
+.modal {display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;}
+.modal-content {background:#fff; padding:25px; border-radius:16px; width:95%; max-width:800px; max-height: 85vh; overflow-y: auto;}
+.close-btn {background:#64748b; color:#fff; padding:6px 12px; float:right; border-radius:6px; cursor:pointer; font-weight:600; border:none;}
+.chk-verify {width: 20px; height: 20px; margin: 0; cursor: pointer;}
 </style>
 </head>
 <body>
 
-<!-- LOGIN -->
+<div id="loadingOverlay"><div class="spinner"></div><div id="loadingText">Menghubungkan ke Cloud...</div></div>
+
 <div id="loginOverlay">
   <div id="loginPanel">
-    <h2>Login</h2>
-    <label>Username</label>
-    <input id="loginUser">
-    <label>Password</label>
-    <input id="loginPass" type="password">
-    <div class="row">
-      <button onclick="doLogin()">Masuk</button>
-      <button onclick="fillDemo()" style="background:#6b7280">Demo</button>
+    <div class="login-header">
+      <h2>Inventory Stok HR-GA</h2>
+      <p>PT ARGAPURA</p>
     </div>
-    <p style="font-size:13px">
-      Admin: admin / admin123<br>
-      User: user / user123
-    </p>
+    <div class="input-group">
+      <label>Username</label>
+      <input id="loginUser" placeholder="Masukkan username">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Masukkan password">
+    </div>
+    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#1e40af;">Masuk Ke Sistem</button>
   </div>
 </div>
-
-<button id="logoutBtn" onclick="doLogout()">Logout</button>
 
 <div id="appRoot" class="container" style="display:none">
 
-<!-- DONE MESSAGE -->
+  <div class="main-header">
+    <div>
+      <h1>PT Argapura</h1>
+      <p>Sistem Management Inventory & Kontrol Stok HR-GA | Akun: <strong id="lblActiveUser" style="color:#2563eb"></strong></p>
+    </div>
+    <div>
+      <button id="logoutBtn" onclick="doLogout()">🔒 Secure Logout</button>
+    </div>
+  </div>
+
 <div id="doneMsg"></div>
 
-<!-- ================= TRANSAKSI ================= -->
-<h2>Transaksi Stok</h2>
-<div class="card">
+<h2>📊 Dashboard Analitik Barang</h2>
 <div class="row">
-  <button class="btn-small" onclick="startScanner()">Scan</button>
-  <button class="btn-small" onclick="kodeBarang.focus()">Manual</button>
-</div>
+  <div class="card" style="flex:1; min-width:340px;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+      <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta (per SPB)</h3>
+      <select id="dashDeptFilter" onchange="renderDashboardTopSpbDept()" style="max-width:220px; margin-top:0;">
+        <option value="">-- Semua Department --</option>
+      </select>
+    </div>
+    <div style="overflow-x:auto; margin-top:15px;">
+      <table>
+        <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Frekuensi</th><th>Total Qty Diminta</th></tr></thead>
+        <tbody id="dashTopSpbBody"></tbody>
+      </table>
+    </div>
+  </div>
 
-<div class="scanner-area" id="scannerArea">
-  <video id="preview" style="width:100%;border-radius:8px"></video>
-</div>
-
-<label>Kode</label>
-<input id="kodeBarang" oninput="isiOtomatis()">
-<label>Nama</label>
-<input id="namaBarang">
-<label>Satuan</label>
-<input id="satuan">
-<label>Kategori</label>
-<input id="kategoriBarang">
-<label>Line</label>
-<input id="lineDept">
-<label>PIC</label>
-<input id="picAmbil">
-<label>Qty</label>
-<input id="qty" type="number" value="1">
-<label>Jenis</label>
-<select id="jenis">
-  <option selected>Keluar</option>
-  <option>Masuk</option>
-</select>
-<div class="row">
-  <button onclick="simpanTransaksi()">Simpan</button>
-</div>
-
-<hr>
-
-<label>Upload Excel Transaksi</label>
-<input type="file" id="uploadTransaksi" accept=".xls,.xlsx">
-<button class="btn-small" onclick="uploadTransaksiExcel()">Upload Excel</button>
-</div>
-
-<!-- ================= MASTER ================= -->
-<h2 class="admin-only">Master Data</h2>
-<div class="card admin-only">
-  <input class="admin-only" id="mBarcode" placeholder="Barcode" oninput="isiMasterOtomatis()">
-  <input class="admin-only" id="mNama" placeholder="Nama">
-  <input class="admin-only" id="mSatuan" placeholder="Satuan">
-  <input class="admin-only" id="mMinimal" type="number" placeholder="Minimal">
-  <input class="admin-only" id="mKategori" placeholder="Kategori">
-  <input class="admin-only" id="mLine" placeholder="Line">
-  <input class="admin-only" id="mPic" placeholder="PIC">
-  <input class="admin-only" type="file" id="uploadExcel" accept=".xls,.xlsx">
-  <div class="row">
-    <button class="admin-only" onclick="tambahMaster()">Tambah</button>
-    <button class="admin-only btn-small" onclick="uploadMasterExcel()">Upload Excel</button>
+  <div class="card" style="flex:1; min-width:340px;">
+    <h3 style="margin:0;">🔥 Barang Paling Banyak Keluar (Realisasi Gudang)</h3>
+    <div style="overflow-x:auto; margin-top:15px;">
+      <table>
+        <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
+        <tbody id="dashTopKeluarBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<script>
-const API_URL = "https://script.google.com/macros/s/AKfycbxeBW3JTiDBqi6xTtxGxdrXSlZGkMxW908jWb_recGlF0aXmjoRITAs8xdX4as_-Cr8yg/exec";
+<h2>1. Buat Permintaan Konsep SPB Baru (Drafting)</h2>
+<div class="card">
+  <div class="row">
+    <div style="flex:1; min-width:200px;">
+      <label>Nomor SPB (Otomatis)</label>
+      <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#1e40af;">
+    </div>
+    <div style="flex:1; min-width:200px;">
+      <label>Department *</label>
+      <select id="spbDepartment" onchange="updateSectionDropdown()">
+        <option value="">-- Pilih Department --</option>
+        <option value="Engineering">Engineering</option>
+        <option value="HR">HR</option>
+        <option value="Logistic">Logistic</option>
+        <option value="OS">OS</option>
+        <option value="Production">Production</option>
+        <option value="QA / QC">QA / QC</option>
+        <option value="Technical">Technical</option>
+      </select>
+    </div>
+    <div style="flex:1; min-width:200px;">
+      <label>Section / Line *</label>
+      <select id="spbLine" onchange="updateJatahInfoHint()">
+        <option value="">-- Pilih Section/Line --</option>
+      </select>
+    </div>
+    <div style="flex:1; min-width:200px;">
+      <label>Nama Pemohon (PIC)</label>
+      <input id="spbPic" placeholder="Nama Lengkap">
+    </div>
+  </div>
 
-// ================= MASTER DATA API FUNCTIONS =================
+  <h3 style="margin-top:25px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">Pilih Item Komoditas</h3>
+  <div class="row">
+    <button class="btn-small btn-warning" onclick="startScanner()">📷 Scan Barcode</button>
+    <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">⌨️ Manual Input</button>
+    <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">⚙️ Adjust Jatah Max</button>
+  </div>
 
-// Auto-fill master data
-function isiMasterOtomatis(){
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(master => {
-      const m = master.find(x => x.barcode === mBarcode.value.trim());
-      if(m){
-        mNama.value = m.nama || "";
-        mSatuan.value = m.satuan || "";
-        mMinimal.value = m.minimal || 0;
-        mKategori.value = m.kategori || "";
-        mLine.value = m.line || "";
-        mPic.value = m.pic || "";
-      } else {
-        mNama.value = "";
-        mSatuan.value = "";
-        mMinimal.value = "";
-        mKategori.value = "";
-        mLine.value = "";
-        mPic.value = "";
-      }
-    })
-    .catch(err => console.error("Gagal fetch master:", err));
-}
+  <div class="scanner-area" id="scannerArea"><video id="preview" style="width:100%;border-radius:8px"></video></div>
 
-// Tambah master
-function tambahMaster(){
-  const data = {
-    mode: "addMaster",
-    barcode: mBarcode.value.trim(),
-    nama: mNama.value.trim(),
-    satuan: mSatuan.value.trim(),
-    minimal: Number(mMinimal.value) || 0,
-    kategori: mKategori.value.trim(),
-    line: mLine.value.trim(),
-    pic: mPic.value.trim()
-  };
+  <div class="row" style="margin-top:15px;">
+    <div style="flex:1; min-width:120px;"><label>Kode Barang</label><input id="kodeBarang" oninput="isiOtomatis()"></div>
+    <div style="flex:2; min-width:180px;"><label>Nama Barang *</label><input id="namaBarang" placeholder="Nama otomatis"></div>
+    <div style="flex:1; min-width:100px;"><label>Qty Diminta</label><input id="qty" type="number" value="1" oninput="evaluasiSisaJatahLive()"></div>
+    <div style="flex:1; min-width:110px;"><label>Max / Bulan</label><input id="jatahMaxBulanView" readonly style="background:#f8fafc; text-align:center;"></div>
+    <div style="flex:1; min-width:90px;"><label>Satuan</label><input id="satuan" placeholder="Satuan"></div>
+    <input type="hidden" id="kategoriBarang">
+    <div style="display:flex; align-items:flex-end;"><button onclick="tambahItemKeKeranjang()" style="height:42px;">+ Tambah</button></div>
+  </div>
 
-  if(!data.barcode || !data.nama) return alert("Barcode dan Nama wajib diisi!");
+  <div id="jatahInfoBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+    📊 Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
+  </div>
 
-  fetch(API_URL, {
-    method: "POST",
-    headers: {"Content-Type":"application/json"},
-    body: JSON.stringify(data)
-  })
-  .then(res => res.json())
-  .then(() => {
-    showDoneMessage("✅ Master berhasil ditambahkan");
-    tampilMaster();
-    mBarcode.value = mNama.value = mSatuan.value = mMinimal.value = mKategori.value = mLine.value = mPic.value = "";
-  })
-  .catch(err => alert("Gagal menambahkan master: " + err));
-}
+  <h4 style="margin-top:25px; margin-bottom:5px;">Daftar Item Sementara (Keranjang SPB):</h4>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Qty</th><th>Satuan</th><th>Aksi</th></tr></thead>
+      <tbody id="keranjangBody"><tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr></tbody>
+    </table>
+  </div>
+  <div class="row" style="margin-top:25px; justify-content: flex-end;">
+    <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">💾 SIMPAN SEBAGAI SPB OPEN</button>
+  </div>
+</div>
 
-// Tampil master
-function tampilMaster(){
-  fetch(API_URL)
-    .then(res => res.json())
-    .then(master => {
-      const masterBody = document.getElementById("masterBody");
-      masterBody.innerHTML = "";
-      master.forEach(m => {
-        masterBody.innerHTML += `<tr>
-          <td>${m.barcode}</td>
-          <td>${m.nama}</td>
-          <td>${m.satuan}</td>
-          <td>${m.minimal}</td>
-          <td>${m.kategori}</td>
-          <td>${m.line}</td>
-          <td class="admin-only">
-            <button onclick="hapusMaster('${m.barcode}')">Hapus</button>
-          </td>
-        </tr>`;
-      });
-      applyRole();
-      updateKategoriFilter();
-    })
-    .catch(err => console.error("Gagal tampil master:", err));
-}
+<h2>| Monitoring Data Status Surat Permintaan Barang (SPB)</h2>
+<div class="card">
+  <div class="row" style="margin-bottom:5px;">
+    <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">📥 Export SPB ke Excel (Filter Department/Tanggal/Status)</button>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Tanggal Pembuatan</th><th>Nomor SPB</th><th>Department</th><th>Line / Dept</th><th>PIC Pemohon</th><th>Jumlah Jenis</th><th>Status Validasi</th></tr></thead>
+      <tbody id="spbReportBody"></tbody>
+    </table>
+  </div>
+</div>
 
-// Hapus master (dummy)
-function hapusMaster(barcode){
-  alert("Fungsi hapus belum terhubung API. Bisa ditambahkan di Apps Script jika perlu.");
-}
-
-// Upload Excel master
-function uploadMasterExcel(){
-  const f = uploadExcel.files[0];
-  if(!f) return alert("Pilih file Excel terlebih dahulu!");
-  const reader = new FileReader();
-  reader.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
-
-    rows.forEach(r => {
-      const data = {
-        mode: "addMaster",
-        barcode: r.Barcode,
-        nama: r.Nama,
-        satuan: r.Satuan,
-        minimal: Number(r.Minimal) || 0,
-        kategori: r.Kategori,
-        line: r.Line,
-        pic: r.PIC
-      };
-      fetch(API_URL, {
-        method: "POST",
-        headers: {"Content-Type":"application/json"},
-        body: JSON.stringify(data)
-      }).catch(err => console.error("Gagal upload row:", err));
-    });
-
-    showDoneMessage("✅ Upload Excel master berhasil");
-    uploadExcel.value = "";
-    tampilMaster();
-  };
-  reader.readAsArrayBuffer(f);
-}
-</script>
-
-<!-- ================= TABLE MASTER ================= -->
+<h2 class="admin-only">2. Input Update Stok & Upload Penyesuaian Aktual</h2>
 <div class="card admin-only">
-  <table>
-    <thead>
-      <tr>
-        <th>Barcode</th>
-        <th>Nama</th>
-        <th>Satuan</th>
-        <th>Min</th>
-        <th>Kategori</th>
-        <th>Line</th>
-        <th class="admin-only">Aksi</th>
-      </tr>
-    </thead>
-    <tbody id="masterBody"></tbody>
-  </table>
+  <h3>Opsi A: Koreksi Input Manual (Barang Masuk)</h3>
+  <div class="row">
+    <div style="flex:1; min-width:150px;"><label>Kode Barang</label><input id="kodeMasuk" oninput="isiOtomatisMasuk()"></div>
+    <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="namaMasuk" readonly style="background:#f8fafc"></div>
+    <div style="flex:1; min-width:80px;"><label>Qty Masuk</label><input id="qtyMasuk" type="number" value="1"></div>
+    <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">Simpan Masuk</button></div>
+  </div>
+  <hr style="border:0; border-top: 1px dashed #cbd5e1; margin: 25px 0;">
+  <h3>Opsi B: Upload Excel Penyesuaian Sisa Stok Aktual (Overwrite/Reset)</h3>
+  <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
+    <div style="flex:1;"><input type="file" id="excelStockFile" accept=".xlsx, .xls"></div>
+    <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">⚡ Jalankan Sinkronisasi Stok Aktual</button></div>
+  </div>
 </div>
 
-<!-- ================= STOCK ================= -->
-<h2>Sisa Stock</h2>
+<h2>3. Budget Kontrol & Limit Bulanan</h2>
 <div class="card">
-<div id="stockFilterRow">
-
-<button class="btn-small admin-only"
-onclick="downloadStockExcel()">
-Download Sisa Stok
-</button>
-
-<input
-type="file"
-id="uploadStock"
-accept=".xls,.xlsx"
-class="admin-only">
-
-<button
-class="btn-small admin-only"
-onclick="uploadStockExcel()">
-Upload Stock Opname
-</button>
-
-<select id="filterKategori"
-onchange="renderStock()">
-<option value="">
--- Semua Kategori --
-</option>
-</select>
-
-<input
-id="searchStock"
-placeholder="Cari Nama / Kode"
-oninput="renderStock()">
-
-</div>
-  <button class="btn-small admin-only" onclick="downloadStockExcel()">
-  Download Sisa Stok
-</button>
-  <select id="filterKategori" onchange="renderStock()">
-    <option value="">-- Semua Kategori --</option>
-  </select>
-  <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()">
-</div>
-<table>
-<thead>
-<tr><th>Kode</th><th>Nama</th><th>Sisa</th><th>Min</th><th>Status</th></tr>
-</thead>
-<tbody id="stockBody"></tbody>
-</table>
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+    <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>✏️ Adjust</strong> untuk merubah jatah limit bulanan.</p>
+  </div>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
+      <tbody id="budgetControlBody"></tbody>
+    </table>
+  </div>
 </div>
 
-<!-- ================= REPORT TRANSAKSI ================= -->
-<h2>Report Transaksi</h2>
+<h2>Sisa Stock Gudang Aktif</h2>
 <div class="card">
-<div id="reportFilterRow" class="row">
-  <input type="date" id="reportTanggal" onchange="renderReport()">
-  <select id="reportJenis" onchange="renderReport()">
-    <option value="">-- Semua Jenis --</option>
-    <option value="Masuk">Masuk</option>
-    <option value="Keluar">Keluar</option>
-  </select>
-  <input id="searchReport" placeholder="Cari Kode/Nama" oninput="renderReport()">
-  <button class="btn-small" onclick="downloadReportExcel()">Download Excel</button>
-</div>
-<table>
-<thead>
-<tr>
-  <th>Tanggal</th>
-  <th>Kode</th>
-  <th>Nama</th>
-  <th>Kategori</th>
-  <th>Line</th>
-  <th>PIC</th>
-  <th>Qty</th>
-  <th>Satuan</th>
-  <th>Jenis</th>
-<th>Status</th>
-</tr>
-</thead>
-<tbody id="reportBody"></tbody>
-</table>
+  <div class="row">
+    <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">📊 Download Sisa Stok (Excel)</button>
+    <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
+    <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
+  </div>
+  <div style="overflow-x:auto; margin-top:15px;">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Kode</th><th>Nama Barang</th><th>Sisa Stok</th><th>Min Stok</th><th>Status Kondisi</th></tr></thead>
+      <tbody id="stockBody"></tbody>
+    </table>
+  </div>
 </div>
 
+<h2>Report Log Transaksi Masuk/Keluar Realtime</h2>
+<div class="card">
+  <div class="row">
+    <input type="date" id="reportTanggal" onchange="renderReport()" style="max-width:200px;">
+    <select id="reportJenis" onchange="renderReport()" style="max-width:200px;"><option value="">-- Semua Jenis --</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option></select>
+    <input id="searchReport" placeholder="Cari Kode/Nama/SPB" oninput="renderReport()" style="max-width:250px;">
+    <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">💾 Download Semua Log Excel</button>
+  </div>
+  <div style="overflow-x:auto; margin-top:15px;">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Tanggal</th><th>No. SPB</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Line</th><th>PIC</th><th>Qty</th><th>Satuan</th><th>Jenis</th><th>Status SPB</th></tr></thead>
+      <tbody id="reportBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<h2 class="admin-only">Master Data Management</h2>
+<div class="card admin-only">
+  <h3>Add / Update Data Barang Master</h3>
+  <div class="row">
+    <div style="flex:1; min-width:130px;"><label>Barcode/Kode</label><input id="mBarcode" oninput="isiMasterOtomatis()"></div>
+    <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="mNama"></div>
+    <div style="flex:1; min-width:100px;"><label>Satuan</label><input id="mSatuan"></div>
+    <div style="flex:1; min-width:100px;"><label>Min Stock</label><input id="mMinimal" type="number" value="0"></div>
+    <div style="flex:1; min-width:130px;"><label>Kategori</label><input id="mKategori"></div>
+  </div>
+  <div class="row" style="margin-top:20px;">
+    <button onclick="tambahMaster()" class="btn-success">➕ Simpan ke Master Data</button>
+    <button onclick="resetFormMaster()" style="background:#64748b;">Clear Form</button>
+  </div>
+  <div style="overflow-x:auto; margin-top:20px;">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Barcode / Kode</th><th>Nama Barang</th><th>Satuan</th><th>Min Stock</th><th>Kategori</th><th>Aksi</th></tr></thead>
+      <tbody id="masterBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<h2 class="admin-only">🔐 Account Management (User Access Control)</h2>
+<div class="card admin-only">
+  <h3>Daftarkan / Update Akun Akses Baru</h3>
+  <div class="row">
+    <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
+    <div style="flex:1; min-width:150px;"><label>Password Akses *</label><input id="uPassword" type="text" placeholder="Password"></div>
+    <div style="flex:2; min-width:200px;"><label>Nama Lengkap Karyawan</label><input id="uNama" placeholder="Nama Karyawan"></div>
+    <div style="flex:1; min-width:150px;">
+      <label>Role Tingkat Akses *</label>
+      <select id="uRole">
+        <option value="user">User biasa (Hanya SPB)</option>
+        <option value="admin">Admin HRGA (Full Akses)</option>
+      </select>
+    </div>
+  </div>
+  <div class="row" style="margin-top:15px;">
+    <button class="btn-success" onclick="simpanAkunBaru()">💾 Simpan Akun Ke Cloud</button>
+  </div>
+  
+  <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
+  <div style="overflow-x:auto">
+    <table>
+      <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:100px; text-align:center;">Aksi</th></tr></thead>
+      <tbody id="usersTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+</div>
+
+<div id="historyModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">✕ Close</button>
+    <h3>Verifikasi Eksekusi Item SPB</h3>
+    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #2563eb;">
+      <strong>No SPB:</strong> <span id="mdNoSpb" style="color:#2563eb; font-weight:bold;"></span> | 
+      <strong>Line/Dept:</strong> <span id="mdLine"></span> | 
+      <strong>PIC:</strong> <span id="mdPic"></span> | 
+      <strong>Status:</strong> <span id="mdStatusBadge"></span>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+      <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>✔️ SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
+      <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">🖨️ Print Struk</button>
+    </div>
+    <p id="checkHint" style="font-size:12px; color:#ef4444; font-weight: 600;">*Seluruh item aktif wajib dicentang untuk menyerahkan barang!</p>
+    <table style="width:100%">
+      <thead><tr style="background:#e2e8f0"><th style="width:60px; text-align:center;">Cek</th><th>Kode Barang</th><th>Nama Barang</th><th>Jumlah Qty</th><th>Satuan</th></tr></thead>
+      <tbody id="modalTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="globalLimitModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeGlobalLimitModal()">✕ Close</button>
+    <h3 style="color:#f97316;">⚙️ Panel Konfigurasi Batas Jatah Maksimal Bulanan</h3>
+    <input id="searchGlobalLimit" placeholder="🔍 Cari..." oninput="renderGlobalLimitTable()" style="margin-bottom:10px;">
+    <div style="overflow-y:auto; max-height:50vh;">
+      <table>
+        <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Section / Line</th><th>Max / Bulan</th><th class="admin-only" style="text-align:center; width:120px;">Aksi</th></tr></thead>
+        <tbody id="globalLimitTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="adjustBudgetModal" class="modal">
+  <div class="modal-content" style="max-width:620px;">
+    <button class="close-btn" onclick="closeAdjustBudgetModal()">✕ Close</button>
+    <h3 style="color:#f59e0b;">✏️ Adjust Jatah Maksimal Bulanan</h3>
+    <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #f59e0b; font-size:13px;">
+      <strong>Kode:</strong> <span id="abKode"></span> &nbsp;|&nbsp;
+      <strong>Nama Barang:</strong> <span id="abNama"></span> &nbsp;|&nbsp;
+      <strong>Section / Line:</strong> <span id="abLine"></span>
+    </div>
+    <div class="row">
+      <div style="flex:1; min-width:150px;" class="input-group">
+        <label>Limit Saat Ini</label>
+        <input id="abLimitLama" readonly style="background:#f1f5f9; font-weight:bold;">
+      </div>
+      <div style="flex:1; min-width:150px;" class="input-group">
+        <label>Limit Baru *</label>
+        <input id="abLimitBaru" type="number" min="0">
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Keterangan (mis. Penambahan Max/Bulan 1, untuk lain-lain)</label>
+      <input id="abKeterangan" placeholder="Contoh: Penambahan 1 untuk kebutuhan lain-lain">
+    </div>
+    <button class="btn-success" style="width:100%; padding:10px; margin-top:6px;" onclick="simpanAdjustBudget()">💾 Simpan Perubahan</button>
+
+    <hr style="border:0; border-top:1px dashed #cbd5e1; margin:22px 0 14px;">
+    <h3 style="margin-bottom:10px;">🕒 Riwayat Perubahan Limit</h3>
+    <div style="overflow-y:auto; max-height:260px;">
+      <table>
+        <thead><tr style="background:#f8fafc"><th>Tanggal & Jam</th><th>Lama → Baru</th><th>Keterangan</th><th>Oleh</th></tr></thead>
+        <tbody id="adjustHistoryBody"><tr><td colspan="4" style="text-align:center; color:#94a3b8;">Memuat riwayat...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="spbExportModal" class="modal">
+  <div class="modal-content" style="max-width:480px;">
+    <button class="close-btn" onclick="closeSpbExportModal()">✕ Close</button>
+    <h3 style="color:#0284c7;">📥 Export Data SPB ke Excel</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:-8px;">Kosongkan filter untuk mengambil seluruh data SPB.</p>
+
+    <div class="input-group">
+      <label>Filter Department</label>
+      <select id="exportDept"><option value="">-- Semua Department --</option></select>
+    </div>
+    <div class="row">
+      <div style="flex:1; min-width:150px;" class="input-group"><label>Dari Tanggal</label><input type="date" id="exportTglDari"></div>
+      <div style="flex:1; min-width:150px;" class="input-group"><label>Sampai Tanggal</label><input type="date" id="exportTglSampai"></div>
+    </div>
+    <div class="input-group">
+      <label>Filter Status</label>
+      <select id="exportStatus">
+        <option value="">-- Semua Status --</option>
+        <option value="OPEN">OPEN</option>
+        <option value="DONE">DONE</option>
+      </select>
+    </div>
+    <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">⬇️ Download Excel (Ringkasan + Detail Item)</button>
+  </div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://rawgit.com/schmich/instascan-builds/master/instascan.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/build/instascan.min.js"></script>
+
 <script>
-// ambil elemen DOM
-const loginUser = document.getElementById("loginUser");
-const loginPass = document.getElementById("loginPass");
-const loginOverlay = document.getElementById("loginOverlay");
-const appRoot = document.getElementById("appRoot");
-const logoutBtn = document.getElementById("logoutBtn");
+const BASE_CLOUD_URL = "https://script.google.com/macros/s/AKfycbxDGYGBCl5rCarC8REaFpYhtIDlNiFd9KVbjwFpZeyax0LrqkuFbCB1MhsemKqbsaco6g/exec";
 
-// USERS
-const USERS={admin:{pass:"admin123",role:"admin"},user:{pass:"user123",role:"user"}}
-let currentRole=null
+let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, stockAwal: {}, users: [] };
+let keranjangItems = [];
+let currentSelectedSpbNo = "";
+let currentRole = null;
+let currentActiveName = "";
+let currentUsername = "";
+let abCurrentKode = "";
+let abCurrentLine = "";
 
-/* ================= LOGIN ================= */
+const SECTION_MAP = {
+  "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Peredam", "PVC", "SMS", "Stiffener", "Office"],
+  "Logistic": ["Warehouse", "Shipping", "PPIC", "Office"],
+  "HR": ["HR-GA", "HR-MTC", "HR-SEC"],
+  "Engineering": ["Office", "Engineering General"],
+  "OS": ["Office", "OS Support"],
+  "QA / QC": ["QA/QC", "Office"], 
+  "Technical": ["Office", "Technical Team"]
+};
+
+function showLoading(sts, txt = "Sinkronisasi Data Google Sheets...") { 
+  document.getElementById("loadingText").innerText = txt;
+  document.getElementById("loadingOverlay").style.display = sts ? "flex" : "none"; 
+}
+function showDoneMessage(msg){ const div = document.getElementById("doneMsg"); div.innerText = msg; setTimeout(() => { div.innerText = "" }, 3000); }
+function getRomanMonth(m) { return ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"][m]; }
+
+window.onload = function() {
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => { if(resObj.status === "SUCCESS") MEMORY = resObj.data; });
+};
+
+function fetchDatabaseAll() {
+  showLoading(true, "Mendownload Database Cloud...");
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        MEMORY = resObj.data;
+        generateNoSPB();
+        renderSpbReport();
+        tampilMaster();
+        renderStock();
+        renderReport();
+        renderBudgetControl();
+        updateJatahInfoHint();
+        renderUsersTable();
+        renderDashboardTopSpbDept();
+        renderDashboardTopKeluar();
+      } else { alert("Gagal memuat database cloud: " + resObj.message); }
+    })
+    .catch(err => alert("Kesalahan Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
+
+// ---------- DASHBOARD ANALITIK ----------
+function renderDashboardTopSpbDept() {
+  const deptFilterEl = document.getElementById("dashDeptFilter"); if(!deptFilterEl) return;
+  if(deptFilterEl.options.length <= 1) {
+    Object.keys(SECTION_MAP).forEach(dept => {
+      const opt = document.createElement("option"); opt.value = dept; opt.textContent = dept; deptFilterEl.appendChild(opt);
+    });
+  }
+  const dept = deptFilterEl.value;
+
+  const tally = {};
+  (MEMORY.spbList || []).forEach(spb => {
+    const spbDept = spb.department || spb.Department || "-";
+    if(dept && spbDept !== dept) return;
+    (spb.items || []).forEach(it => {
+      const kode = it.kode || it.kodeBarang; const nama = it.nama || it.namaBarang;
+      if(!kode) return;
+      if(!tally[kode]) tally[kode] = { nama, totalQty: 0, totalSpb: 0 };
+      tally[kode].totalQty += Number(it.qty || 0);
+      tally[kode].totalSpb += 1;
+    });
+  });
+
+  const sorted = Object.entries(tally).map(([kode, v]) => ({ kode, ...v })).sort((a,b) => b.totalQty - a.totalQty).slice(0, 10);
+  const maxQty = sorted.length ? sorted[0].totalQty : 1;
+  const tbody = document.getElementById("dashTopSpbBody");
+  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => `
+    <tr>
+      <td style="width:30px;">${idx+1}</td>
+      <td><strong>${item.kode}</strong></td>
+      <td>${item.nama}</td>
+      <td style="white-space:nowrap;">${item.totalSpb}x diminta</td>
+      <td style="min-width:160px;">
+        <div style="background:#e2e8f0; border-radius:6px; overflow:hidden; height:22px;">
+          <div style="background:#2563eb; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty}</div>
+        </div>
+      </td>
+    </tr>`).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data SPB untuk filter ini.</td></tr>`;
+}
+
+function renderDashboardTopKeluar() {
+  const tally = {};
+  (MEMORY.transaksi || []).forEach(t => {
+    if(t.jenis !== "Keluar") return;
+    if(!tally[t.kode]) tally[t.kode] = { nama: t.nama, totalQty: 0, satuan: t.satuan };
+    tally[t.kode].totalQty += Number(t.qty || 0);
+  });
+
+  const sorted = Object.entries(tally).map(([kode, v]) => ({ kode, ...v })).sort((a,b) => b.totalQty - a.totalQty).slice(0, 10);
+  const maxQty = sorted.length ? sorted[0].totalQty : 1;
+  const tbody = document.getElementById("dashTopKeluarBody");
+  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => `
+    <tr>
+      <td style="width:30px;">${idx+1}</td>
+      <td><strong>${item.kode}</strong></td>
+      <td>${item.nama}</td>
+      <td style="min-width:160px;">
+        <div style="background:#e2e8f0; border-radius:6px; overflow:hidden; height:22px;">
+          <div style="background:#f97316; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty} ${item.satuan||""}</div>
+        </div>
+      </td>
+    </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data transaksi keluar.</td></tr>`;
+}
+
 function doLogin(){
-  const u = loginUser.value.trim();
-  const p = loginPass.value.trim();
-  if(USERS[u] && USERS[u].pass === p){
-    currentRole = USERS[u].role;
-    loginOverlay.style.display = "none";
-    appRoot.style.display = "block";
-    logoutBtn.style.display = "block";
-    applyRole();
-    loadAll();
+  const uInput = document.getElementById("loginUser").value.trim().toLowerCase();
+  const pInput = document.getElementById("loginPass").value.trim();
+
+  if(uInput === "adminmaster" && pInput === "ptargapura2026"){
+    currentRole = "admin";
+    currentActiveName = "Super Administrator";
+    currentUsername = "adminmaster";
+    masukSistem(); return;
+  }
+
+  const matchUser = MEMORY.users.find(x => String(x.username).toLowerCase() === uInput && String(x.password) === pInput);
+  
+  if(matchUser) {
+    currentRole = matchUser.role;
+    currentActiveName = matchUser.nama || matchUser.username;
+    currentUsername = matchUser.username;
+    masukSistem();
   } else {
-    alert("Login gagal: username atau password salah");
+    alert("Username atau Password salah!");
   }
 }
 
-function fillDemo(){loginUser.value="user"; loginPass.value="user123";}
-function doLogout(){
-  // reset role
-  currentRole = null;
-
-  // sembunyikan app root & logout button
-  appRoot.style.display = "none";
-  logoutBtn.style.display = "none";
-
-  // tampilkan login overlay
-  loginOverlay.style.display = "flex";
-
-  // reset input login
-  loginUser.value = "";
-  loginPass.value = "";
-
-  // sembunyikan semua elemen admin-only
-  document.querySelectorAll(".admin-only").forEach(el => el.style.display = "none");
+function masukSistem() {
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("appRoot").style.display = "block";
+  document.getElementById("lblActiveUser").innerText = `${currentActiveName} (${currentRole.toUpperCase()})`;
+  fetchDatabaseAll();
 }
 
-
-/* ================= ROLE ================= */
-function applyRole(){
-  // Tampilkan elemen admin-only hanya jika role admin
-  document.querySelectorAll(".admin-only").forEach(el => {
-    if(currentRole === "admin"){
-      el.style.display = ""; // tampilkan untuk admin
-    } else {
-      el.style.display = "none"; // sembunyikan untuk user
-    }
-  });
+function doLogout(){ 
+  currentRole = null; currentActiveName = ""; currentUsername = "";
+  document.getElementById("loginUser").value = ""; document.getElementById("loginPass").value = "";
+  document.getElementById("appRoot").style.display = "none"; 
+  document.getElementById("loginOverlay").style.display = "flex"; 
 }
 
-/* ================= DONE MESSAGE ================= */
-function showDoneMessage(msg){
-  const div=document.getElementById("doneMsg");
-  div.innerText=msg;
-  div.style.color="green";
-  setTimeout(()=>{div.innerText=""},3000);
+function applyRole() { 
+  document.querySelectorAll(".admin-only").forEach(el => el.style.display = (currentRole === "admin") ? "" : "none"); 
 }
 
-/* ================= MASTER ================= */
-function tambahMaster(){
-  let data = JSON.parse(localStorage.masterData || "[]");
-  data.push({
-    barcode: mBarcode.value.trim(),
-    nama: mNama.value.trim(),
-    satuan: mSatuan.value.trim(),
-    minimal: Number(mMinimal.value) || 0,
-    kategori: mKategori.value.trim(),
-    line: mLine.value.trim(),
-    pic: mPic.value.trim()
-  });
-  localStorage.masterData = JSON.stringify(data);
-  tampilMaster();
-  showDoneMessage("✅ Master berhasil ditambahkan");
-}
+function simpanAkunBaru() {
+  const username = document.getElementById("uUsername").value.trim().toLowerCase();
+  const password = document.getElementById("uPassword").value.trim();
+  const nama = document.getElementById("uNama").value.trim();
+  const role = document.getElementById("uRole").value;
 
-function uploadMasterExcel(){
-  const f = uploadExcel.files[0];
-  if(!f) return;
+  if(!username || !password) return alert("Username dan Password wajib diisi!");
 
-  const r = new FileReader();
-  r.onload = e => {
-    const wb = XLSX.read(e.target.result, { type: "array" });
-    const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]]);
+  showLoading(true, "Mendaftarkan Akun ke Cloud...");
+  const payload = { username, password, nama, role };
 
-    let masterData = [];
-
-    rows.forEach(r => {
-      masterData.push({
-        barcode: r.Barcode,
-        nama: r.Nama,
-        satuan: r.Satuan,
-        minimal: Number(r.Minimal) || 0,
-        kategori: r.Kategori,
-        line: r.Line,
-        pic: r.PIC
-      });
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`✅ Akun [${username}] berhasil disimpan.`);
+        document.getElementById("uUsername").value = "";
+        document.getElementById("uPassword").value = "";
+        document.getElementById("uNama").value = "";
+        fetchDatabaseAll();
+      }
     });
-
-    localStorage.masterData = JSON.stringify(masterData);
-    localStorage.transaksi = "[]";
-
-    tampilMaster();
-    renderStock();
-    renderReport();
-
-    uploadExcel.value = "";
-    showDoneMessage("✅ Upload master sukses dan data lama direset");
-  };
-  r.readAsArrayBuffer(f);
 }
 
-function tampilMaster(){
-  const d = JSON.parse(localStorage.masterData || "[]");
-  masterBody.innerHTML = "";
-  d.forEach(m => {
-    masterBody.innerHTML += `<tr>
-      <td>${m.barcode}</td>
-      <td>${m.nama}</td>
-      <td>${m.satuan}</td>
-      <td>${m.minimal}</td>
-      <td>${m.kategori}</td>
-      <td>${m.line}</td>
-      <td class="admin-only">
-        <button onclick="hapusMaster('${m.barcode}')">Hapus</button>
-      </td>
+function hapusAkun(username) {
+  if(!confirm(`Hapus hak akses login untuk user [${username}]?`)) return;
+  showLoading(true, "Menghapus Akun...");
+  fetch(`${BASE_CLOUD_URL}?target=hapusUser`, { method: "POST", body: JSON.stringify({ username }) })
+    .then(() => { showDoneMessage("🗑️ Akun berhasil dihapus."); fetchDatabaseAll(); });
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById("usersTableBody"); if(!tbody) return; tbody.innerHTML = "";
+  MEMORY.users.forEach(u => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td>•••••• (terproteksi)</td>
+      <td>${u.nama || "-"}</td>
+      <td><span style="font-size:12px; padding:2px 6px; border-radius:4px; font-weight:bold; background:${u.role==='admin'?'#fee2e2':'#e0f2fe'}; color:${u.role==='admin'?'#b91c1c':'#0369a1'};">${u.role.toUpperCase()}</span></td>
+      <td style="text-align:center;"><button class="btn-mini btn-danger" onclick="hapusAkun('${u.username}')">Hapus</button></td>
     </tr>`;
   });
   applyRole();
-  updateKategoriFilter(); // ✅ refresh filter kategori otomatis
 }
 
-function hapusMaster(b){
-  let d = JSON.parse(localStorage.masterData || "[]");
-  localStorage.masterData = JSON.stringify(d.filter(x => x.barcode !== b));
-  tampilMaster();
-  showDoneMessage("✅ Master berhasil dihapus");
+function updateSectionDropdown() {
+  const deptSelect = document.getElementById("spbDepartment"); const lineSelect = document.getElementById("spbLine"); const selectedDept = deptSelect.value;
+  lineSelect.innerHTML = `<option value="">-- Pilih Section/Line --</option>`;
+  if (selectedDept && SECTION_MAP[selectedDept]) {
+    SECTION_MAP[selectedDept].forEach(item => { const opt = document.createElement("option"); opt.value = item; opt.textContent = item; lineSelect.appendChild(opt); });
+  }
+  updateJatahInfoHint();
 }
 
-/* ================= UPDATE FILTER KATEGORI ================= */
-function updateKategoriFilter(){
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const select = document.getElementById("filterKategori");
-  if(!select) return;
-
-  const current = select.value;
-  select.innerHTML = `<option value="">-- Semua Kategori --</option>`;
-
-  const kategoriUnik = [...new Set(
-    master.map(m => m.kategori).filter(k => k && k.trim() !== "")
-  )];
-
-  kategoriUnik.forEach(k => {
-    const opt = document.createElement("option");
-    opt.value = k.toLowerCase();
-    opt.textContent = k;
-    select.appendChild(opt);
-  });
-
-  select.value = current;
+function generateNoSPB() {
+  const now = new Date(); const yr = now.getFullYear(); const rm = getRomanMonth(now.getMonth());
+  let currentCounter = 0; MEMORY.spbList.forEach(x => { if(x.tanggal && new Date(x.tanggal).getFullYear() === yr) currentCounter++; });
+  document.getElementById("spbNomor").value = `${String(currentCounter + 1).padStart(4, '0')}/${rm}/${yr}/HR-GA`;
 }
-
-/* ================= TRANSAKSI ================= */
 
 function isiOtomatis(){
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const m = master.find(x => x.barcode === kodeBarang.value.trim());
-
-  if(m){
-    namaBarang.value = m.nama || "";
-    satuan.value = m.satuan || "";
-    kategoriBarang.value = m.kategori || "";
-
-    // LINE TIDAK OTOMATIS
-    lineDept.value = "";
-  }
+  const m = MEMORY.masterData.find(x => x.barcode === document.getElementById("kodeBarang").value.trim());
+  if(m){ document.getElementById("namaBarang").value = m.nama || ""; document.getElementById("satuan").value = m.satuan || ""; document.getElementById("kategoriBarang").value = m.kategori || ""; }
+  updateJatahInfoHint();
 }
-function simpanTransaksi(){
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const m = master.find(x => x.barcode === kodeBarang.value.trim());
 
-  if(!m){
-    alert("Barang tidak ada di master!");
+function hitungKuotaJatahAktif(kode, line) {
+  if(!kode || !line) return { maxBulan: 2, aktualDone: 0, diKeranjang: 0, sisa: 2 };
+  const key = `${kode}_${line}`; const maxBulan = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+  const bln = new Date().getMonth(); const thn = new Date().getFullYear();
+  let aktualDone = 0; MEMORY.transaksi.forEach(t => { if(t.kode === kode && t.line === line && t.jenis === "Keluar") { const d = new Date(t.tanggal); if(d.getMonth() === bln && d.getFullYear() === thn) { aktualDone += Number(t.qty); } } });
+  let diKeranjang = 0; keranjangItems.forEach(item => { if(item.kode === kode) { diKeranjang += Number(item.qty); } });
+  return { maxBulan, aktualDone, diKeranjang, sisa: maxBulan - (aktualDone + diKeranjang) };
+}
+
+function updateJatahInfoHint() {
+  const kode = document.getElementById("kodeBarang").value.trim(); const line = document.getElementById("spbLine").value;
+  const infoBox = document.getElementById("jatahInfoBox"); const maxViewInput = document.getElementById("jatahMaxBulanView");
+  const data = hitungKuotaJatahAktif(kode, line); maxViewInput.value = data.maxBulan;
+  if(!kode || !line) { infoBox.style.display = "none"; return; }
+  document.getElementById("jiMax").innerText = data.maxBulan; document.getElementById("jiDone").innerText = data.aktualDone; document.getElementById("jiKeranjang").innerText = data.diKeranjang;
+  const sisaSpan = document.getElementById("jiSisa"); sisaSpan.innerText = data.sisa; sisaSpan.style.color = (data.sisa <= 0) ? "#dc2626" : "#16a34a";
+  infoBox.style.display = "block";
+}
+
+function evaluasiSisaJatahLive() { updateJatahInfoHint(); }
+function openGlobalLimitModal() { document.getElementById("globalLimitModal").style.display = "flex"; renderGlobalLimitTable(); }
+function closeGlobalLimitModal() { document.getElementById("globalLimitModal").style.display = "none"; }
+
+function renderGlobalLimitTable() {
+  const searchKeyword = document.getElementById("searchGlobalLimit").value.toLowerCase();
+  const tbody = document.getElementById("globalLimitTableBody"); tbody.innerHTML = ""; let rowsHtml = "";
+  MEMORY.masterData.forEach(m => {
+    for (const dept in SECTION_MAP) {
+      SECTION_MAP[dept].forEach(line => {
+        const key = `${m.barcode}_${line}`; const currentLimit = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+        if (searchKeyword && !(m.nama.toLowerCase().includes(searchKeyword) || m.barcode.toLowerCase().includes(searchKeyword) || line.toLowerCase().includes(searchKeyword))) return;
+        rowsHtml += `<tr><td><strong>${m.barcode}</strong></td><td>${m.nama}</td><td><span style="font-size:12px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${dept} - ${line}</span></td><td><strong>${currentLimit}</strong></td><td class="admin-only" style="text-align:center;"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td></tr>`;
+      });
+    }
+  });
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada data.</td></tr>`;
+  applyRole();
+}
+
+// ---------- ADJUST JATAH MAKSIMAL (dengan keterangan + riwayat) ----------
+function adjustMaxBudget(kode, line) {
+  if(currentRole !== 'admin') return;
+  const key = `${kode}_${line}`;
+  const currentLimit = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+  const master = MEMORY.masterData.find(m => m.barcode === kode);
+
+  abCurrentKode = kode;
+  abCurrentLine = line;
+
+  document.getElementById("abKode").innerText = kode;
+  document.getElementById("abNama").innerText = master ? master.nama : "-";
+  document.getElementById("abLine").innerText = line;
+  document.getElementById("abLimitLama").value = currentLimit;
+  document.getElementById("abLimitBaru").value = currentLimit;
+  document.getElementById("abKeterangan").value = "";
+
+  document.getElementById("adjustBudgetModal").style.display = "flex";
+  loadAdjustHistory(key);
+}
+
+function closeAdjustBudgetModal() {
+  document.getElementById("adjustBudgetModal").style.display = "none";
+}
+
+function loadAdjustHistory(key) {
+  const tbody = document.getElementById("adjustHistoryBody");
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Memuat riwayat...</td></tr>`;
+  fetch(`${BASE_CLOUD_URL}?target=getAdjustHistory&key=${encodeURIComponent(key)}`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS" && resObj.data && resObj.data.length > 0) {
+        tbody.innerHTML = resObj.data.map(h => {
+          const tglJam = h.timestamp ? new Date(h.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-";
+          return `<tr>
+            <td style="white-space:nowrap;">${tglJam}</td>
+            <td><strong>${h.limitLama}</strong> → <strong style="color:#16a34a;">${h.limitBaru}</strong></td>
+            <td>${h.keterangan || "-"}</td>
+            <td>${h.nama || h.username || "-"}</td>
+          </tr>`;
+        }).join("");
+      } else {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada riwayat perubahan untuk item ini.</td></tr>`;
+      }
+    })
+    .catch(() => { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444;">Gagal memuat riwayat.</td></tr>`; });
+}
+
+function simpanAdjustBudget() {
+  const val = parseInt(document.getElementById("abLimitBaru").value);
+  if(isNaN(val) || val < 0) return alert("Angka limit baru tidak valid!");
+  const keterangan = document.getElementById("abKeterangan").value.trim();
+  const key = `${abCurrentKode}_${abCurrentLine}`;
+
+  showLoading(true, "Mengubah Limit Anggaran...");
+  fetch(`${BASE_CLOUD_URL}?target=adjustBudget`, {
+    method: "POST",
+    body: JSON.stringify({
+      kode: abCurrentKode,
+      line: abCurrentLine,
+      limit: val,
+      keterangan: keterangan,
+      username: currentUsername,
+      nama: currentActiveName
+    })
+  })
+  .then(res => res.json())
+  .then(resObj => {
+    if(resObj.status === "SUCCESS") {
+      MEMORY.budgetLimits[key] = val;
+      showDoneMessage("⚙️ Limit jatah diupdate & tercatat di riwayat.");
+      document.getElementById("abLimitLama").value = val;
+      loadAdjustHistory(key);
+      if(document.getElementById("globalLimitModal").style.display === "flex") renderGlobalLimitTable();
+      renderBudgetControl();
+      updateJatahInfoHint();
+    } else { alert("Gagal mengubah limit: " + resObj.message); }
+  })
+  .finally(() => showLoading(false));
+}
+
+function tambahItemKeKeranjang() {
+  const line = document.getElementById("spbLine").value; 
+  const dept = document.getElementById("spbDepartment").value; 
+  if(!dept || !line) return alert("Pilih Department & Section / Line terlebih dahulu!");
+
+  const code = document.getElementById("kodeBarang").value.trim(); 
+  const nama = document.getElementById("namaBarang").value.trim(); 
+  const qty = Number(document.getElementById("qty").value); 
+  const satuan = document.getElementById("satuan").value.trim(); 
+  const kat = document.getElementById("kategoriBarang").value || "Umum";
+
+  if(!code || !nama || qty <= 0) return alert("Pastikan Kode, Nama Barang terisi, dan Qty lebih dari 0!");
+
+  const dataKuota = hitungKuotaJatahAktif(code, line);
+  if(qty > dataKuota.sisa) {
+    return alert(`Permintaan Ditolak!\nSisa kuota bersih bulan ini untuk barang [${nama}] pada line [${line}] adalah ${dataKuota.sisa} ${satuan}.\n(Jumlah yang diminta: ${qty} | Sudah ada di keranjang: ${dataKuota.diKeranjang})`);
+  }
+
+  const existingIndex = keranjangItems.findIndex(item => item.kode === code);
+  if(existingIndex > -1) {
+    keranjangItems[existingIndex].qty += qty;
+  } else {
+    keranjangItems.push({ kode: code, nama: nama, kategori: kat, qty: qty, satuan: satuan });
+  }
+
+  document.getElementById("kodeBarang").value = "";
+  document.getElementById("namaBarang").value = "";
+  document.getElementById("qty").value = "1";
+  document.getElementById("satuan").value = "";
+  document.getElementById("kategoriBarang").value = "";
+  document.getElementById("jatahMaxBulanView").value = "";
+
+  renderKeranjang();
+  updateJatahInfoHint();
+}
+
+function renderKeranjang() {
+  const tbody = document.getElementById("keranjangBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+
+  if(keranjangItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr>`;
     return;
   }
 
-  if(!qty.value || qty.value <= 0){
-    alert("Qty harus lebih dari 0");
-    return;
-  }
-
-  let transaksi = JSON.parse(localStorage.transaksi || "[]");
-
-  const tgl = new Date().toISOString(); // tanggal + jam
-
-transaksi.unshift({
-  kode: kodeBarang.value.trim(),
-  nama: m.nama,
-  satuan: m.satuan || "",
-  kategori: m.kategori || "",
-  line: lineDept.value.trim() || "-",
-  pic: picAmbil.value.trim() || m.pic || "",
-  qty: Number(qty.value),
-  jenis: jenis.value,
-  tanggal: tgl
-});
-  localStorage.transaksi = JSON.stringify(transaksi);
-
-  renderStock();
-  renderReport();
-
-  /* ================= RESET FORM ================= */
-  kodeBarang.value = "";
-  namaBarang.value = "";
-  satuan.value = "";
-  kategoriBarang.value = "";
-  lineDept.value = "";
-  picAmbil.value = "";
-  qty.value = 1;
-  jenis.value = "Masuk";
-
-  /* ================= PESAN SUKSES ================= */
-  showDoneMessage("✅ Transaksi berhasil disimpan");
-
-  kodeBarang.focus();
+  keranjangItems.forEach((item, index) => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${item.kode}</strong></td>
+      <td>${item.nama}</td>
+      <td>${item.kategori}</td>
+      <td><strong>${item.qty}</strong></td>
+      <td>${item.satuan}</td>
+      <td><button class="btn-mini btn-danger" onclick="hapusItemKeranjang(${index})">✕ Hapus</button></td>
+    </tr>`;
+  });
 }
 
-/* ================= UPLOAD EXCEL TRANSAKSI ================= */
-function uploadTransaksiExcel(){
+function hapusItemKeranjang(index) {
+  keranjangItems.splice(index, 1);
+  renderKeranjang();
+  updateJatahInfoHint();
+}
 
-  const f = uploadTransaksi.files[0];
-  if(!f) return;
+function simpanSPBOpen() {
+  const noSpb = document.getElementById("spbNomor").value;
+  const dept = document.getElementById("spbDepartment").value;
+  const line = document.getElementById("spbLine").value;
+  const pic = document.getElementById("spbPic").value.trim();
 
-  const r = new FileReader();
+  if(!dept || !line || !pic) return alert("⚠️ Department, Section, dan PIC Pemohon wajib diisi!");
+  if(keranjangItems.length === 0) return alert("⚠️ Keranjang SPB masih kosong!");
 
-  r.onload = e => {
+  showLoading(true, "Menyimpan Dokumen SPB ke Cloud...");
+  const payload = { nomorSpb: noSpb, department: dept, line: line, pic: pic, items: keranjangItems };
 
-    const wb =
-    XLSX.read(
-      e.target.result,
-      { type: "array" }
-    );
+  fetch(`${BASE_CLOUD_URL}?target=simpanSPB`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`✅ SPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
+        document.getElementById("spbPic").value = "";
+        keranjangItems = [];
+        renderKeranjang();
+        fetchDatabaseAll();
+      } else { alert("Gagal: " + resObj.message); }
+    })
+    .catch(err => alert("Error Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
 
-    const rows =
-    XLSX.utils.sheet_to_json(
-      wb.Sheets[
-        wb.SheetNames[0]
-      ]
-    );
+function renderSpbReport() {
+  const tbody = document.getElementById("spbReportBody"); 
+  if(!tbody) return; 
+  tbody.innerHTML = "";
+  
+  if(!MEMORY.spbList || MEMORY.spbList.length === 0) { 
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data SPB.</td></tr>`; 
+    return; 
+  }
 
-    const master =
-    JSON.parse(
-      localStorage.masterData || "[]"
-    );
+  MEMORY.spbList.forEach(x => {
+    const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb || "KODE-UNKNOWN";
+    
+    const badge = x.status === "DONE" 
+      ? `<span class="badge-done" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">✔️ DONE</span>` 
+      : `<span class="badge-open" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">⏳ OPEN</span>`;
+    
+    let tgl = "-";
+    if (x.tanggal) {
+      tgl = new Date(x.tanggal).toLocaleDateString('id-ID');
+    } else if (x.Tanggal) {
+      tgl = new Date(x.Tanggal).toLocaleDateString('id-ID');
+    }
+    
+    tbody.innerHTML += `<tr>
+      <td>${tgl}</td>
+      <td><strong style="color:#1e40af; cursor:pointer; text-decoration: underline;" onclick="openSpbDetailModal('${nomorSpbAktif}')">${nomorSpbAktif}</strong></td>
+      <td>${x.department || x.Department || "-"}</td>
+      <td>${x.line || x.Line || "-"}</td>
+      <td>${x.pic || x.Pic || x.PIC || "-"}</td>
+      <td><strong>${x.jumlahJenis || (x.items ? x.items.length : 0)} Item</strong></td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+}
 
-    let transaksi = [];
+function openSpbDetailModal(noSpb) {
+  currentSelectedSpbNo = noSpb;
+  const matchSpb = MEMORY.spbList.find(x => (x.nomorSpb === noSpb || x.noSpb === noSpb || x.NoSpb === noSpb));
+  if(!matchSpb) return alert("Data SPB tidak ditemukan!");
 
-    rows.forEach(r => {
+  const nomorSpbAktif = matchSpb.nomorSpb || matchSpb.noSpb || matchSpb.NoSpb;
+  document.getElementById("mdNoSpb").innerText = nomorSpbAktif;
+  document.getElementById("mdLine").innerText = matchSpb.line || matchSpb.Line || "-";
+  document.getElementById("mdPic").innerText = matchSpb.pic || matchSpb.Pic || matchSpb.PIC || "-";
+  
+  const bSelesai = document.getElementById("btnEksekusiSelesai");
+  const bPrint = document.getElementById("btnPrintSpb");
+  const hint = document.getElementById("checkHint");
+  const badgeModal = document.getElementById("mdStatusBadge");
+  badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>` : `<span class="badge-open">OPEN</span>`;
+  
+  const tbody = document.getElementById("modalTableBody"); tbody.innerHTML = "";
+  let itemsAktif = matchSpb.items || [];
 
-      const m =
-      master.find(
-        x =>
-        x.barcode ==
-        r.Barcode
-      );
+  if(itemsAktif.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada rincian item.</td></tr>`;
+  }
 
-      if(m){
+  itemsAktif.forEach((it) => {
+    const isDone = matchSpb.status === "DONE";
+    const chk = isDone ? `✔️` : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
+    tbody.innerHTML += `<tr>
+      <td style="text-align:center;">${chk}</td>
+      <td><strong>${it.kode || it.kodeBarang}</strong></td>
+      <td>${it.namaBarang || it.nama}</td>
+      <td><strong>${it.qty}</strong></td>
+      <td>${it.satuan}</td>
+    </tr>`;
+  });
 
-        transaksi.push({
+  bSelesai.disabled = true;
 
-          kode:
-          m.barcode,
+  // Atur tombol sesuai status SPB: OPEN -> tombol Selesai aktif, DONE -> langsung tampilkan tombol Print
+  if (matchSpb.status === "DONE") {
+    bSelesai.style.display = "none";
+    bPrint.style.display = "inline-flex";
+    hint.style.display = "none";
+  } else {
+    bSelesai.style.display = "inline-flex";
+    bPrint.style.display = "none";
+    hint.style.display = "block";
+  }
 
-          nama:
-          m.nama,
+  document.getElementById("historyModal").style.display = "flex";
+}
 
-          satuan:
-          m.satuan || "",
+function closeModal() { document.getElementById("historyModal").style.display = "none"; }
 
-          kategori:
-          m.kategori || "",
+function evaluasiCheckboxModal() {
+  const totalCheck = document.querySelectorAll(".chk-verify").length;
+  const totalChecked = document.querySelectorAll(".chk-verify:checked").length;
+  document.getElementById("btnEksekusiSelesai").disabled = (totalCheck !== totalChecked || totalCheck === 0);
+}
 
-          line:
-          m.line || "",
+document.getElementById("btnEksekusiSelesai").onclick = function() {
+  if(!confirm("Apakah Anda yakin semua barang telah diverifikasi fisik dan siap diserahkan (DONE)?")) return;
+  showLoading(true, "Memproses pengeluaran stok di cloud...");
 
-          pic:
-          r.PIC ||
-          m.pic ||
-          "",
+  fetch(`${BASE_CLOUD_URL}?target=eksekusiSPB`, {
+    method: "POST",
+    body: JSON.stringify({ nomorSpb: currentSelectedSpbNo })
+  })
+  .then(res => res.json())
+  .then(resObj => {
+    if(resObj.status === "SUCCESS") {
+      showDoneMessage(`✔️ SPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
+      fetchDatabaseAll();
 
-          qty:
-          Number(
-            r.Qty
-          ) || 0,
+      // Ubah tampilan modal jadi DONE tanpa menutup, supaya bisa langsung print struk
+      document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
+      document.getElementById("btnEksekusiSelesai").style.display = "none";
+      document.getElementById("btnPrintSpb").style.display = "inline-flex";
+      document.getElementById("checkHint").style.display = "none";
+      document.querySelectorAll(".chk-verify").forEach(chk => {
+        chk.closest("td").innerHTML = "✔️";
+      });
+    } else { alert("Gagal mengeksekusi: " + resObj.message); }
+  })
+  .finally(() => showLoading(false));
+};
 
-          jenis:
-          r.Jenis || "Masuk",
+function printSpbDetail() {
+  const noSpb = document.getElementById("mdNoSpb").innerText;
+  const line = document.getElementById("mdLine").innerText;
+  const pic = document.getElementById("mdPic").innerText;
+  const tglCetak = new Date().toLocaleString('id-ID');
 
-          tanggal:
-          r.Tanggal
-          ? new Date(
-              r.Tanggal
-            ).toISOString()
-          : new Date()
-            .toISOString()
+  let rows = "";
+  let totalJenis = 0;
+  document.querySelectorAll("#modalTableBody tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length >= 5) {
+      totalJenis++;
+      rows += `
+        <div class="item-row">
+          <div class="item-checkbox">☐</div>
+          <div class="item-text">
+            <div class="item-name">${tds[2].innerText}</div>
+            <div class="item-sub">${tds[1].innerText}</div>
+            <div class="item-qty">${tds[3].innerText} ${tds[4].innerText}</div>
+          </div>
+        </div>`;
+    }
+  });
 
+  const win = window.open('', '_blank', 'width=400,height=600');
+  win.document.write(`
+    <html>
+    <head>
+      <title>Struk SPB ${noSpb}</title>
+      <style>
+        @page { margin: 0; }
+        body {
+          font-family: 'Courier New', monospace;
+          width: 58mm;
+          margin: 0 auto;
+          padding: 8px;
+          font-size: 11px;
+          color: #000;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .line { border-top: 1px dashed #000; margin: 6px 0; }
+        .header h2 { margin: 0; font-size: 13px; }
+        .header p { margin: 2px 0; font-size: 10px; }
+        .info p { margin: 2px 0; }
+        .item-row { margin: 8px 0; display: flex; gap: 6px; align-items: flex-start; }
+        .item-checkbox { font-size: 15px; line-height: 1.2; flex-shrink: 0; }
+        .item-text { flex: 1; }
+        .item-name { font-weight: bold; }
+        .item-sub { font-size: 10px; color: #333; }
+        .item-qty { text-align: right; }
+        .footer { margin-top: 10px; font-size: 10px; }
+        .signature { margin-top: 10px; font-size: 10px; }
+        .signature-box { border-bottom: 1px solid #000; height: 30px; margin-top: 4px; }
+      </style>
+    </head>
+    <body>
+      <div class="header center">
+        <h2>PT ARGAPURA</h2>
+        <p>Surat Permintaan Barang</p>
+      </div>
+      <div class="line"></div>
+      <div class="info">
+        <p><strong>No SPB:</strong> ${noSpb}</p>
+        <p><strong>Line/Dept:</strong> ${line}</p>
+        <p><strong>PIC:</strong> ${pic}</p>
+        <p><strong>Status:</strong> DONE</p>
+      </div>
+      <div class="line"></div>
+      ${rows}
+      <div class="line"></div>
+      <p class="bold">Total Jenis Barang: ${totalJenis}</p>
+      <div class="line"></div>
+      <div class="signature">
+        <p>Tanda Tangan Penerima:</p>
+        <div class="signature-box"></div>
+        <p style="margin-top:4px;">( ${pic} )</p>
+      </div>
+      <div class="footer center">
+        <p>Dicetak: ${tglCetak}</p>
+        <p>-- Terima Kasih --</p>
+      </div>
+    </body>
+    </html>
+  `);
+  win.document.close();
+  win.onload = function() {
+    win.focus();
+    win.print();
+  };
+}
+
+function isiOtomatisMasuk() {
+  const m = MEMORY.masterData.find(x => x.barcode === document.getElementById("kodeMasuk").value.trim());
+  document.getElementById("namaMasuk").value = m ? m.nama : "";
+}
+
+function simpanBarangMasuk() {
+  const kode = document.getElementById("kodeMasuk").value.trim();
+  const qty = Number(document.getElementById("qtyMasuk").value);
+  if(!kode || qty <= 0) return alert("Lengkapi data barang masuk dengan valid!");
+
+  showLoading(true, "Menyimpan barang masuk...");
+  fetch(`${BASE_CLOUD_URL}?target=barangMasuk`, {
+    method: "POST",
+    body: JSON.stringify({ kode, qty })
+  })
+  .then(() => {
+    showDoneMessage("📦 Stok masuk manual berhasil direkam!");
+    document.getElementById("kodeMasuk").value = "";
+    document.getElementById("namaMasuk").value = "";
+    fetchDatabaseAll();
+  });
+}
+
+function renderBudgetControl() {
+  const tbody = document.getElementById("budgetControlBody"); if(!tbody) return; tbody.innerHTML = "";
+  let html = "";
+  MEMORY.masterData.forEach(m => {
+    for (const dept in SECTION_MAP) {
+      SECTION_MAP[dept].forEach(line => {
+        const key = `${m.barcode}_${line}`;
+        let aktualPakai = 0;
+        const bln = new Date().getMonth(); const thn = new Date().getFullYear();
+        MEMORY.transaksi.forEach(t => {
+          if(t.kode === m.barcode && t.line === line && t.jenis === "Keluar") {
+            const d = new Date(t.tanggal);
+            if(d.getMonth() === bln && d.getFullYear() === thn) aktualPakai += Number(t.qty);
+          }
         });
 
+        const limitMax = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+        if(aktualPakai === 0 && limitMax == 2) return; 
+
+        const statusEff = aktualPakai > limitMax ? `<span class="badge-over">OVER BUDGET</span>` : `<span class="badge-normal">AMAN (EFISIEN)</span>`;
+        html += `<tr>
+          <td>${m.barcode}</td>
+          <td>${m.nama}</td>
+          <td><small>${dept} - ${line}</small></td>
+          <td><strong>${limitMax}</strong></td>
+          <td>${aktualPakai}</td>
+          <td>${statusEff}</td>
+          <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td>
+        </tr>`;
+      });
+    }
+  });
+  tbody.innerHTML = html || `<tr><td colspan="7" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
+  applyRole();
+}
+
+function renderStock() {
+  const tbody = document.getElementById("stockBody"); if(!tbody) return; tbody.innerHTML = "";
+  const filterKat = document.getElementById("filterKategori").value;
+  const search = document.getElementById("searchStock").value.toLowerCase();
+  
+  const ddown = document.getElementById("filterKategori");
+  if(ddown.options.length <= 1) {
+    let kats = [...new Set(MEMORY.masterData.map(x => x.kategori).filter(Boolean))];
+    kats.forEach(k => { ddown.innerHTML += `<option value="${k}">${k}</option>`; });
+  }
+
+  // Kumpulkan dulu semua baris + hitung prioritas status (0=Habis, 1=Warning, 2=Aman)
+  // supaya bisa diurutkan: Habis paling atas, lalu Warning, baru Aman.
+  let rows = [];
+  MEMORY.masterData.forEach(m => {
+    if(filterKat && m.kategori !== filterKat) return;
+    if(search && !(m.nama.toLowerCase().includes(search) || m.barcode.toLowerCase().includes(search))) return;
+
+    let sisa = Number(MEMORY.stockAwal[m.barcode] || 0);
+    MEMORY.transaksi.forEach(t => {
+      if(t.kode === m.barcode) {
+        if(t.jenis === "Masuk") sisa += Number(t.qty);
+        if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
       }
     });
 
-    localStorage.transaksi =
-    JSON.stringify(
-      transaksi
-    );
+    let statusKondisi = `<span class="status-aman">Stok Aman</span>`;
+    let priority = 2; // 0 = Habis, 1 = Warning, 2 = Aman
+    if(sisa <= Number(m.minStock || 0)) { statusKondisi = `<span class="status-warning">⚠️ Reorder Limit</span>`; priority = 1; }
+    if(sisa <= 0) { statusKondisi = `<span class="status-habis">❌ HABIS</span>`; priority = 0; }
 
-    renderStock();
-    renderReport();
-
-    showDoneMessage(
-      "✅ Upload transaksi sukses & stok dihitung ulang"
-    );
-
-    uploadTransaksi.value =
-    "";
-
-  };
-
-  r.readAsArrayBuffer(f);
-}
-/* ================= STOCK ================= */
-  /* ================= UPLOAD STOCK OPNAME ================= */
-function uploadStockExcel(){
-
-  const f =
-  document.getElementById(
-    "uploadStock"
-  ).files[0];
-
-  if(!f){
-    alert("Pilih file stock opname");
-    return;
-  }
-
-  const reader =
-  new FileReader();
-
-  reader.onload = e => {
-
-    const wb =
-    XLSX.read(
-      e.target.result,
-      { type:"array" }
-    );
-
-    const rows =
-    XLSX.utils.sheet_to_json(
-      wb.Sheets[
-        wb.SheetNames[0]
-      ]
-    );
-
-    let stockAwal = {};
-
-    rows.forEach(r => {
-
-  const kode =
-  String(
-    r.Barcode ||
-    r.Kode ||
-    ""
-  ).trim();
-
-  if(!kode) return;
-
-  stockAwal[kode] =
-  Number(
-    r.Sisa_Stok ||
-    r.Sisa ||
-    0
-  );
-
-});
-    // GANTI stok lama
-    localStorage.stockAwal =
-    JSON.stringify(
-      stockAwal
-    );
-
-    // RESET transaksi lama
-    localStorage.transaksi =
-    JSON.stringify([]);
-
-    renderStock();
-    renderReport();
-
-    showDoneMessage(
-      "✅ Stock opname berhasil diperbarui"
-    );
-
-    document.getElementById(
-      "uploadStock"
-    ).value = "";
-
-  };
-
-  // WAJIB DI LUAR reader.onload
-  reader.readAsArrayBuffer(f);
-}
-function renderStock() {
-  const master = JSON.parse(localStorage.masterData || "[]");
-  const trx = JSON.parse(localStorage.transaksi || "[]");
-
-  const filterKategori =
-    document.getElementById("filterKategori")
-    .value.toLowerCase();
-
-  const search =
-    document.getElementById("searchStock")
-    .value.toLowerCase();
-
-  // Ambil saldo awal stock opname
-const stockAwal =
-JSON.parse(
-  localStorage.stockAwal || "{}"
-);
-
-// Hitung stok
-let stockMap = {};
-
-// mulai dari saldo opname
-master.forEach(m => {
-
-  stockMap[m.barcode] =
-  Number(
-    stockAwal[
-      m.barcode
-    ]
-  ) || 0;
-
-});
-
-// tambah / kurang transaksi
-trx.forEach(t => {
-
-  stockMap[t.kode] =
-  stockMap[t.kode] || 0;
-
-  stockMap[t.kode] +=
-    t.jenis === "Masuk"
-    ? Number(t.qty)
-    : -Number(t.qty);
-
-});
-  // Gabungkan master + stok
-  let stockData =
-  master.map(m => {
-
-    const sisa =
-      stockMap[m.barcode] || 0;
-
-    return {
-      ...m,
-      sisa
-    };
-  });
-
-  // Filter kategori + search
-  stockData =
-  stockData.filter(m => {
-
-    if (
-      filterKategori &&
-      m.kategori.toLowerCase()
-      !== filterKategori
-    ) return false;
-
-    if (
-      search &&
-      !(
-        m.nama.toLowerCase()
-        .includes(search)
-        ||
-        m.barcode.toLowerCase()
-        .includes(search)
-      )
-    ) return false;
-
-    return true;
-  });
-
-  // PARETO: stok terkecil di atas
-  stockData.sort(
-    (a, b) => a.sisa - b.sisa
-  );
-
-  stockBody.innerHTML = "";
-
-  stockData.forEach(m => {
-
-    let statusClass =
-      "status-aman";
-
-    let statusText =
-      "Aman";
-
-    if (m.sisa <= 0) {
-      statusClass =
-        "status-habis";
-      statusText =
-        "Habis";
-    }
-    else if (
-      m.sisa <= m.minimal
-    ) {
-      statusClass =
-        "status-warning";
-      statusText =
-        "Warning";
-    }
-
-    stockBody.innerHTML += `
-      <tr>
-        <td>${m.barcode}</td>
+    rows.push({
+      priority,
+      sisa,
+      html: `<tr>
+        <td><strong>${m.barcode}</strong></td>
         <td>${m.nama}</td>
-        <td>${m.sisa}</td>
-        <td>${m.minimal}</td>
-        <td class="${statusClass}">
-          ${statusText}
-        </td>
-      </tr>
-    `;
+        <td><strong style="color:${sisa<=0?'#ef4444':'#0f172a'}">${sisa}</strong> ${m.satuan}</td>
+        <td>${m.minStock || 0}</td>
+        <td>${statusKondisi}</td>
+      </tr>`
+    });
   });
+
+  // Urutkan: prioritas status dulu (Habis > Warning > Aman), lalu sisa stok terkecil dulu dalam grup yang sama
+  rows.sort((a, b) => a.priority - b.priority || a.sisa - b.sisa);
+
+  tbody.innerHTML = rows.length ? rows.map(r => r.html).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada data stok.</td></tr>`;
 }
-/* ================= REPORT ================= */
-function renderReport(){
 
-  const trx =
-  JSON.parse(localStorage.transaksi || "[]");
+function renderReport() {
+  const tbody = document.getElementById("reportBody"); if(!tbody) return; tbody.innerHTML = "";
+  const filterTgl = document.getElementById("reportTanggal").value;
+  const filterJenis = document.getElementById("reportJenis").value;
+  const search = document.getElementById("searchReport").value.toLowerCase();
 
-  const tglFilter =
-  document.getElementById(
-    "reportTanggal"
-  ).value;
+  let html = "";
+  MEMORY.transaksi.forEach(t => {
+    const tglStr = t.tanggal ? new Date(t.tanggal).toISOString().split('T')[0] : "";
+    if(filterTgl && tglStr !== filterTgl) return;
+    if(filterJenis && t.jenis !== filterJenis) return;
+    if(search && !(t.nama.toLowerCase().includes(search) || t.kode.toLowerCase().includes(search) || String(t.noSpb).toLowerCase().includes(search))) return;
 
-  const jenisFilter =
-  document.getElementById(
-    "reportJenis"
-  ).value;
-
-  const search =
-  document.getElementById(
-    "searchReport"
-  ).value.toLowerCase();
-
-  const sorted =
-  trx.sort((a,b)=>
-    new Date(b.tanggal)
-    - new Date(a.tanggal)
-  );
-
-  reportBody.innerHTML = "";
-
-  sorted.forEach(t=>{
-
-    if(
-      tglFilter &&
-      !t.tanggal.startsWith(
-        tglFilter
-      )
-    ) return;
-
-    if(
-      jenisFilter &&
-      t.jenis !== jenisFilter
-    ) return;
-
-    if(
-      search &&
-      !(
-        t.kode.toLowerCase()
-        .includes(search)
-        ||
-        t.nama.toLowerCase()
-        .includes(search)
-      )
-    ) return;
-
-    reportBody.innerHTML += `
-    <tr>
-      <td>${formatTanggalJam(t.tanggal)}</td>
+    html += `<tr>
+      <td>${t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-"}</td>
+      <td>${t.noSpb || "-"}</td>
       <td>${t.kode}</td>
       <td>${t.nama}</td>
       <td>${t.kategori || "-"}</td>
       <td>${t.line || "-"}</td>
       <td>${t.pic || "-"}</td>
-      <td>${t.qty}</td>
-      <td>${t.satuan || "-"}</td>
-      <td>${t.jenis}</td>
+      <td><strong>${t.qty}</strong></td>
+      <td>${t.satuan}</td>
+      <td><span style="font-weight:bold; color:${t.jenis==='Masuk'?'#10b981':'#f97316'}">${t.jenis}</span></td>
+      <td>${t.statusSpb || "DONE"}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html || `<tr><td colspan="11" style="text-align:center;">Log transaksi kosong.</td></tr>`;
+}
 
-<td>
-  <span style="
-    padding:4px 8px;
-    border-radius:6px;
-    font-size:12px;
-    font-weight:bold;
-    background:
-    ${t.jenis === 'Keluar'
-      ? '#dcfce7'
-      : '#dbeafe'};
-    color:
-    ${t.jenis === 'Keluar'
-      ? '#166534'
-      : '#1e40af'};
-  ">
-    ${
-      t.jenis === 'Keluar'
-      ? 'Delivered'
-      : 'Received'
-    }
-  </span>
-</td>
+function tampilMaster() {
+  const tbody = document.getElementById("masterBody"); if(!tbody) return; tbody.innerHTML = "";
+  MEMORY.masterData.forEach(m => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${m.barcode}</strong></td>
+      <td>${m.nama}</td>
+      <td>${m.satuan}</td>
+      <td>${m.minStock || 0}</td>
+      <td>${m.kategori}</td>
+      <td><button class="btn-mini btn-danger" onclick="hapusMasterBarang('${m.barcode}')">Hapus</button></td>
     </tr>`;
   });
 }
-  /* ================= DOWNLOAD STOCK ================= */
-function downloadStockExcel(){
 
-  const master =
-  JSON.parse(
-    localStorage.masterData || "[]"
-  );
-
-  const trx =
-  JSON.parse(
-    localStorage.transaksi || "[]"
-  );
-
-  const stockAwal =
-  JSON.parse(
-    localStorage.stockAwal || "{}"
-  );
-
-  let stockMap = {};
-
-  // Ambil saldo awal stock opname
-  master.forEach(m => {
-
-    stockMap[m.barcode] =
-    Number(
-      stockAwal[m.barcode]
-    ) || 0;
-
-  });
-
-  // Hitung transaksi masuk & keluar
-  trx.forEach(t => {
-
-    stockMap[t.kode] =
-    stockMap[t.kode] || 0;
-
-    stockMap[t.kode] +=
-      t.jenis === "Masuk"
-      ? Number(t.qty)
-      : -Number(t.qty);
-
-  });
-
-  // Susun data export
-  const stockData =
-master.map(m => {
-
-  const sisa =
-  stockMap[m.barcode] || 0;
-
-  let status = "Aman";
-
-  if(sisa <= 0){
-    status = "Habis";
+function isiMasterOtomatis() {
+  const ex = MEMORY.masterData.find(x => x.barcode === document.getElementById("mBarcode").value.trim());
+  if(ex) {
+    document.getElementById("mNama").value = ex.nama;
+    document.getElementById("mSatuan").value = ex.satuan;
+    document.getElementById("mMinimal").value = ex.minStock || 0;
+    document.getElementById("mKategori").value = ex.kategori;
   }
-  else if(sisa <= m.minimal){
-    status = "Warning";
-  }
-
-  return {
-
-    Kode: m.barcode,
-    Nama: m.nama,
-    Kategori: m.kategori || "-",
-    Line: m.line || "-",
-    Satuan: m.satuan || "-",
-    Sisa_Stok: sisa,
-    Minimal: m.minimal || 0,
-    Status: status
-
-  };
-
-});
-
-// URUTKAN DARI STOK TERKECIL
-stockData.sort(
-  (a,b) =>
-  a.Sisa_Stok - b.Sisa_Stok
-);
-
-const ws_data = stockData;
-  const wb =
-  XLSX.utils.book_new();
-const now = new Date();
-
-ws_data.unshift({
-  Kode: "Tanggal Download",
-  Nama: now.toLocaleDateString("id-ID"),
-  Kategori: "",
-  Line: "",
-  Satuan: "",
-  Sisa_Stok: "",
-  Minimal: "",
-  Status: ""
-});
-
-ws_data.unshift({
-  Kode: "Jam Download",
-  Nama: now.toLocaleTimeString("id-ID"),
-  Kategori: "",
-  Line: "",
-  Satuan: "",
-  Sisa_Stok: "",
-  Minimal: "",
-  Status: ""
-});
-  
-  const ws =
-  XLSX.utils.json_to_sheet(
-    ws_data
-  );
-
-  XLSX.utils.book_append_sheet(
-    wb,
-    ws,
-    "Sisa Stock"
-  );
-
-  XLSX.writeFile(
-    wb,
-    "Sisa_Stock.xlsx"
-  );
-
 }
+
+function tambahMaster() {
+  const barcode = document.getElementById("mBarcode").value.trim();
+  const nama = document.getElementById("mNama").value.trim();
+  const satuan = document.getElementById("mSatuan").value.trim();
+  const minStock = Number(document.getElementById("mMinimal").value);
+  const kategori = document.getElementById("mKategori").value.trim();
+
+  if(!barcode || !nama) return alert("Barcode dan Nama Wajib Diisi!");
+  showLoading(true, "Menyimpan ke Master Data...");
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahMaster`, {
+    method: "POST",
+    body: JSON.stringify({ barcode, nama, satuan, minStock, kategori })
+  })
+  .then(() => { resetFormMaster(); fetchDatabaseAll(); });
+}
+
+function resetFormMaster() {
+  document.getElementById("mBarcode").value = ""; document.getElementById("mNama").value = "";
+  document.getElementById("mSatuan").value = ""; document.getElementById("mMinimal").value = "0";
+  document.getElementById("mKategori").value = "";
+}
+
+function prosesUploadStokAktual() {
+  const fileInput = document.getElementById("excelStockFile");
+  if(fileInput.files.length === 0) return alert("Pilih file excel penyesuaian stok terlebih dahulu!");
   
-/* ================= DOWNLOAD REPORT ================= */
-function downloadReportExcel(){
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
 
-  const trx =
-  JSON.parse(
-    localStorage.transaksi || "[]"
-  );
+    showLoading(true, "Membaca dan menimpa database sisa stok aktual...");
+    fetch(`${BASE_CLOUD_URL}?target=overwriteStokAktual`, {
+      method: "POST",
+      body: JSON.stringify({ excelData: rawData })
+    })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        alert("⚡ Sinkronisasi Berhasil! Sisa stok gudang telah diperbarui sesuai data aktual.");
+        fileInput.value = "";
+        fetchDatabaseAll();
+      }
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
 
-  if(!trx.length){
-    alert(
-      "Tidak ada data untuk di download"
-    );
-    return;
+function hitungSisaStok(barcode, minStock) {
+  let sisa = Number(MEMORY.stockAwal[barcode] || 0);
+  MEMORY.transaksi.forEach(t => {
+    if(t.kode === barcode) {
+      if(t.jenis === "Masuk") sisa += Number(t.qty);
+      if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
+    }
+  });
+  let status = "Stok Aman";
+  if(sisa <= Number(minStock || 0)) status = "Reorder Limit";
+  if(sisa <= 0) status = "HABIS";
+  return { sisa, status };
+}
+
+function downloadStockExcel() {
+  if(MEMORY.masterData.length === 0) return alert("Tidak ada data master barang untuk diexport!");
+  const dataExport = MEMORY.masterData.map(m => {
+    const r = hitungSisaStok(m.barcode, m.minStock);
+    return {
+      "Kode Barang": m.barcode,
+      "Nama Barang": m.nama,
+      "Kategori": m.kategori || "-",
+      "Sisa Stok": r.sisa,
+      "Satuan": m.satuan || "-",
+      "Min Stock": m.minStock || 0,
+      "Status Kondisi": r.status
+    };
+  });
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok Gudang");
+  XLSX.writeFile(wb, `Sisa_Stok_Gudang_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function downloadReportExcel() {
+  if(MEMORY.transaksi.length === 0) return alert("Tidak ada data log transaksi untuk diexport!");
+  const dataExport = MEMORY.transaksi.map(t => ({
+    "Tanggal": t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-",
+    "No. SPB": t.noSpb || "-",
+    "Kode Barang": t.kode,
+    "Nama Barang": t.nama,
+    "Kategori": t.kategori || "-",
+    "Line / Section": t.line || "-",
+    "PIC": t.pic || "-",
+    "Qty": t.qty,
+    "Satuan": t.satuan,
+    "Jenis": t.jenis,
+    "Status SPB": t.statusSpb || "DONE"
+  }));
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:30},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:12}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Log Transaksi");
+  XLSX.writeFile(wb, `Log_Transaksi_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+// ---------- EXPORT SPB DENGAN FILTER (Department / Tanggal / Status) ----------
+function openSpbExportModal() {
+  const deptSelect = document.getElementById("exportDept");
+  if(deptSelect.options.length <= 1) {
+    Object.keys(SECTION_MAP).forEach(dept => {
+      const opt = document.createElement("option"); opt.value = dept; opt.textContent = dept; deptSelect.appendChild(opt);
+    });
   }
+  document.getElementById("spbExportModal").style.display = "flex";
+}
+function closeSpbExportModal() { document.getElementById("spbExportModal").style.display = "none"; }
 
-  const now =
-  new Date();
+function downloadSpbExcelFiltered() {
+  const dept = document.getElementById("exportDept").value;
+  const tglDari = document.getElementById("exportTglDari").value;
+  const tglSampai = document.getElementById("exportTglSampai").value;
+  const status = document.getElementById("exportStatus").value;
 
-  const ws_data =
-  trx.map(t => ({
+  const filtered = (MEMORY.spbList || []).filter(x => {
+    const spbDept = x.department || x.Department || "-";
+    const spbStatus = x.status || x.Status || "OPEN";
+    if(dept && spbDept !== dept) return false;
+    if(status && spbStatus !== status) return false;
+    if(x.tanggal || x.Tanggal) {
+      const dStr = new Date(x.tanggal || x.Tanggal).toISOString().split('T')[0];
+      if(tglDari && dStr < tglDari) return false;
+      if(tglSampai && dStr > tglSampai) return false;
+    }
+    return true;
+  });
 
-    Tanggal:
-    formatTanggalJam(
-      t.tanggal
-    ),
+  if(filtered.length === 0) return alert("Tidak ada data SPB yang sesuai dengan filter dipilih!");
 
-    Kode:
-    t.kode,
-
-    Nama:
-    t.nama,
-
-    Kategori:
-    t.kategori || "-",
-
-    Line:
-    t.line || "-",
-
-    PIC:
-    t.pic || "-",
-
-    Qty:
-    t.qty,
-
-    Satuan:
-    t.satuan || "-",
-
-    Jenis:
-    t.jenis
-
+  const ringkasan = filtered.map(x => ({
+    "Nomor SPB": x.nomorSpb || x.noSpb || x.NoSpb,
+    "Tanggal": (x.tanggal || x.Tanggal) ? new Date(x.tanggal || x.Tanggal).toLocaleDateString('id-ID') : "-",
+    "Department": x.department || x.Department || "-",
+    "Section / Line": x.line || x.Line || "-",
+    "PIC": x.pic || x.Pic || x.PIC || "-",
+    "Jumlah Jenis Item": x.jumlahJenis || (x.items ? x.items.length : 0),
+    "Status": x.status || x.Status || "OPEN"
   }));
 
-  // Tambah info download
-  ws_data.unshift({
-    Tanggal:
-    "Tanggal Download",
-    Kode:
-    now.toLocaleDateString("id-ID"),
-    Nama:"",
-    Kategori:"",
-    Line:"",
-    PIC:"",
-    Qty:"",
-    Satuan:"",
-    Jenis:""
+  const detail = [];
+  filtered.forEach(x => {
+    const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb;
+    (x.items || []).forEach(it => {
+      detail.push({
+        "Nomor SPB": nomorSpbAktif,
+        "Department": x.department || x.Department || "-",
+        "Section / Line": x.line || x.Line || "-",
+        "PIC": x.pic || x.Pic || x.PIC || "-",
+        "Kode Barang": it.kode || it.kodeBarang,
+        "Nama Barang": it.nama || it.namaBarang,
+        "Kategori": it.kategori || "-",
+        "Qty": it.qty,
+        "Satuan": it.satuan,
+        "Status SPB": x.status || x.Status || "OPEN"
+      });
+    });
   });
 
-  ws_data.unshift({
-    Tanggal:
-    "Jam Download",
-    Kode:
-    now.toLocaleTimeString("id-ID"),
-    Nama:"",
-    Kategori:"",
-    Line:"",
-    PIC:"",
-    Qty:"",
-    Satuan:"",
-    Jenis:""
-  });
+  const wb = XLSX.utils.book_new();
+  const wsRingkasan = XLSX.utils.json_to_sheet(ringkasan);
+  wsRingkasan['!cols'] = [{wch:20},{wch:12},{wch:14},{wch:16},{wch:18},{wch:16},{wch:10}];
+  const wsDetail = XLSX.utils.json_to_sheet(detail);
+  wsDetail['!cols'] = [{wch:20},{wch:14},{wch:16},{wch:18},{wch:14},{wch:30},{wch:16},{wch:8},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsRingkasan, "Ringkasan SPB");
+  XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Item SPB");
 
-  const wb =
-  XLSX.utils.book_new();
-
-  const ws =
-  XLSX.utils.json_to_sheet(
-    ws_data
-  );
-
-  XLSX.utils.book_append_sheet(
-    wb,
-    ws,
-    "Report Transaksi"
-  );
-
-  XLSX.writeFile(
-    wb,
-    "Report_Transaksi.xlsx"
-  );
-
-}
-/* ================= SCANNER ================= */
-let scanner;
-function startScanner(){
-  const scannerArea=document.getElementById("scannerArea");
-  scannerArea.style.display="block";
-  if(scanner) return;
-  scanner=new Instascan.Scanner({video:document.getElementById('preview')});
-  scanner.addListener('scan', function(content){
-    kodeBarang.value=content;
-    isiOtomatis();
-    scanner.stop();
-    scannerArea.style.display="none";
-  });
-  Instascan.Camera.getCameras().then(function(cameras){
-    if(cameras.length>0) scanner.start(cameras[0]);
-    else alert('Tidak ada kamera ditemukan');
-  }).catch(function(e){
-    console.error(e);
-    alert('Gagal mengakses kamera: '+e);
-  });
-}
-/* ================= AUTO DELETE HISTORY > 2 BULAN ================= */
-function cleanupOldTransactions(){
-  let trx = JSON.parse(localStorage.transaksi || "[]");
-
-  // tanggal hari ini
-  const today = new Date();
-
-  // batas 2 bulan ke belakang
-  const limitDate = new Date();
-  limitDate.setMonth(today.getMonth() - 2);
-
-  // filter transaksi yang masih <= 2 bulan
-  trx = trx.filter(t => {
-    const trxDate = new Date(t.tanggal);
-    return trxDate >= limitDate;
-  });
-
-  // simpan ulang ke localStorage
-  localStorage.transaksi = JSON.stringify(trx);
-
-  console.log("History transaksi >2 bulan sudah dibersihkan");
-}
-/* ================= LOAD AWAL ================= */
-function loadAll(){
-  cleanupOldTransactions(); // auto hapus history > 2 bulan
-  tampilMaster();
-  renderStock();
-  renderReport();
+  const labelDept = dept || "SemuaDept";
+  XLSX.writeFile(wb, `Export_SPB_${labelDept}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  closeSpbExportModal();
 }
 
-/* ================= FORMAT TANGGAL + JAM ================= */
-function formatTanggalJam(iso){
-  const d = new Date(iso);
-  return d.toLocaleString("id-ID", {
-    day: "2-digit",
-    month: "long",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+let scannerObj = null;
+function startScanner() {
+  document.getElementById("scannerArea").style.display = "block";
+  if(!scannerObj) {
+    scannerObj = new Instascan.Scanner({ video: document.getElementById('preview') });
+    scannerObj.addListener('scan', function(content) {
+      document.getElementById("kodeBarang").value = content;
+      isiOtomatis();
+      document.getElementById("scannerArea").style.display = "none";
+      scannerObj.stop();
+    });
+  }
+  Instascan.Camera.getCameras().then(function(cameras) {
+    if (cameras.length > 0) { scannerObj.start(cameras[0]); } else { alert('Kamera tidak ditemukan.'); }
+  }).catch(function(e) { console.error(e); });
 }
 </script>
 </body>
