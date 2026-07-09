@@ -46,6 +46,7 @@ tr:hover {background-color:#f8fafc}
 
 .badge-normal{background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
 .badge-over{background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-adjusted{background:#ffedd5;color:#c2410c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
 .badge-open {background:#ffedd5; color:#c2410c; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 .badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 
@@ -241,8 +242,12 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
 <h2>3. Budget Kontrol & Limit Bulanan</h2>
 <div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px;">
+  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
     <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>✏️ Adjust</strong> untuk merubah jatah limit bulanan.</p>
+    <div style="display:flex; gap:8px; flex-wrap:wrap;">
+      <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">📊 Download Excel</button>
+      <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">🔄 Refresh</button>
+    </div>
   </div>
   <div style="overflow-x:auto">
     <table>
@@ -250,6 +255,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <tbody id="budgetControlBody"></tbody>
     </table>
   </div>
+  <p id="budgetControlNote" style="font-size:12px; color:#94a3b8; margin-top:10px;"></p>
 </div>
 
 <h2>Sisa Stock Gudang Aktif</h2>
@@ -452,10 +458,10 @@ const SECTION_MAP = {
   "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Peredam", "PVC", "SMS", "Stiffener", "Office", "KRB", "Asphalt sheet"],
   "Logistic": ["Drum", "WHS Cikarang", "WHS Tangerang", "Shipping", "PPIC", "Office"],
   "HR": ["HR-GA", "HR-MTC", "HR-SEC", "HR-PER"],
-  "Engineering": ["Office", "Engineering General"],
+  "Engineering": ["Engineering Field", "Engineering Project"],
   "OS": ["Office", "OS Support"],
-  "QA / QC": ["QA", "QC", "Office"],
-  "Technical": ["Office", "Technical Team"],
+  "QA / QC": ["QA", "QC"],
+  "Technical": ["Office"],
   "Finance": ["Finance Cikarang", "Finance Kedoya"],
   "IT": ["IT Cikarang", "IT Kedoya"],
   "Accounting": ["Accounting"],
@@ -1120,7 +1126,8 @@ function simpanBarangMasuk() {
 
 function renderBudgetControl() {
   const tbody = document.getElementById("budgetControlBody"); if(!tbody) return; tbody.innerHTML = "";
-  let html = "";
+  const note = document.getElementById("budgetControlNote");
+  let rows = [];
   MEMORY.masterData.forEach(m => {
     for (const dept in SECTION_MAP) {
       SECTION_MAP[dept].forEach(line => {
@@ -1135,23 +1142,82 @@ function renderBudgetControl() {
         });
 
         const limitMax = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
-        if(aktualPakai === 0 && limitMax == 2) return; 
+        const sudahDiAdjust = MEMORY.budgetLimits[key] !== undefined && limitMax !== 2;
+        if(aktualPakai === 0 && limitMax == 2) return;
 
-        const statusEff = aktualPakai > limitMax ? `<span class="badge-over">OVER BUDGET</span>` : `<span class="badge-normal">AMAN (EFISIEN)</span>`;
-        html += `<tr>
-          <td>${m.barcode}</td>
-          <td>${m.nama}</td>
-          <td><small>${dept} - ${line}</small></td>
-          <td><strong>${limitMax}</strong></td>
-          <td>${aktualPakai}</td>
-          <td>${statusEff}</td>
-          <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td>
-        </tr>`;
+        // Prioritas urutan tampilan: 0 = Over Budget (paling atas), 1 = Ok Adjustment, 2 = Aman (Efisien)
+        let priority = 2;
+        let statusLabel = "AMAN (EFISIEN)";
+        let statusEff = `<span class="badge-normal">AMAN (EFISIEN)</span>`;
+        if(sudahDiAdjust) { priority = 1; statusLabel = "OK ADJUSTMENT"; statusEff = `<span class="badge-adjusted">OK ADJUSTMENT</span>`; }
+        if(aktualPakai > limitMax) { priority = 0; statusLabel = "OVER BUDGET"; statusEff = `<span class="badge-over">OVER BUDGET</span>`; }
+
+        rows.push({
+          priority, statusLabel,
+          kode: m.barcode, nama: m.nama, dept, line, limitMax, aktualPakai,
+          html: `<tr>
+            <td>${m.barcode}</td>
+            <td>${m.nama}</td>
+            <td><small>${dept} - ${line}</small></td>
+            <td><strong>${limitMax}</strong></td>
+            <td>${aktualPakai}</td>
+            <td>${statusEff}</td>
+            <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td>
+          </tr>`
+        });
       });
     }
   });
-  tbody.innerHTML = html || `<tr><td colspan="7" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
+
+  // Urutkan: Over Budget dulu, lalu Ok Adjustment, baru Aman (Efisien)
+  rows.sort((a, b) => a.priority - b.priority);
+
+  // Simpan data lengkap (belum dipotong) untuk kebutuhan Download Excel
+  window.__budgetControlAllRows = rows;
+
+  const displayRows = rows.slice(0, 30);
+  tbody.innerHTML = displayRows.length ? displayRows.map(r => r.html).join("") : `<tr><td colspan="7" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
+
+  if(note) {
+    note.innerText = rows.length > 30
+      ? `Menampilkan 30 dari ${rows.length} data (diurutkan: Over Budget → Ok Adjustment → Aman). Gunakan tombol Download Excel untuk melihat seluruh data.`
+      : (rows.length > 0 ? `Menampilkan seluruh ${rows.length} data.` : "");
+  }
+
   applyRole();
+}
+
+function downloadBudgetControlExcel() {
+  const rows = window.__budgetControlAllRows || [];
+  if(rows.length === 0) return alert("Tidak ada data Budget Kontrol untuk diexport!");
+  const dataExport = rows.map(r => ({
+    "Kode Barang": r.kode,
+    "Nama Barang": r.nama,
+    "Department": r.dept,
+    "Section / Line": r.line,
+    "Batas Max": r.limitMax,
+    "Aktual Pakai": r.aktualPakai,
+    "Status Efisiensi": r.statusLabel
+  }));
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Budget Kontrol");
+  XLSX.writeFile(wb, `Budget_Kontrol_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function refreshBudgetControl() {
+  showLoading(true, "Me-refresh data Budget Kontrol...");
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        MEMORY = resObj.data;
+        renderBudgetControl();
+        showDoneMessage("🔄 Data Budget Kontrol berhasil di-refresh.");
+      } else { alert("Gagal me-refresh: " + resObj.message); }
+    })
+    .catch(err => alert("Kesalahan Jaringan: " + err))
+    .finally(() => showLoading(false));
 }
 
 function renderStock() {
