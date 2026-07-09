@@ -148,11 +148,16 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <label>Department *</label>
       <select id="spbDepartment" onchange="updateSectionDropdown()">
         <option value="">-- Pilih Department --</option>
+        <option value="Accounting">Accounting</option>
         <option value="Engineering">Engineering</option>
+        <option value="Finance">Finance</option>
         <option value="HR">HR</option>
+        <option value="IT">IT</option>
         <option value="Logistic">Logistic</option>
+        <option value="Marketing">Marketing</option>
         <option value="OS">OS</option>
         <option value="Production">Production</option>
+        <option value="Purchasing">Purchasing</option>
         <option value="QA / QC">QA / QC</option>
         <option value="Technical">Technical</option>
       </select>
@@ -444,13 +449,18 @@ let abCurrentKode = "";
 let abCurrentLine = "";
 
 const SECTION_MAP = {
-  "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Peredam", "PVC", "SMS", "Stiffener", "Office"],
-  "Logistic": ["Warehouse", "Shipping", "PPIC", "Office"],
-  "HR": ["HR-GA", "HR-MTC", "HR-SEC"],
+  "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Peredam", "PVC", "SMS", "Stiffener", "Office", "KRB", "Asphalt sheet"],
+  "Logistic": ["Drum", "WHS Cikarang", "WHS Tangerang", "Shipping", "PPIC", "Office"],
+  "HR": ["HR-GA", "HR-MTC", "HR-SEC", "HR-PER"],
   "Engineering": ["Office", "Engineering General"],
   "OS": ["Office", "OS Support"],
-  "QA / QC": ["QA/QC", "Office"], 
-  "Technical": ["Office", "Technical Team"]
+  "QA / QC": ["QA", "QC", "Office"],
+  "Technical": ["Office", "Technical Team"],
+  "Finance": ["Finance Cikarang", "Finance Kedoya"],
+  "IT": ["IT Cikarang", "IT Kedoya"],
+  "Accounting": ["Accounting"],
+  "Purchasing": ["Purchasing"],
+  "Marketing": ["Marketing"]
 };
 
 function showLoading(sts, txt = "Sinkronisasi Data Google Sheets...") { 
