@@ -88,6 +88,14 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 .close-btn {background:#64748b; color:#fff; padding:6px 12px; float:right; border-radius:6px; cursor:pointer; font-weight:600; border:none;}
 .chk-verify {width: 20px; height: 20px; margin: 0; cursor: pointer;}
 
+/* PRINTER STATUS PILL */
+.printer-pill{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; cursor:pointer; border:1px solid transparent;}
+.printer-pill.connected{background:#dcfce7; color:#15803d; border-color:#86efac;}
+.printer-pill.disconnected{background:#fee2e2; color:#b91c1c; border-color:#fca5a5;}
+.printer-pill .dot{width:7px; height:7px; border-radius:50%;}
+.printer-pill.connected .dot{background:#22c55e;}
+.printer-pill.disconnected .dot{background:#ef4444;}
+
 /* ==================== APP SHELL / SIDEBAR (baru) ==================== */
 .app-shell{display:flex; min-height:100vh;}
 .sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.25); z-index:10; border-right:1px solid rgba(255,255,255,0.06);}
@@ -111,6 +119,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 .topbar{background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5; flex-wrap:wrap; gap:10px;}
 .topbar h2{margin:0; font-size:18px; border:0;}
 .topbar h2::before{display:none;}
+.topbar-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
 .tab-content{display:none;}
 .tab-content.active{display:block;}
 @media (max-width: 900px){
@@ -194,7 +203,12 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   <div class="main-content">
     <div class="topbar">
       <h2 id="topbarTitle">Dashboard</h2>
-      <span class="status-pill"><span class="dot"></span>Sistem Aktif</span>
+      <div class="topbar-right">
+        <span id="printerStatusPill" class="printer-pill disconnected" onclick="togglePrinterConnection()">
+          <span class="dot"></span><span id="printerStatusText">Printer Belum Terhubung</span>
+        </span>
+        <span class="status-pill"><span class="dot"></span>Sistem Aktif</span>
+      </div>
     </div>
     <div class="container">
 
@@ -467,6 +481,31 @@ tr:nth-child(even) { background-color: #fcfdfe; }
         </div>
 
         <div class="card">
+          <h3>Printer Struk Bluetooth (BLE)</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Sambungkan printer thermal Bluetooth (contoh: RPP02N / TM-58V) supaya tombol "Print Struk" pada Monitoring FPB bisa cetak langsung tanpa dialog print browser.</p>
+          <div class="row" style="align-items:center;">
+            <button class="btn-success" onclick="connectBluetoothPrinter()">Hubungkan Printer Bluetooth</button>
+            <button class="btn-danger" onclick="disconnectBluetoothPrinter()">Putuskan Koneksi</button>
+            <span id="printerNameLabel" style="font-size:13px; color:#64748b;">Belum ada printer terhubung.</span>
+          </div>
+
+          <div class="row" style="margin-top:18px; align-items:center; border-top:1px dashed #e2e8f0; padding-top:16px;">
+            <div style="flex:1; min-width:200px;">
+              <label>Ukuran Font Struk</label>
+              <select id="printerFontSize" onchange="savePrinterPrefs()">
+                <option value="normal">Normal</option>
+                <option value="besar">Besar (Lebih Mudah Dibaca)</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:8px; margin-top:22px;">
+              <input type="checkbox" id="printerIncludeLogo" onchange="savePrinterPrefs()" style="width:20px; height:20px; margin-top:0;">
+              <label style="margin:0;">Sertakan Logo Perusahaan di Struk</label>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#94a3b8; margin-top:8px; margin-bottom:0;">*Logo diambil dari logo yang sudah diupload di bagian "Logo Perusahaan" di atas. Printer thermal 58mm akan mencetak logo dalam hitam-putih.</p>
+        </div>
+
+        <div class="card">
           <h3>Daftarkan / Update Akun Akses Baru</h3>
           <div class="row">
             <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
@@ -627,6 +666,256 @@ let currentUsername = "";
 let abCurrentKode = "";
 let abCurrentLine = "";
 
+// ---------- PRINTER BLUETOOTH (ESC/POS via Web Bluetooth) ----------
+// UUID ditemukan lewat halaman tes koneksi (test-bluetooth-printer.html) khusus untuk printer RPP02N.
+const PRINTER_SERVICE_UUID = 'e7810a71-73ae-499d-8c15-faa9aef0c3f2';
+const PRINTER_CHAR_UUID = 'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f';
+let btPrinterDevice = null;
+let btPrinterCharacteristic = null;
+let printerFontSizePref = 'normal';
+let printerIncludeLogoPref = false;
+
+function loadPrinterPrefs() {
+  try {
+    printerFontSizePref = localStorage.getItem('printerFontSize') || 'normal';
+    printerIncludeLogoPref = localStorage.getItem('printerIncludeLogo') === 'true';
+  } catch(e) {
+    printerFontSizePref = 'normal';
+    printerIncludeLogoPref = false;
+  }
+  const selFont = document.getElementById('printerFontSize');
+  const chkLogo = document.getElementById('printerIncludeLogo');
+  if(selFont) selFont.value = printerFontSizePref;
+  if(chkLogo) chkLogo.checked = printerIncludeLogoPref;
+}
+
+function savePrinterPrefs() {
+  const selFont = document.getElementById('printerFontSize');
+  const chkLogo = document.getElementById('printerIncludeLogo');
+  printerFontSizePref = selFont ? selFont.value : 'normal';
+  printerIncludeLogoPref = chkLogo ? chkLogo.checked : false;
+  try {
+    localStorage.setItem('printerFontSize', printerFontSizePref);
+    localStorage.setItem('printerIncludeLogo', String(printerIncludeLogoPref));
+  } catch(e) {}
+  showDoneMessage('Preferensi struk disimpan.');
+}
+
+function updatePrinterStatusUI() {
+  const pill = document.getElementById('printerStatusPill');
+  const text = document.getElementById('printerStatusText');
+  const label = document.getElementById('printerNameLabel');
+  const connected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+
+  if (pill) pill.className = 'printer-pill ' + (connected ? 'connected' : 'disconnected');
+  if (text) text.innerText = connected ? `Printer Tersambung (${btPrinterDevice.name || 'Unknown'})` : 'Printer Belum Terhubung';
+  if (label) label.innerText = connected ? `Terhubung ke: ${btPrinterDevice.name || 'Unknown'}` : 'Belum ada printer terhubung.';
+}
+
+async function connectBluetoothPrinter() {
+  if (!navigator.bluetooth) {
+    alert('Browser ini tidak mendukung Web Bluetooth. Gunakan Chrome/Edge terbaru di desktop.');
+    return;
+  }
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [PRINTER_SERVICE_UUID, '49535343-fe7d-4ae5-8fa9-9fafd205e455', '000018f0-0000-1000-8000-00805f9b34fb']
+    });
+    await bindPrinterDevice(device);
+    showDoneMessage(`Printer "${device.name || 'perangkat'}" berhasil terhubung.`);
+  } catch (err) {
+    if (err.name !== 'NotFoundError') alert('Gagal menghubungkan printer: ' + err.message);
+  }
+}
+
+async function bindPrinterDevice(device) {
+  btPrinterDevice = device;
+  device.addEventListener('gattserverdisconnected', () => {
+    btPrinterCharacteristic = null;
+    updatePrinterStatusUI();
+  });
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(PRINTER_SERVICE_UUID);
+  const characteristic = await service.getCharacteristic(PRINTER_CHAR_UUID);
+  btPrinterCharacteristic = characteristic;
+  updatePrinterStatusUI();
+}
+
+function disconnectBluetoothPrinter() {
+  if (btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected) {
+    btPrinterDevice.gatt.disconnect();
+  }
+  btPrinterDevice = null;
+  btPrinterCharacteristic = null;
+  updatePrinterStatusUI();
+  showDoneMessage('Koneksi printer diputuskan.');
+}
+
+function togglePrinterConnection() {
+  const connected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+  if (connected) disconnectBluetoothPrinter(); else connectBluetoothPrinter();
+}
+
+// Coba sambung ulang otomatis ke printer yang sebelumnya sudah diberi izin,
+// TANPA memunculkan dialog pilih perangkat (butuh dukungan Persistent Permissions di Chrome).
+async function tryAutoReconnectPrinter() {
+  if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+  try {
+    const knownDevices = await navigator.bluetooth.getDevices();
+    if (knownDevices.length > 0) {
+      await bindPrinterDevice(knownDevices[0]);
+    }
+  } catch (e) {
+    // Diam saja jika gagal auto-reconnect; user tinggal klik "Hubungkan Printer Bluetooth" manual.
+  }
+}
+
+// Konversi logo perusahaan (data URL di localStorage) menjadi bitmap ESC/POS (perintah GS v 0)
+// supaya bisa ikut tercetak di bagian atas struk pada printer thermal 58mm (lebar cetak ~384 dot).
+function buildLogoBitmap() {
+  return new Promise((resolve) => {
+    let logoData = null;
+    try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+    if (!logoData) { resolve(new Uint8Array(0)); return; }
+
+    const img = new Image();
+    img.onload = function() {
+      try {
+        const targetWidth = 320; // dot, kelipatan 8, aman untuk kertas 58mm
+        const widthBytes = targetWidth / 8;
+        const scale = targetWidth / img.width;
+        const targetHeight = Math.max(8, Math.round(img.height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+        const raster = new Uint8Array(widthBytes * targetHeight);
+
+        for (let y = 0; y < targetHeight; y++) {
+          for (let x = 0; x < targetWidth; x++) {
+            const idx = (y * targetWidth + x) * 4;
+            const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2], a = imgData[idx+3];
+            const gray = (r * 0.3 + g * 0.59 + b * 0.11);
+            const isBlack = a > 100 && gray < 160;
+            if (isBlack) {
+              const byteIndex = y * widthBytes + (x >> 3);
+              raster[byteIndex] |= (0x80 >> (x % 8));
+            }
+          }
+        }
+
+        const xL = widthBytes & 0xFF, xH = (widthBytes >> 8) & 0xFF;
+        const yL = targetHeight & 0xFF, yH = (targetHeight >> 8) & 0xFF;
+        const header = new Uint8Array([0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH]);
+
+        const result = new Uint8Array(header.length + raster.length + 1);
+        result.set(header, 0);
+        result.set(raster, header.length);
+        result[result.length - 1] = 0x0A; // feed satu baris setelah logo
+        resolve(result);
+      } catch(e) {
+        resolve(new Uint8Array(0));
+      }
+    };
+    img.onerror = function() { resolve(new Uint8Array(0)); };
+    img.src = logoData;
+  });
+}
+
+// Encoder ESC/POS sederhana untuk kertas 58mm (32 karakter per baris umumnya)
+async function buildEscPosReceipt({ noSpb, line, pic, items, tglCetak, fontSize, includeLogo }) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const push = (arr) => chunks.push(arr);
+
+  const ESC_INIT = new Uint8Array([0x1B, 0x40]);
+  const ALIGN_CENTER = new Uint8Array([0x1B, 0x61, 0x01]);
+  const ALIGN_LEFT = new Uint8Array([0x1B, 0x61, 0x00]);
+  const BOLD_ON = new Uint8Array([0x1B, 0x45, 0x01]);
+  const BOLD_OFF = new Uint8Array([0x1B, 0x45, 0x00]);
+  const FEED_CUT = new Uint8Array([0x1D, 0x56, 0x01]);
+
+  // GS ! n -> n=0x00 normal, n=0x11 lebar 2x + tinggi 2x (untuk mode "Besar")
+  const SIZE_BIG = new Uint8Array([0x1D, 0x21, 0x11]);
+  const SIZE_NORMAL = new Uint8Array([0x1D, 0x21, 0x00]);
+  const SIZE_BODY = fontSize === 'besar' ? new Uint8Array([0x1D, 0x21, 0x01]) : SIZE_NORMAL; // 0x01 = tinggi 2x saja untuk body, biar tetap muat lebar
+
+  push(ESC_INIT);
+
+  if (includeLogo) {
+    const logoBytes = await buildLogoBitmap();
+    if (logoBytes.length > 0) {
+      push(ALIGN_CENTER);
+      push(logoBytes);
+    }
+  }
+
+  push(ALIGN_CENTER);
+  push(fontSize === 'besar' ? SIZE_BIG : SIZE_NORMAL);
+  push(BOLD_ON);
+  push(enc.encode('PT ARGAPURA\n'));
+  push(BOLD_OFF);
+  push(SIZE_NORMAL);
+  push(enc.encode('Formulir Permintaan Barang\n'));
+  push(enc.encode('--------------------------------\n'));
+  push(ALIGN_LEFT);
+  push(SIZE_BODY);
+  push(enc.encode(`No FPB : ${noSpb}\n`));
+  push(enc.encode(`Line   : ${line}\n`));
+  push(enc.encode(`PIC    : ${pic}\n`));
+  push(enc.encode(`Status : DONE\n`));
+  push(SIZE_NORMAL);
+  push(enc.encode('--------------------------------\n'));
+
+  items.forEach(it => {
+    push(SIZE_BODY);
+    push(enc.encode(`${it.nama}\n`));
+    push(SIZE_NORMAL);
+    push(enc.encode(`  ${it.kode}\n`));
+    push(enc.encode(`  Qty: ${it.qty} ${it.satuan}\n`));
+  });
+
+  push(enc.encode('--------------------------------\n'));
+  push(BOLD_ON);
+  push(enc.encode(`Total Jenis Barang: ${items.length}\n`));
+  push(BOLD_OFF);
+  push(enc.encode('\nTanda Tangan Penerima:\n\n\n'));
+  push(enc.encode(`( ${pic} )\n`));
+  push(enc.encode('--------------------------------\n'));
+  push(ALIGN_CENTER);
+  push(enc.encode(`Dicetak: ${tglCetak}\n`));
+  push(enc.encode('-- Terima Kasih --\n\n\n\n'));
+  push(FEED_CUT);
+
+  let totalLen = 0;
+  chunks.forEach(c => totalLen += c.length);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  chunks.forEach(c => { result.set(c, offset); offset += c.length; });
+  return result;
+}
+
+// Kirim data ke printer per-potongan (BLE punya batas ukuran paket / MTU)
+async function sendToBluetoothPrinter(bytes) {
+  if (!btPrinterCharacteristic) throw new Error('Printer belum terhubung.');
+  const CHUNK_SIZE = 180;
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.slice(i, i + CHUNK_SIZE);
+    if (btPrinterCharacteristic.properties.writeWithoutResponse) {
+      await btPrinterCharacteristic.writeValueWithoutResponse(chunk);
+    } else {
+      await btPrinterCharacteristic.writeValue(chunk);
+    }
+  }
+}
+
 const SECTION_MAP = {
   "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Peredam", "PVC", "SMS", "Stiffener", "Office", "KRB", "Asphalt sheet"],
   "Logistic": ["Drum", "WHS Cikarang", "WHS Tangerang", "Shipping", "PPIC", "Office"],
@@ -732,6 +1021,9 @@ function getRomanMonth(m) { return ["I","II","III","IV","V","VI","VII","VIII","I
 
 window.onload = function() {
   applyCompanyLogo();
+  updatePrinterStatusUI();
+  loadPrinterPrefs();
+  tryAutoReconnectPrinter();
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
     .then(resObj => { if(resObj.status === "SUCCESS") MEMORY = resObj.data; });
@@ -762,10 +1054,6 @@ function fetchDatabaseAll() {
 }
 
 // ---------- DASHBOARD ANALITIK ----------
-// Rekap "Barang Paling Banyak Diminta" sekarang dikelompokkan PER DEPARTMENT (bukan per kode barang lagi).
-// Diurutkan Pareto: Total Qty Diminta terbesar di atas, dengan kolom Kumulatif % supaya terlihat
-// department mana yang berkontribusi paling besar terhadap total permintaan.
-// Hover pada kolom "Jumlah FPB" akan menampilkan daftar nomor FPB milik department tsb.
 function renderDashboardTopSpbDept() {
   const tally = {};
   (MEMORY.spbList || []).forEach(spb => {
@@ -806,8 +1094,6 @@ function renderDashboardTopSpbDept() {
   }).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data FPB.</td></tr>`;
 }
 
-// Kartu ringkasan angka besar di bagian atas Dashboard (gaya seperti target/terkumpul/sisa)
-// Seluruh angka di bawah ini otomatis mengikuti bulan & tahun berjalan (bulan sekarang di komputer/HP pengguna).
 function renderDashboardStats() {
   const now = new Date();
   const bln = now.getMonth(); const thn = now.getFullYear();
@@ -1359,7 +1645,6 @@ function openSpbDetailModal(noSpb) {
 
   bSelesai.disabled = true;
 
-  // Atur tombol sesuai status FPB: OPEN -> tombol Selesai aktif, DONE -> langsung tampilkan tombol Print
   if (matchSpb.status === "DONE") {
     bSelesai.style.display = "none";
     bPrint.style.display = "inline-flex";
@@ -1395,7 +1680,6 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
       showDoneMessage(`FPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
       fetchDatabaseAll();
 
-      // Ubah tampilan modal jadi DONE tanpa menutup, supaya bisa langsung print struk
       document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
       document.getElementById("btnEksekusiSelesai").style.display = "none";
       document.getElementById("btnPrintSpb").style.display = "inline-flex";
@@ -1408,28 +1692,58 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
   .finally(() => showLoading(false));
 };
 
-function printSpbDetail() {
+// ---------- PRINT STRUK: coba cetak via Bluetooth dulu, fallback ke jendela print browser ----------
+async function printSpbDetail() {
   const noSpb = document.getElementById("mdNoSpb").innerText;
   const line = document.getElementById("mdLine").innerText;
   const pic = document.getElementById("mdPic").innerText;
   const tglCetak = new Date().toLocaleString('id-ID');
 
-  let rows = "";
-  let totalJenis = 0;
+  const items = [];
   document.querySelectorAll("#modalTableBody tr").forEach(tr => {
     const tds = tr.querySelectorAll("td");
     if (tds.length >= 5) {
-      totalJenis++;
-      rows += `
-        <div class="item-row">
-          <div class="item-checkbox"></div>
-          <div class="item-text">
-            <div class="item-name">${tds[2].innerText}</div>
-            <div class="item-sub">${tds[1].innerText}</div>
-            <div class="item-qty">${tds[3].innerText} ${tds[4].innerText}</div>
-          </div>
-        </div>`;
+      items.push({ kode: tds[1].innerText, nama: tds[2].innerText, qty: tds[3].innerText, satuan: tds[4].innerText });
     }
+  });
+
+  const printerConnected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+
+  if (printerConnected) {
+    try {
+      showLoading(true, "Mengirim struk ke printer Bluetooth...");
+      const bytes = await buildEscPosReceipt({
+        noSpb, line, pic, items, tglCetak,
+        fontSize: printerFontSizePref,
+        includeLogo: printerIncludeLogoPref
+      });
+      await sendToBluetoothPrinter(bytes);
+      showDoneMessage(`Struk FPB ${noSpb} berhasil dikirim ke printer.`);
+    } catch (err) {
+      alert('Gagal cetak lewat Bluetooth: ' + err.message + '\nMenggunakan jendela print browser sebagai cadangan.');
+      printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak);
+    } finally {
+      showLoading(false);
+    }
+  } else {
+    // Printer belum terhubung -> pakai jendela print browser biasa (perilaku lama)
+    printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak);
+  }
+}
+
+function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
+  let rows = "";
+  let totalJenis = items.length;
+  items.forEach(it => {
+    rows += `
+      <div class="item-row">
+        <div class="item-checkbox"></div>
+        <div class="item-text">
+          <div class="item-name">${it.nama}</div>
+          <div class="item-sub">${it.kode}</div>
+          <div class="item-qty">${it.qty} ${it.satuan}</div>
+        </div>
+      </div>`;
   });
 
   const win = window.open('', '_blank', 'width=400,height=600');
@@ -1563,7 +1877,6 @@ function renderBudgetControl() {
         const sudahDiAdjust = MEMORY.budgetLimits[key] !== undefined && limitMax !== 2;
         if(aktualPakai === 0 && limitMax == 2) return;
 
-        // Prioritas urutan tampilan: 0 = Over Budget (paling atas), 1 = Ok Adjustment, 2 = Aman (Efisien)
         let priority = 2;
         let statusLabel = "AMAN (EFISIEN)";
         let statusEff = `<span class="badge-normal">AMAN (EFISIEN)</span>`;
@@ -1587,10 +1900,8 @@ function renderBudgetControl() {
     }
   });
 
-  // Urutkan: Over Budget dulu, lalu Ok Adjustment, baru Aman (Efisien)
   rows.sort((a, b) => a.priority - b.priority);
 
-  // Simpan data lengkap (belum dipotong) untuk kebutuhan Download Excel
   window.__budgetControlAllRows = rows;
 
   const displayRows = rows.slice(0, 30);
@@ -1649,8 +1960,6 @@ function renderStock() {
     kats.forEach(k => { ddown.innerHTML += `<option value="${k}">${k}</option>`; });
   }
 
-  // Kumpulkan dulu semua baris + hitung prioritas status (0=Habis, 1=Warning, 2=Aman)
-  // supaya bisa diurutkan: Habis paling atas, lalu Warning, baru Aman.
   let rows = [];
   MEMORY.masterData.forEach(m => {
     if(filterKat && m.kategori !== filterKat) return;
@@ -1665,7 +1974,7 @@ function renderStock() {
     });
 
     let statusKondisi = `<span class="status-aman">Stok Aman</span>`;
-    let priority = 2; // 0 = Habis, 1 = Warning, 2 = Aman
+    let priority = 2;
     if(sisa <= Number(m.minStock || 0)) { statusKondisi = `<span class="status-warning">Reorder Limit</span>`; priority = 1; }
     if(sisa <= 0) { statusKondisi = `<span class="status-habis">HABIS</span>`; priority = 0; }
 
@@ -1682,7 +1991,6 @@ function renderStock() {
     });
   });
 
-  // Urutkan: prioritas status dulu (Habis > Warning > Aman), lalu sisa stok terkecil dulu dalam grup yang sama
   rows.sort((a, b) => a.priority - b.priority || a.sisa - b.sisa);
 
   tbody.innerHTML = rows.length ? rows.map(r => r.html).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada data stok.</td></tr>`;
