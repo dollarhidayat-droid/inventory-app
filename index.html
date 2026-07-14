@@ -91,10 +91,10 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 /* ==================== APP SHELL / SIDEBAR (baru) ==================== */
 .app-shell{display:flex; min-height:100vh;}
 .sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.25); z-index:10; border-right:1px solid rgba(255,255,255,0.06);}
-.sidebar-brand{display:flex; align-items:center; gap:10px;}
+.sidebar-brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
 .sidebar-brand img{width:40px; height:40px; border-radius:10px; object-fit:cover; display:none; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.25);}
 .sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px; line-height:1.2;}
-.sidebar-brand p{margin:4px 0 20px; font-size:12px; color:#94a3b8; font-weight:600;}
+.sidebar-brand p{margin:4px 0 0; font-size:12px; color:#94a3b8; font-weight:600; line-height:1.2;}
 .sidebar-userbox{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; font-size:12px; margin-bottom:18px; line-height:1.5; color:#94a3b8;}
 .sidebar-userbox strong{color:#fff; font-size:13.5px;}
 .sidebar-userbox .role-pill{display:inline-block; margin-top:7px; background:#10b981; color:#052e1f; font-weight:800; font-size:10.5px; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
@@ -224,11 +224,11 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           </div>
         </div>
 
-        <div class="row" style="margin-top:15px;">
-          <div class="card" style="flex:2; min-width:320px;">
+        <div class="row" style="margin-top:15px; align-items:stretch;">
+          <div class="card" style="flex:2; min-width:320px; display:flex; flex-direction:column; max-height:480px;">
             <h3 style="margin:0;">Barang Paling Banyak Diminta per Department</h3>
             <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Diurutkan dari yang paling banyak mengajukan FPB (Pareto). Arahkan kursor ke "Jumlah FPB" untuk melihat daftar nomor FPB.</p>
-            <div style="overflow-x:auto; margin-top:15px;">
+            <div style="overflow-x:auto; overflow-y:auto; margin-top:15px; flex:1;">
               <table>
                 <thead><tr style="background:#f1f5f9"><th>#</th><th>Department</th><th>Jumlah FPB</th><th>Total Qty Diminta</th><th>Kumulatif %</th></tr></thead>
                 <tbody id="dashTopSpbBody"></tbody>
@@ -236,9 +236,9 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             </div>
           </div>
 
-          <div class="card" style="flex:1; min-width:280px;">
+          <div class="card" style="flex:1; min-width:280px; display:flex; flex-direction:column; max-height:480px;">
             <h3 style="margin:0;">Barang Paling Banyak Keluar (Realisasi)</h3>
-            <div style="overflow-x:auto; margin-top:15px;">
+            <div style="overflow-x:auto; overflow-y:auto; margin-top:15px; flex:1;">
               <table>
                 <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
                 <tbody id="dashTopKeluarBody"></tbody>
