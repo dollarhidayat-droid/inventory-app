@@ -5,17 +5,18 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Inventory Stok HR-GA PT Argapura</title>
 <style>
-body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;margin:0;background:#f1f5f9;color:#334155;line-height:1.5}
+*{box-sizing:border-box}
+body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;margin:0;background:#f1f5f9;color:#334155;line-height:1.5;overflow-x:hidden}
 .container{max-width:1200px;margin:30px auto;padding:0 20px}
 
 h2{color:#0f172a;margin-top:35px;font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
-h2::before{content:''; display:inline-block; width:4px; height:20px; background:#2563eb; border-radius:2px}
-h3{color:#1e40af; font-size:16px; margin-top:0; margin-bottom:15px; font-weight:600}
+h2::before{content:''; display:inline-block; width:4px; height:20px; background:#10b981; border-radius:2px}
+h3{color:#0f172a; font-size:16px; margin-top:0; margin-bottom:15px; font-weight:600}
 
 input,select{width:100%;padding:10px 14px;margin-top:6px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:14px;background:#fff;transition:all 0.2s}
-input:focus,select:focus{border-color:#2563eb;outline:none;box-shadow:0 0 0 3px rgba(37,99,235,0.15)}
-button{padding:10px 18px;border:none;border-radius:8px;background:#2563eb;color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center}
-button:hover{background:#1d4ed8;transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(37,99,235,0.2)}
+input:focus,select:focus{border-color:#10b981;outline:none;box-shadow:0 0 0 3px rgba(16,185,129,0.15)}
+button{padding:10px 18px;border:none;border-radius:8px;background:#10b981;color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center}
+button:hover{background:#059669;transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(16,185,129,0.25)}
 button:disabled{background:#cbd5e1 !important; color:#94a3b8 !important; cursor:not-allowed; transform:none !important; box-shadow:none !important;}
 
 .btn-mini{padding:4px 8px; font-size:11px; border-radius:4px; font-weight:600}
@@ -46,42 +47,66 @@ tr:hover {background-color:#f8fafc}
 .badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 
 /* LOGIN OVERLAY */
-#loginOverlay {position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%); display: flex; align-items: center; justify-content: center; z-index: 999;}
-#loginPanel {background: #ffffff; width: 440px; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);}
-.login-header h2 { margin: 0; color: #1e3a8a; font-size: 26px; font-weight: 800; display:flex; align-items:center; gap:8px;}
+#loginOverlay {position: fixed; inset: 0; background: #0b1120; display: flex; align-items: center; justify-content: center; z-index: 999; padding:16px;}
+#loginPanel {background: #ffffff; width: 440px; max-width:100%; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);}
+.login-header{text-align:center}
+.login-header img{width:64px;height:64px;border-radius:14px;object-fit:cover;margin-bottom:12px;display:none;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.login-header h2 { margin: 0; color: #0f172a; font-size: 26px; font-weight: 800; display:flex; align-items:center; justify-content:center; gap:8px;}
 .login-header p { margin: 5px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600; }
 .input-group { text-align: left; margin-bottom: 20px; }
 .input-group label { font-size: 13px; font-weight: 600; color: #475569; }
+
+/* STATUS PILL (topbar) */
+.status-pill{display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#15803d; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
+.status-pill .dot{width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.25); animation:pulseDot 1.6s infinite;}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
+
+/* DASHBOARD STAT CARDS */
+.stat-card{flex:1; min-width:200px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:20px 22px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.03);}
+.stat-card .stat-label{font-size:11.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;}
+.stat-card .stat-value{font-size:24px; font-weight:800; color:#0369a1; margin-top:6px;}
+.progress-outer{background:#e2e8f0; border-radius:8px; overflow:hidden; height:10px; margin-top:10px;}
+.progress-inner{background:linear-gradient(90deg,#10b981,#34d399); height:100%; border-radius:8px;}
+
+/* PARETO TOOLTIP */
+.pareto-tip{position:relative; cursor:help; border-bottom:1px dashed #94a3b8;}
+.pareto-tip .tip-box{display:none; position:absolute; left:0; top:calc(100% + 8px); background:#0f172a; color:#e2e8f0; font-size:11.5px; font-weight:500; padding:10px 12px; border-radius:8px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.3); z-index:50; min-width:190px; max-width:260px; max-height:180px; overflow-y:auto; line-height:1.6; white-space:normal;}
+.pareto-tip:hover .tip-box{display:block;}
+.pareto-tip .tip-box b{color:#6ee7b7;}
 
 .scanner-area{display:none;margin-top:10px}
 #doneMsg{font-size:14px;color:#10b981;margin-bottom:10px;font-weight:bold}
 tr:nth-child(even) { background-color: #fcfdfe; }
 
 /* LOADING SCREEN */
-#loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.8); z-index:2000; align-items:center; justify-content:center; flex-direction:column; font-weight:bold; color:#1e3a8a; font-size:16px;}
-.spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top: 4px solid #2563eb; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom:10px; }
+#loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.8); z-index:2000; align-items:center; justify-content:center; flex-direction:column; font-weight:bold; color:#0f172a; font-size:16px;}
+.spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom:10px; }
 @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
 
-.modal {display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center;}
+.modal {display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:12px;}
 .modal-content {background:#fff; padding:25px; border-radius:16px; width:95%; max-width:800px; max-height: 85vh; overflow-y: auto;}
 .close-btn {background:#64748b; color:#fff; padding:6px 12px; float:right; border-radius:6px; cursor:pointer; font-weight:600; border:none;}
 .chk-verify {width: 20px; height: 20px; margin: 0; cursor: pointer;}
 
 /* ==================== APP SHELL / SIDEBAR (baru) ==================== */
 .app-shell{display:flex; min-height:100vh;}
-.sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.15); z-index:10;}
+.sidebar{width:250px; flex-shrink:0; background:#0b1120; color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.25); z-index:10; border-right:1px solid rgba(255,255,255,0.06);}
+.sidebar-brand{display:flex; align-items:center; gap:10px;}
+.sidebar-brand img{width:40px; height:40px; border-radius:10px; object-fit:cover; display:none; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.25);}
 .sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px;}
-.sidebar-brand p{margin:4px 0 20px; font-size:12px; color:#bfdbfe; font-weight:600;}
-.sidebar-userbox{background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; font-size:12px; margin-bottom:18px; line-height:1.4;}
-.sidebar-userbox strong{color:#fff; font-size:13px;}
+.sidebar-brand p{margin:4px 0 20px; font-size:12px; color:#94a3b8; font-weight:600;}
+.sidebar-userbox{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; font-size:12px; margin-bottom:18px; line-height:1.5; color:#94a3b8;}
+.sidebar-userbox strong{color:#fff; font-size:13.5px;}
+.sidebar-userbox .role-pill{display:inline-block; margin-top:7px; background:#10b981; color:#052e1f; font-weight:800; font-size:10.5px; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
 .sidebar-nav{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px;}
-.nav-btn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:#dbeafe; padding:11px 14px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:none; justify-content:flex-start;}
-.nav-btn:hover{background:rgba(255,255,255,0.14); transform:none; box-shadow:none;}
-.nav-btn.active{background:#ffffff; color:#1e3a8a;}
-.nav-section-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.7px; color:#93c5fd; margin:14px 0 2px 12px; font-weight:700;}
-.sidebar-logout{margin-top:14px; width:100%;}
-.main-content{margin-left:250px; flex:1; min-width:0; background:#f1f5f9;}
-.topbar{background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5;}
+.nav-btn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:#94a3b8; padding:11px 14px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:none; justify-content:flex-start;}
+.nav-btn:hover{background:rgba(255,255,255,0.06); transform:none; box-shadow:none; color:#fff;}
+.nav-btn.active{background:#10b981; color:#052e1f; box-shadow:0 4px 10px -2px rgba(16,185,129,0.4);}
+.nav-section-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.7px; color:#475569; margin:14px 0 2px 12px; font-weight:700;}
+.sidebar-logout{margin-top:14px; width:100%; background:transparent !important; border:1px solid rgba(239,68,68,0.4) !important; color:#f87171 !important;}
+.sidebar-logout:hover{background:rgba(239,68,68,0.12) !important; color:#fca5a5 !important;}
+.main-content{margin-left:250px; flex:1; min-width:0; background:#f1f5f9; max-width:calc(100% - 250px);}
+.topbar{background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5; flex-wrap:wrap; gap:10px;}
 .topbar h2{margin:0; font-size:18px; border:0;}
 .topbar h2::before{display:none;}
 .tab-content{display:none;}
@@ -92,8 +117,21 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   .sidebar-userbox{width:100%;}
   .sidebar-nav{flex-direction:row; flex-wrap:wrap; width:100%;}
   .sidebar-logout{width:auto;}
-  .main-content{margin-left:0;}
+  .main-content{margin-left:0; max-width:100%;}
   .app-shell{flex-direction:column;}
+}
+@media (max-width: 640px){
+  .container{padding:0 12px; margin:16px auto;}
+  .card{padding:16px}
+  .row{gap:10px}
+  .stat-card{min-width:100%; padding:16px}
+  .topbar{padding:12px 14px}
+  .topbar h2{font-size:16px}
+  #loginPanel{padding:26px 22px}
+  .modal-content{padding:16px}
+  table{font-size:12.5px}
+  th,td{padding:8px 10px}
+  .sidebar-brand h1{font-size:16px}
 }
 </style>
 </head>
@@ -104,7 +142,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 <div id="loginOverlay">
   <div id="loginPanel">
     <div class="login-header">
-      <h2>Inventory Stok HR-GA</h2>
+      <img id="companyLogoLoginImg" src="" alt="Logo Perusahaan">
+      <h2><span id="loginLogoEmoji">🏭</span> Inventory Stok HR-GA</h2>
       <p>PT ARGAPURA</p>
     </div>
     <div class="input-group">
@@ -115,7 +154,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <label>Password</label>
       <input id="loginPass" type="password" placeholder="Masukkan password">
     </div>
-    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#1e40af;">Masuk Ke Sistem</button>
+    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
   </div>
 </div>
 
@@ -123,11 +162,15 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
   <aside class="sidebar">
     <div class="sidebar-brand">
-      <h1>🏭 PT Argapura</h1>
-      <p>Inventory Stok HR-GA</p>
+      <img id="companyLogoSidebar" src="" alt="Logo Perusahaan">
+      <div>
+        <h1><span id="sidebarLogoEmoji">🏭</span> PT Argapura</h1>
+        <p>Inventory Stok HR-GA</p>
+      </div>
     </div>
     <div class="sidebar-userbox">
-      Masuk sebagai:<br><strong id="lblActiveUser"></strong>
+      Masuk sebagai:<br><strong id="lblActiveUser"></strong><br>
+      <span class="role-pill" id="lblActiveRole"></span>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
@@ -148,6 +191,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   <div class="main-content">
     <div class="topbar">
       <h2 id="topbarTitle">📊 Dashboard</h2>
+      <span class="status-pill"><span class="dot"></span>Sistem Aktif</span>
     </div>
     <div class="container">
 
@@ -155,23 +199,44 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
       <!-- ================= DASHBOARD ================= -->
       <div id="dashboard" class="tab-content active">
+
+        <div class="card" style="margin-top:0;">
+          <h3 style="margin:0; font-size:20px;">Selamat Datang, <span id="dashGreetName">-</span> 👋</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:0;">Berikut ringkasan aktivitas FPB & stok HR-GA bulan <span id="dashCurrentMonth">-</span>.</p>
+        </div>
+
         <div class="row">
-          <div class="card" style="flex:1; min-width:340px;">
-            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-              <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta (per FPB)</h3>
-              <select id="dashDeptFilter" onchange="renderDashboardTopSpbDept()" style="max-width:220px; margin-top:0;">
-                <option value="">-- Semua Department --</option>
-              </select>
-            </div>
+          <div class="stat-card">
+            <div class="stat-label">Total FPB <span id="lblBulanFpb"></span></div>
+            <div class="stat-value" id="statTotalFpb">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Qty Diminta <span id="lblBulanQty"></span></div>
+            <div class="stat-value" id="statTotalQty">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Department Teraktif</div>
+            <div class="stat-value" id="statTopDept" style="font-size:18px;">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Item Perlu Reorder</div>
+            <div class="stat-value" id="statReorder" style="color:#dc2626;">0</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:15px;">
+          <div class="card" style="flex:2; min-width:320px;">
+            <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta per Department</h3>
+            <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Diurutkan dari yang paling banyak mengajukan FPB (Pareto). Arahkan kursor ke "Jumlah FPB" untuk melihat daftar nomor FPB.</p>
             <div style="overflow-x:auto; margin-top:15px;">
               <table>
-                <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Frekuensi</th><th>Total Qty Diminta</th></tr></thead>
+                <thead><tr style="background:#f1f5f9"><th>#</th><th>Department</th><th>Jumlah FPB</th><th>Total Qty Diminta</th><th>Kumulatif %</th></tr></thead>
                 <tbody id="dashTopSpbBody"></tbody>
               </table>
             </div>
           </div>
 
-          <div class="card" style="flex:1; min-width:340px;">
+          <div class="card" style="flex:1; min-width:280px;">
             <h3 style="margin:0;">🔥 Barang Paling Banyak Keluar (Realisasi)</h3>
             <div style="overflow-x:auto; margin-top:15px;">
               <table>
@@ -179,17 +244,6 @@ tr:nth-child(even) { background-color: #fcfdfe; }
                 <tbody id="dashTopKeluarBody"></tbody>
               </table>
             </div>
-          </div>
-        </div>
-
-        <div class="card" style="margin-top:15px;">
-          <h3 style="margin:0;">🏢 Rekap Total FPB per Department</h3>
-          <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Total jumlah FPB yang diajukan dan total quantity barang yang diminta, dikelompokkan per department.</p>
-          <div style="overflow-x:auto; margin-top:10px;">
-            <table>
-              <thead><tr style="background:#f1f5f9"><th>#</th><th>Department</th><th>Total FPB (Frekuensi)</th><th>Total Qty Diminta</th></tr></thead>
-              <tbody id="dashRekapDeptBody"></tbody>
-            </table>
           </div>
         </div>
       </div>
@@ -200,7 +254,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           <div class="row">
             <div style="flex:1; min-width:200px;">
               <label>Nomor FPB (Otomatis)</label>
-              <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#1e40af;">
+              <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#059669;">
             </div>
             <div style="flex:1; min-width:200px;">
               <label>Department *</label>
@@ -392,6 +446,24 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <!-- ================= ACCOUNT MANAGEMENT (Admin Only) ================= -->
       <div id="akun" class="tab-content admin-only">
         <div class="card">
+          <h3>🖼️ Logo Perusahaan</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Logo akan tampil di sebelah kiri tulisan "PT Argapura" (setelah login) dan di halaman login. Ukuran file maksimal 1MB.</p>
+          <div class="row" style="align-items:center;">
+            <div style="flex:0 0 auto;">
+              <img id="logoPreviewAdmin" src="" style="display:none; width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e2e8f0;">
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <label>Pilih File Logo (PNG/JPG)</label>
+              <input type="file" id="logoFileInput" accept="image/*">
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:8px;">
+              <button class="btn-success" onclick="uploadCompanyLogo()">💾 Simpan Logo</button>
+              <button class="btn-danger" onclick="hapusCompanyLogo()">🗑️ Hapus Logo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
           <h3>Daftarkan / Update Akun Akses Baru</h3>
           <div class="row">
             <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
@@ -427,8 +499,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   <div class="modal-content">
     <button class="close-btn" onclick="closeModal()">✕ Close</button>
     <h3>Verifikasi Eksekusi Item FPB</h3>
-    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #2563eb;">
-      <strong>No FPB:</strong> <span id="mdNoSpb" style="color:#2563eb; font-weight:bold;"></span> | 
+    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #10b981;">
+      <strong>No FPB:</strong> <span id="mdNoSpb" style="color:#059669; font-weight:bold;"></span> | 
       <strong>Line/Dept:</strong> <span id="mdLine"></span> | 
       <strong>PIC:</strong> <span id="mdPic"></span> | 
       <strong>Status:</strong> <span id="mdStatusBadge"></span>
@@ -551,6 +623,62 @@ const SECTION_MAP = {
   "Marketing": ["Marketing"]
 };
 
+const BULAN_INDO = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+// ---------- LOGO PERUSAHAAN (tampil di login & sidebar setelah login) ----------
+function applyCompanyLogo() {
+  let logoData = null;
+  try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+
+  const sidebarImg = document.getElementById('companyLogoSidebar');
+  const sidebarEmoji = document.getElementById('sidebarLogoEmoji');
+  const loginImg = document.getElementById('companyLogoLoginImg');
+  const loginEmoji = document.getElementById('loginLogoEmoji');
+  const previewAdmin = document.getElementById('logoPreviewAdmin');
+
+  if(logoData) {
+    if(sidebarImg){ sidebarImg.src = logoData; sidebarImg.style.display = 'block'; }
+    if(sidebarEmoji) sidebarEmoji.style.display = 'none';
+    if(loginImg){ loginImg.src = logoData; loginImg.style.display = 'block'; }
+    if(loginEmoji) loginEmoji.style.display = 'none';
+    if(previewAdmin){ previewAdmin.src = logoData; previewAdmin.style.display = 'inline-block'; }
+  } else {
+    if(sidebarImg) sidebarImg.style.display = 'none';
+    if(sidebarEmoji) sidebarEmoji.style.display = 'inline';
+    if(loginImg) loginImg.style.display = 'none';
+    if(loginEmoji) loginEmoji.style.display = 'inline';
+    if(previewAdmin) previewAdmin.style.display = 'none';
+  }
+}
+
+function uploadCompanyLogo() {
+  const fileInput = document.getElementById('logoFileInput');
+  const file = fileInput.files[0];
+  if(!file) return alert('Pilih file logo terlebih dahulu!');
+  if(!file.type.startsWith('image/')) return alert('File harus berupa gambar (PNG/JPG)!');
+  if(file.size > 1024 * 1024) return alert('Ukuran file logo maksimal 1MB!');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      localStorage.setItem('companyLogo', e.target.result);
+      applyCompanyLogo();
+      showDoneMessage('🖼️ Logo perusahaan berhasil diperbarui.');
+      fileInput.value = "";
+    } catch(err) {
+      alert('Gagal menyimpan logo (kemungkinan ukuran terlalu besar untuk penyimpanan browser).');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function hapusCompanyLogo() {
+  if(!confirm('Hapus logo perusahaan dan kembali ke ikon default?')) return;
+  try { localStorage.removeItem('companyLogo'); } catch(e) {}
+  applyCompanyLogo();
+  showDoneMessage('Logo perusahaan telah dihapus.');
+}
+
 // ---------- NAVIGASI SIDEBAR (baru) ----------
 const TAB_TITLES = {
   dashboard: "📊 Dashboard",
@@ -590,6 +718,7 @@ function showDoneMessage(msg){ const div = document.getElementById("doneMsg"); d
 function getRomanMonth(m) { return ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"][m]; }
 
 window.onload = function() {
+  applyCompanyLogo();
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
     .then(resObj => { if(resObj.status === "SUCCESS") MEMORY = resObj.data; });
@@ -612,7 +741,7 @@ function fetchDatabaseAll() {
         renderUsersTable();
         renderDashboardTopSpbDept();
         renderDashboardTopKeluar();
-        renderDashboardRekapDept();
+        renderDashboardStats();
       } else { alert("Gagal memuat database cloud: " + resObj.message); }
     })
     .catch(err => alert("Kesalahan Jaringan: " + err))
@@ -620,43 +749,93 @@ function fetchDatabaseAll() {
 }
 
 // ---------- DASHBOARD ANALITIK ----------
+// Rekap "Barang Paling Banyak Diminta" sekarang dikelompokkan PER DEPARTMENT (bukan per kode barang lagi).
+// Diurutkan Pareto: Total Qty Diminta terbesar di atas, dengan kolom Kumulatif % supaya terlihat
+// department mana yang berkontribusi paling besar terhadap total permintaan.
+// Hover pada kolom "Jumlah FPB" akan menampilkan daftar nomor FPB milik department tsb.
 function renderDashboardTopSpbDept() {
-  const deptFilterEl = document.getElementById("dashDeptFilter"); if(!deptFilterEl) return;
-  if(deptFilterEl.options.length <= 1) {
-    Object.keys(SECTION_MAP).forEach(dept => {
-      const opt = document.createElement("option"); opt.value = dept; opt.textContent = dept; deptFilterEl.appendChild(opt);
-    });
-  }
-  const dept = deptFilterEl.value;
-
   const tally = {};
   (MEMORY.spbList || []).forEach(spb => {
-    const spbDept = spb.department || spb.Department || "-";
-    if(dept && spbDept !== dept) return;
-    (spb.items || []).forEach(it => {
-      const kode = it.kode || it.kodeBarang; const nama = it.nama || it.namaBarang;
-      if(!kode) return;
-      if(!tally[kode]) tally[kode] = { nama, totalQty: 0, totalSpb: 0 };
-      tally[kode].totalQty += Number(it.qty || 0);
-      tally[kode].totalSpb += 1;
-    });
+    const dept = spb.department || spb.Department || "-";
+    const nomorSpbAktif = spb.nomorSpb || spb.noSpb || spb.NoSpb || "-";
+    if(!tally[dept]) tally[dept] = { totalFpb: 0, totalQty: 0, nomorList: [] };
+    tally[dept].totalFpb += 1;
+    tally[dept].nomorList.push(nomorSpbAktif);
+    (spb.items || []).forEach(it => { tally[dept].totalQty += Number(it.qty || 0); });
   });
 
-  const sorted = Object.entries(tally).map(([kode, v]) => ({ kode, ...v })).sort((a,b) => b.totalQty - a.totalQty).slice(0, 10);
+  const sorted = Object.entries(tally).map(([dept, v]) => ({ dept, ...v })).sort((a,b) => b.totalQty - a.totalQty);
+  const grandTotalQty = sorted.reduce((sum, r) => sum + r.totalQty, 0) || 1;
   const maxQty = sorted.length ? sorted[0].totalQty : 1;
+
+  let running = 0;
   const tbody = document.getElementById("dashTopSpbBody");
-  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => `
+  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => {
+    running += item.totalQty;
+    const kumulatifPct = ((running / grandTotalQty) * 100).toFixed(0);
+    const daftarSpbHtml = item.nomorList.map(n => `• ${n}`).join("<br>");
+    return `
     <tr>
       <td style="width:30px;">${idx+1}</td>
-      <td><strong>${item.kode}</strong></td>
-      <td>${item.nama}</td>
-      <td style="white-space:nowrap;">${item.totalSpb}x diminta</td>
+      <td><strong>${item.dept}</strong></td>
+      <td style="white-space:nowrap;">
+        <span class="pareto-tip">${item.totalFpb}x FPB
+          <div class="tip-box"><b>Nomor FPB — ${item.dept}</b><br>${daftarSpbHtml}</div>
+        </span>
+      </td>
       <td style="min-width:160px;">
         <div style="background:#e2e8f0; border-radius:6px; overflow:hidden; height:22px;">
-          <div style="background:#2563eb; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty}</div>
+          <div style="background:#10b981; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty}</div>
         </div>
       </td>
-    </tr>`).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data FPB untuk filter ini.</td></tr>`;
+      <td style="white-space:nowrap; color:#64748b; font-size:12.5px;">${kumulatifPct}%</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data FPB.</td></tr>`;
+}
+
+// Kartu ringkasan angka besar di bagian atas Dashboard (gaya seperti target/terkumpul/sisa)
+// Seluruh angka di bawah ini otomatis mengikuti bulan & tahun berjalan (bulan sekarang di komputer/HP pengguna).
+function renderDashboardStats() {
+  const now = new Date();
+  const bln = now.getMonth(); const thn = now.getFullYear();
+  const labelBulan = `${BULAN_INDO[bln]} ${thn}`;
+
+  let totalFpbBulanIni = 0, totalQtyBulanIni = 0;
+  const tallyDept = {};
+  (MEMORY.spbList || []).forEach(spb => {
+    const d = spb.tanggal ? new Date(spb.tanggal) : null;
+    if(!d || d.getMonth() !== bln || d.getFullYear() !== thn) return;
+    totalFpbBulanIni += 1;
+    const dept = spb.department || spb.Department || "-";
+    let qtySpb = 0;
+    (spb.items || []).forEach(it => { qtySpb += Number(it.qty || 0); });
+    totalQtyBulanIni += qtySpb;
+    tallyDept[dept] = (tallyDept[dept] || 0) + qtySpb;
+  });
+
+  const topDeptEntry = Object.entries(tallyDept).sort((a,b) => b[1]-a[1])[0];
+
+  let reorderCount = 0;
+  (MEMORY.masterData || []).forEach(m => {
+    let sisa = Number(MEMORY.stockAwal[m.barcode] || 0);
+    MEMORY.transaksi.forEach(t => {
+      if(t.kode === m.barcode) {
+        if(t.jenis === "Masuk") sisa += Number(t.qty);
+        if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
+      }
+    });
+    if(sisa <= Number(m.minStock || 0)) reorderCount++;
+  });
+
+  const setText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+  setText("dashGreetName", currentActiveName || "-");
+  setText("dashCurrentMonth", labelBulan);
+  setText("lblBulanFpb", `- ${labelBulan}`);
+  setText("lblBulanQty", `- ${labelBulan}`);
+  setText("statTotalFpb", totalFpbBulanIni);
+  setText("statTotalQty", totalQtyBulanIni);
+  setText("statTopDept", topDeptEntry ? topDeptEntry[0] : "-");
+  setText("statReorder", reorderCount);
 }
 
 function renderDashboardTopKeluar() {
@@ -681,31 +860,6 @@ function renderDashboardTopKeluar() {
         </div>
       </td>
     </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data transaksi keluar.</td></tr>`;
-}
-
-// BARU: Rekap total FPB (frekuensi) & total qty diminta, dikelompokkan per Department
-function renderDashboardRekapDept() {
-  const tbody = document.getElementById("dashRekapDeptBody"); if(!tbody) return;
-
-  const tally = {};
-  (MEMORY.spbList || []).forEach(spb => {
-    const dept = spb.department || spb.Department || "-";
-    if(!tally[dept]) tally[dept] = { totalFpb: 0, totalQty: 0 };
-    tally[dept].totalFpb += 1;
-    (spb.items || []).forEach(it => { tally[dept].totalQty += Number(it.qty || 0); });
-  });
-
-  const sorted = Object.entries(tally)
-    .map(([dept, v]) => ({ dept, ...v }))
-    .sort((a,b) => b.totalQty - a.totalQty);
-
-  tbody.innerHTML = sorted.length ? sorted.map((r, idx) => `
-    <tr>
-      <td style="width:30px;">${idx+1}</td>
-      <td><strong>${r.dept}</strong></td>
-      <td>${r.totalFpb}x FPB</td>
-      <td><strong>${r.totalQty}</strong> item</td>
-    </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data FPB.</td></tr>`;
 }
 
 function doLogin(){
@@ -734,7 +888,9 @@ function doLogin(){
 function masukSistem() {
   document.getElementById("loginOverlay").style.display = "none";
   document.getElementById("appRoot").style.display = "flex";
-  document.getElementById("lblActiveUser").innerText = `${currentActiveName} (${currentRole.toUpperCase()})`;
+  document.getElementById("lblActiveUser").innerText = currentActiveName;
+  document.getElementById("lblActiveRole").innerText = currentRole === "admin" ? "Admin HR-GA" : "User";
+  applyCompanyLogo();
   switchTab("dashboard");
   fetchDatabaseAll();
 }
@@ -1053,7 +1209,7 @@ function renderSpbReport() {
     
     tbody.innerHTML += `<tr>
       <td>${tgl}</td>
-      <td><strong style="color:#1e40af; cursor:pointer; text-decoration: underline;" onclick="openSpbDetailModal('${nomorSpbAktif}')">${nomorSpbAktif}</strong></td>
+      <td><strong style="color:#059669; cursor:pointer; text-decoration: underline;" onclick="openSpbDetailModal('${nomorSpbAktif}')">${nomorSpbAktif}</strong></td>
       <td>${x.department || x.Department || "-"}</td>
       <td>${x.line || x.Line || "-"}</td>
       <td>${x.pic || x.Pic || x.PIC || "-"}</td>
