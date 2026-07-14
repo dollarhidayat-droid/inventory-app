@@ -960,9 +960,20 @@ function generateNoSPB() {
   document.getElementById("spbNomor").value = `${String(currentCounter + 1).padStart(4, '0')}/${rm}/${yr}/HR-GA`;
 }
 
+function getKategoriDariKode(kode) {
+  if(!kode) return "Umum";
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  if(m && m.kategori && String(m.kategori).trim() !== "") return m.kategori;
+  const idx = kode.indexOf("-");
+  if(idx > 0) return kode.substring(0, idx).trim().toUpperCase();
+  return "Umum";
+}
+
 function isiOtomatis(){
-  const m = MEMORY.masterData.find(x => x.barcode === document.getElementById("kodeBarang").value.trim());
-  if(m){ document.getElementById("namaBarang").value = m.nama || ""; document.getElementById("satuan").value = m.satuan || ""; document.getElementById("kategoriBarang").value = m.kategori || ""; }
+  const kode = document.getElementById("kodeBarang").value.trim();
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  if(m){ document.getElementById("namaBarang").value = m.nama || ""; document.getElementById("satuan").value = m.satuan || ""; }
+  document.getElementById("kategoriBarang").value = getKategoriDariKode(kode);
   updateJatahInfoHint();
 }
 
@@ -1095,7 +1106,7 @@ function tambahItemKeKeranjang() {
   const nama = document.getElementById("namaBarang").value.trim(); 
   const qty = Number(document.getElementById("qty").value); 
   const satuan = document.getElementById("satuan").value.trim(); 
-  const kat = document.getElementById("kategoriBarang").value || "Umum";
+  const kat = document.getElementById("kategoriBarang").value || getKategoriDariKode(code);
 
   if(!code || !nama || qty <= 0) return alert("Pastikan Kode, Nama Barang terisi, dan Qty lebih dari 0!");
 
@@ -1638,7 +1649,7 @@ function tambahMaster() {
   const nama = document.getElementById("mNama").value.trim();
   const satuan = document.getElementById("mSatuan").value.trim();
   const minStock = Number(document.getElementById("mMinimal").value);
-  const kategori = document.getElementById("mKategori").value.trim();
+  const kategori = document.getElementById("mKategori").value.trim() || getKategoriDariKode(barcode);
 
   if(!barcode || !nama) return alert("Barcode dan Nama Wajib Diisi!");
   showLoading(true, "Menyimpan ke Master Data...");
