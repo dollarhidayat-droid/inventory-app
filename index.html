@@ -98,6 +98,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 .sidebar-userbox{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; font-size:12px; margin-bottom:18px; line-height:1.5; color:#94a3b8;}
 .sidebar-userbox strong{color:#fff; font-size:13.5px;}
 .sidebar-userbox .role-pill{display:inline-block; margin-top:7px; background:#10b981; color:#052e1f; font-weight:800; font-size:10.5px; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
+.sidebar-userbox .change-pass-link{display:block; margin-top:9px; background:transparent; border:none; color:#93c5fd; font-size:11.5px; font-weight:700; padding:0; text-decoration:underline; cursor:pointer; box-shadow:none; justify-content:flex-start; width:auto;}
+.sidebar-userbox .change-pass-link:hover{color:#bfdbfe; background:transparent; transform:none; box-shadow:none;}
 .sidebar-nav{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px;}
 .nav-btn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:#94a3b8; padding:11px 14px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:none; justify-content:flex-start;}
 .nav-btn:hover{background:rgba(255,255,255,0.06); transform:none; box-shadow:none; color:#fff;}
@@ -171,6 +173,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
     <div class="sidebar-userbox">
       Masuk sebagai:<br><strong id="lblActiveUser"></strong><br>
       <span class="role-pill" id="lblActiveRole"></span>
+      <button type="button" class="change-pass-link" onclick="openChangePasswordModal()">Ubah Password</button>
     </div>
     <nav class="sidebar-nav">
       <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">Dashboard</button>
@@ -484,7 +487,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
           <div style="overflow-x:auto">
             <table>
-              <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:100px; text-align:center;">Aksi</th></tr></thead>
+              <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:170px; text-align:center;">Aksi</th></tr></thead>
               <tbody id="usersTableBody"></tbody>
             </table>
           </div>
@@ -590,6 +593,22 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       </select>
     </div>
     <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">Download Excel (Ringkasan + Detail Item)</button>
+  </div>
+</div>
+
+<div id="changePasswordModal" class="modal">
+  <div class="modal-content" style="max-width:420px;">
+    <button class="close-btn" onclick="closeChangePasswordModal()">Close</button>
+    <h3 style="color:#10b981;">Ubah Password Akun Saya</h3>
+    <div class="input-group">
+      <label>Password Baru *</label>
+      <input id="cpBaru" type="password" placeholder="Masukkan password baru">
+    </div>
+    <div class="input-group">
+      <label>Konfirmasi Password Baru *</label>
+      <input id="cpKonfirmasi" type="password" placeholder="Ulangi password baru">
+    </div>
+    <button class="btn-success" style="width:100%; padding:12px; margin-top:6px;" onclick="simpanChangePassword()">Simpan Password Baru</button>
   </div>
 </div>
 
@@ -883,7 +902,7 @@ function masukSistem() {
   document.getElementById("loginOverlay").style.display = "none";
   document.getElementById("appRoot").style.display = "flex";
   document.getElementById("lblActiveUser").innerText = currentActiveName;
-  document.getElementById("lblActiveRole").innerText = currentRole === "admin" ? "Admin HR-GA" : "User";
+  document.getElementById("lblActiveRole").innerText = currentRole === "admin" ? "Admin" : "User";
   applyCompanyLogo();
   switchTab("dashboard");
   fetchDatabaseAll();
@@ -898,6 +917,45 @@ function doLogout(){
 
 function applyRole() { 
   document.querySelectorAll(".admin-only").forEach(el => el.style.display = (currentRole === "admin") ? "" : "none"); 
+}
+
+// ---------- UBAH PASSWORD AKUN SENDIRI ----------
+function openChangePasswordModal() {
+  if(!currentUsername) return;
+  document.getElementById("cpBaru").value = "";
+  document.getElementById("cpKonfirmasi").value = "";
+  document.getElementById("changePasswordModal").style.display = "flex";
+}
+
+function closeChangePasswordModal() {
+  document.getElementById("changePasswordModal").style.display = "none";
+}
+
+function simpanChangePassword() {
+  if(currentUsername === "adminmaster") {
+    return alert("Password akun Super Administrator (adminmaster) tidak dapat diubah melalui panel ini.");
+  }
+
+  const baru = document.getElementById("cpBaru").value.trim();
+  const konfirmasi = document.getElementById("cpKonfirmasi").value.trim();
+
+  if(!baru || baru.length < 4) return alert("Password baru minimal 4 karakter!");
+  if(baru !== konfirmasi) return alert("Konfirmasi password tidak sama dengan password baru!");
+
+  showLoading(true, "Menyimpan Password Baru...");
+  const payload = { username: currentUsername, password: baru, nama: currentActiveName, role: currentRole };
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage("Password akun berhasil diperbarui.");
+        closeChangePasswordModal();
+        fetchDatabaseAll();
+      } else { alert("Gagal mengubah password: " + resObj.message); }
+    })
+    .catch(err => alert("Error Jaringan: " + err))
+    .finally(() => showLoading(false));
 }
 
 function simpanAkunBaru() {
@@ -931,6 +989,35 @@ function hapusAkun(username) {
     .then(() => { showDoneMessage("Akun berhasil dihapus."); fetchDatabaseAll(); });
 }
 
+// ---------- UBAH ROLE PENGGUNA (Admin) ----------
+function ubahRoleAkun(username, selectEl) {
+  const newRole = selectEl.value;
+  const u = MEMORY.users.find(x => x.username === username);
+  if(!u) return alert("Data user tidak ditemukan!");
+
+  if(!confirm(`Ubah role user [${username}] menjadi "${newRole === 'admin' ? 'Admin' : 'User'}"?`)) {
+    selectEl.value = u.role;
+    return;
+  }
+
+  showLoading(true, "Mengubah Role Akun...");
+  const payload = { username: u.username, password: u.password, nama: u.nama, role: newRole };
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`Role akun [${username}] berhasil diubah menjadi ${newRole.toUpperCase()}.`);
+        fetchDatabaseAll();
+      } else {
+        alert("Gagal mengubah role: " + resObj.message);
+        selectEl.value = u.role;
+      }
+    })
+    .catch(err => { alert("Error Jaringan: " + err); selectEl.value = u.role; })
+    .finally(() => showLoading(false));
+}
+
 function renderUsersTable() {
   const tbody = document.getElementById("usersTableBody"); if(!tbody) return; tbody.innerHTML = "";
   MEMORY.users.forEach(u => {
@@ -938,7 +1025,12 @@ function renderUsersTable() {
       <td><strong>${u.username}</strong></td>
       <td>•••••• (terproteksi)</td>
       <td>${u.nama || "-"}</td>
-      <td><span style="font-size:12px; padding:2px 6px; border-radius:4px; font-weight:bold; background:${u.role==='admin'?'#fee2e2':'#e0f2fe'}; color:${u.role==='admin'?'#b91c1c':'#0369a1'};">${u.role.toUpperCase()}</span></td>
+      <td>
+        <select onchange="ubahRoleAkun('${u.username}', this)" style="width:auto; min-width:110px; margin-top:0; padding:5px 8px; font-size:12px; font-weight:bold; color:${u.role==='admin'?'#b91c1c':'#0369a1'};">
+          <option value="user" ${u.role!=='admin' ? 'selected' : ''}>USER</option>
+          <option value="admin" ${u.role==='admin' ? 'selected' : ''}>ADMIN</option>
+        </select>
+      </td>
       <td style="text-align:center;"><button class="btn-mini btn-danger" onclick="hapusAkun('${u.username}')">Hapus</button></td>
     </tr>`;
   });
@@ -1198,7 +1290,13 @@ function renderSpbReport() {
     return; 
   }
 
-  MEMORY.spbList.forEach(x => {
+  const sortedSpbList = [...MEMORY.spbList].sort((a, b) => {
+    const tglA = new Date(a.tanggal || a.Tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || b.Tanggal || 0).getTime();
+    return tglB - tglA;
+  });
+
+  sortedSpbList.forEach(x => {
     const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb || "KODE-UNKNOWN";
     
     const badge = x.status === "DONE" 
@@ -1596,8 +1694,14 @@ function renderReport() {
   const filterJenis = document.getElementById("reportJenis").value;
   const search = document.getElementById("searchReport").value.toLowerCase();
 
+  const sortedTransaksi = [...MEMORY.transaksi].sort((a, b) => {
+    const tglA = new Date(a.tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || 0).getTime();
+    return tglB - tglA;
+  });
+
   let html = "";
-  MEMORY.transaksi.forEach(t => {
+  sortedTransaksi.forEach(t => {
     const tglStr = t.tanggal ? new Date(t.tanggal).toISOString().split('T')[0] : "";
     if(filterTgl && tglStr !== filterTgl) return;
     if(filterJenis && t.jenis !== filterJenis) return;
@@ -1732,7 +1836,12 @@ function downloadStockExcel() {
 
 function downloadReportExcel() {
   if(MEMORY.transaksi.length === 0) return alert("Tidak ada data log transaksi untuk diexport!");
-  const dataExport = MEMORY.transaksi.map(t => ({
+  const sortedTransaksi = [...MEMORY.transaksi].sort((a, b) => {
+    const tglA = new Date(a.tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || 0).getTime();
+    return tglB - tglA;
+  });
+  const dataExport = sortedTransaksi.map(t => ({
     "Tanggal": t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-",
     "No. FPB": t.noSpb || "-",
     "Kode Barang": t.kode,
@@ -1780,6 +1889,10 @@ function downloadSpbExcelFiltered() {
       if(tglSampai && dStr > tglSampai) return false;
     }
     return true;
+  }).sort((a, b) => {
+    const tglA = new Date(a.tanggal || a.Tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || b.Tanggal || 0).getTime();
+    return tglB - tglA;
   });
 
   if(filtered.length === 0) return alert("Tidak ada data FPB yang sesuai dengan filter dipilih!");
