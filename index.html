@@ -47,10 +47,10 @@ tr:hover {background-color:#f8fafc}
 .badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 
 /* LOGIN OVERLAY */
-#loginOverlay {position: fixed; inset: 0; background: #0b1120; display: flex; align-items: center; justify-content: center; z-index: 999; padding:16px;}
+#loginOverlay {position: fixed; inset: 0; background: linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); display: flex; align-items: center; justify-content: center; z-index: 999; padding:16px;}
 #loginPanel {background: #ffffff; width: 440px; max-width:100%; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);}
 .login-header{text-align:center}
-.login-header img{width:64px;height:64px;border-radius:14px;object-fit:cover;margin-bottom:12px;display:none;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.login-header img{width:64px;height:64px;border-radius:14px;object-fit:cover;margin:0 auto 12px;display:none;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
 .login-header h2 { margin: 0; color: #0f172a; font-size: 26px; font-weight: 800; display:flex; align-items:center; justify-content:center; gap:8px;}
 .login-header p { margin: 5px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600; }
 .input-group { text-align: left; margin-bottom: 20px; }
@@ -93,7 +93,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 .sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.25); z-index:10; border-right:1px solid rgba(255,255,255,0.06);}
 .sidebar-brand{display:flex; align-items:center; gap:10px;}
 .sidebar-brand img{width:40px; height:40px; border-radius:10px; object-fit:cover; display:none; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.25);}
-.sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px;}
+.sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px; line-height:1.2;}
 .sidebar-brand p{margin:4px 0 20px; font-size:12px; color:#94a3b8; font-weight:600;}
 .sidebar-userbox{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; font-size:12px; margin-bottom:18px; line-height:1.5; color:#94a3b8;}
 .sidebar-userbox strong{color:#fff; font-size:13.5px;}
@@ -143,7 +143,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   <div id="loginPanel">
     <div class="login-header">
       <img id="companyLogoLoginImg" src="" alt="Logo Perusahaan">
-      <h2><span id="loginLogoEmoji">🏭</span> Inventory Stok HR-GA</h2>
+      <h2>Inventory Stok HR-GA</h2>
       <p>PT ARGAPURA</p>
     </div>
     <div class="input-group">
@@ -164,7 +164,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
     <div class="sidebar-brand">
       <img id="companyLogoSidebar" src="" alt="Logo Perusahaan">
       <div>
-        <h1><span id="sidebarLogoEmoji">🏭</span> PT Argapura</h1>
+        <h1>PT Argapura</h1>
         <p>Inventory Stok HR-GA</p>
       </div>
     </div>
@@ -173,24 +173,24 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <span class="role-pill" id="lblActiveRole"></span>
     </div>
     <nav class="sidebar-nav">
-      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
-      <button class="nav-btn" data-tab="buatfpb" onclick="switchTab('buatfpb', this)">📝 Buat FPB</button>
-      <button class="nav-btn" data-tab="monitoring" onclick="switchTab('monitoring', this)">🗂️ Monitoring FPB</button>
-      <button class="nav-btn" data-tab="stokmasuk" onclick="switchTab('stokmasuk', this)">📦 Stok Masuk</button>
-      <button class="nav-btn admin-only" data-tab="sinkronisasi" onclick="switchTab('sinkronisasi', this)">⚡ Sinkronisasi Stok</button>
-      <button class="nav-btn" data-tab="budget" onclick="switchTab('budget', this)">💰 Budget Kontrol</button>
-      <button class="nav-btn" data-tab="stok" onclick="switchTab('stok', this)">📋 Sisa Stok</button>
-      <button class="nav-btn" data-tab="laporan" onclick="switchTab('laporan', this)">🧾 Log Transaksi</button>
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">Dashboard</button>
+      <button class="nav-btn" data-tab="buatfpb" onclick="switchTab('buatfpb', this)">Buat FPB</button>
+      <button class="nav-btn" data-tab="monitoring" onclick="switchTab('monitoring', this)">Monitoring FPB</button>
+      <button class="nav-btn" data-tab="stokmasuk" onclick="switchTab('stokmasuk', this)">Stok Masuk</button>
+      <button class="nav-btn admin-only" data-tab="sinkronisasi" onclick="switchTab('sinkronisasi', this)">Sinkronisasi Stok</button>
+      <button class="nav-btn" data-tab="budget" onclick="switchTab('budget', this)">Budget Kontrol</button>
+      <button class="nav-btn" data-tab="stok" onclick="switchTab('stok', this)">Sisa Stok</button>
+      <button class="nav-btn" data-tab="laporan" onclick="switchTab('laporan', this)">Log Transaksi</button>
       <div class="nav-section-label admin-only">Admin</div>
-      <button class="nav-btn admin-only" data-tab="master" onclick="switchTab('master', this)">🗄️ Master Data</button>
-      <button class="nav-btn admin-only" data-tab="akun" onclick="switchTab('akun', this)">🔐 Account Management</button>
+      <button class="nav-btn admin-only" data-tab="master" onclick="switchTab('master', this)">Master Data</button>
+      <button class="nav-btn admin-only" data-tab="akun" onclick="switchTab('akun', this)">Account Management</button>
     </nav>
-    <button id="logoutBtn" class="btn-danger sidebar-logout" onclick="doLogout()">🔒 Secure Logout</button>
+    <button id="logoutBtn" class="btn-danger sidebar-logout" onclick="doLogout()">Secure Logout</button>
   </aside>
 
   <div class="main-content">
     <div class="topbar">
-      <h2 id="topbarTitle">📊 Dashboard</h2>
+      <h2 id="topbarTitle">Dashboard</h2>
       <span class="status-pill"><span class="dot"></span>Sistem Aktif</span>
     </div>
     <div class="container">
@@ -201,7 +201,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="dashboard" class="tab-content active">
 
         <div class="card" style="margin-top:0;">
-          <h3 style="margin:0; font-size:20px;">Selamat Datang, <span id="dashGreetName">-</span> 👋</h3>
+          <h3 style="margin:0; font-size:20px;">Selamat Datang, <span id="dashGreetName">-</span></h3>
           <p style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:0;">Berikut ringkasan aktivitas FPB & stok HR-GA bulan <span id="dashCurrentMonth">-</span>.</p>
         </div>
 
@@ -226,7 +226,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
         <div class="row" style="margin-top:15px;">
           <div class="card" style="flex:2; min-width:320px;">
-            <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta per Department</h3>
+            <h3 style="margin:0;">Barang Paling Banyak Diminta per Department</h3>
             <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Diurutkan dari yang paling banyak mengajukan FPB (Pareto). Arahkan kursor ke "Jumlah FPB" untuk melihat daftar nomor FPB.</p>
             <div style="overflow-x:auto; margin-top:15px;">
               <table>
@@ -237,7 +237,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           </div>
 
           <div class="card" style="flex:1; min-width:280px;">
-            <h3 style="margin:0;">🔥 Barang Paling Banyak Keluar (Realisasi)</h3>
+            <h3 style="margin:0;">Barang Paling Banyak Keluar (Realisasi)</h3>
             <div style="overflow-x:auto; margin-top:15px;">
               <table>
                 <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
@@ -288,9 +288,9 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
           <h3 style="margin-top:25px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">Pilih Item Komoditas</h3>
           <div class="row">
-            <button class="btn-small btn-warning" onclick="startScanner()">📷 Scan Barcode</button>
-            <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">⌨️ Manual Input</button>
-            <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">⚙️ Adjust Jatah Max</button>
+            <button class="btn-small btn-warning" onclick="startScanner()">Scan Barcode</button>
+            <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">Manual Input</button>
+            <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">Adjust Jatah Max</button>
           </div>
 
           <div class="scanner-area" id="scannerArea"><video id="preview" style="width:100%;border-radius:8px"></video></div>
@@ -306,7 +306,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           </div>
 
           <div id="jatahInfoBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-            📊 Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
+            Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
           </div>
 
           <h4 style="margin-top:25px; margin-bottom:5px;">Daftar Item Sementara (Keranjang FPB):</h4>
@@ -317,7 +317,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             </table>
           </div>
           <div class="row" style="margin-top:25px; justify-content: flex-end;">
-            <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">💾 SIMPAN SEBAGAI FPB OPEN</button>
+            <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">SIMPAN SEBAGAI FPB OPEN</button>
           </div>
         </div>
       </div>
@@ -326,7 +326,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="monitoring" class="tab-content">
         <div class="card">
           <div class="row" style="margin-bottom:5px;">
-            <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">📥 Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
+            <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
           </div>
           <div style="overflow-x:auto">
             <table>
@@ -345,10 +345,10 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             <div style="flex:1; min-width:150px;"><label>Kode Barang</label><input id="kodeMasuk" oninput="isiOtomatisMasuk()"></div>
             <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="namaMasuk" readonly style="background:#f8fafc"></div>
             <div style="flex:1; min-width:80px;"><label>Qty Masuk</label><input id="qtyMasuk" type="number" value="1"></div>
-            <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">💾 Simpan Barang Masuk</button></div>
+            <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">Simpan Barang Masuk</button></div>
           </div>
           <div id="infoStokMasukBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-            📦 Stok Saat Ini: <strong id="infoStokSaatIni">0</strong> <span id="infoStokSatuan"></span> &nbsp;|&nbsp; Kategori: <strong id="infoStokKategori">-</strong>
+            Stok Saat Ini: <strong id="infoStokSaatIni">0</strong> <span id="infoStokSatuan"></span> &nbsp;|&nbsp; Kategori: <strong id="infoStokKategori">-</strong>
           </div>
         </div>
       </div>
@@ -359,7 +359,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           <h3>Upload Excel Penyesuaian Sisa Stok Aktual (Overwrite/Reset)</h3>
           <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
             <div style="flex:1;"><input type="file" id="excelStockFile" accept=".xlsx, .xls"></div>
-            <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">⚡ Jalankan Sinkronisasi Stok Aktual</button></div>
+            <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">Jalankan Sinkronisasi Stok Aktual</button></div>
           </div>
         </div>
       </div>
@@ -368,10 +368,10 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="budget" class="tab-content">
         <div class="card">
           <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
-            <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>✏️ Adjust</strong> untuk merubah jatah limit bulanan.</p>
+            <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>Adjust</strong> untuk merubah jatah limit bulanan.</p>
             <div style="display:flex; gap:8px; flex-wrap:wrap;">
-              <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">📊 Download Excel</button>
-              <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">🔄 Refresh</button>
+              <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">Download Excel</button>
+              <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">Refresh</button>
             </div>
           </div>
           <div style="overflow-x:auto">
@@ -388,7 +388,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="stok" class="tab-content">
         <div class="card">
           <div class="row">
-            <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">📊 Download Sisa Stok (Excel)</button>
+            <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">Download Sisa Stok (Excel)</button>
             <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
             <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
           </div>
@@ -408,7 +408,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             <input type="date" id="reportTanggal" onchange="renderReport()" style="max-width:200px;">
             <select id="reportJenis" onchange="renderReport()" style="max-width:200px;"><option value="">-- Semua Jenis --</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option></select>
             <input id="searchReport" placeholder="Cari Kode/Nama/FPB" oninput="renderReport()" style="max-width:250px;">
-            <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">💾 Download Semua Log Excel</button>
+            <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">Download Semua Log Excel</button>
           </div>
           <div style="overflow-x:auto; margin-top:15px;">
             <table>
@@ -431,7 +431,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             <div style="flex:1; min-width:130px;"><label>Kategori</label><input id="mKategori"></div>
           </div>
           <div class="row" style="margin-top:20px;">
-            <button onclick="tambahMaster()" class="btn-success">➕ Simpan ke Master Data</button>
+            <button onclick="tambahMaster()" class="btn-success">Simpan ke Master Data</button>
             <button onclick="resetFormMaster()" style="background:#64748b;">Clear Form</button>
           </div>
           <div style="overflow-x:auto; margin-top:20px;">
@@ -446,7 +446,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <!-- ================= ACCOUNT MANAGEMENT (Admin Only) ================= -->
       <div id="akun" class="tab-content admin-only">
         <div class="card">
-          <h3>🖼️ Logo Perusahaan</h3>
+          <h3>Logo Perusahaan</h3>
           <p style="font-size:13px; color:#64748b; margin-top:-8px;">Logo akan tampil di sebelah kiri tulisan "PT Argapura" (setelah login) dan di halaman login. Ukuran file maksimal 1MB.</p>
           <div class="row" style="align-items:center;">
             <div style="flex:0 0 auto;">
@@ -457,8 +457,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
               <input type="file" id="logoFileInput" accept="image/*">
             </div>
             <div style="display:flex; align-items:flex-end; gap:8px;">
-              <button class="btn-success" onclick="uploadCompanyLogo()">💾 Simpan Logo</button>
-              <button class="btn-danger" onclick="hapusCompanyLogo()">🗑️ Hapus Logo</button>
+              <button class="btn-success" onclick="uploadCompanyLogo()">Simpan Logo</button>
+              <button class="btn-danger" onclick="hapusCompanyLogo()">Hapus Logo</button>
             </div>
           </div>
         </div>
@@ -478,7 +478,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
             </div>
           </div>
           <div class="row" style="margin-top:15px;">
-            <button class="btn-success" onclick="simpanAkunBaru()">💾 Simpan Akun Ke Cloud</button>
+            <button class="btn-success" onclick="simpanAkunBaru()">Simpan Akun Ke Cloud</button>
           </div>
 
           <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
@@ -497,7 +497,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
 <div id="historyModal" class="modal">
   <div class="modal-content">
-    <button class="close-btn" onclick="closeModal()">✕ Close</button>
+    <button class="close-btn" onclick="closeModal()">Close</button>
     <h3>Verifikasi Eksekusi Item FPB</h3>
     <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #10b981;">
       <strong>No FPB:</strong> <span id="mdNoSpb" style="color:#059669; font-weight:bold;"></span> | 
@@ -506,8 +506,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <strong>Status:</strong> <span id="mdStatusBadge"></span>
     </div>
     <div style="display:flex; gap:10px; margin-bottom:15px;">
-      <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>✔️ SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
-      <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">🖨️ Print Struk</button>
+      <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
+      <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">Print Struk</button>
     </div>
     <p id="checkHint" style="font-size:12px; color:#ef4444; font-weight: 600;">*Seluruh item aktif wajib dicentang untuk menyerahkan barang!</p>
     <table style="width:100%">
@@ -519,9 +519,9 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
 <div id="globalLimitModal" class="modal">
   <div class="modal-content">
-    <button class="close-btn" onclick="closeGlobalLimitModal()">✕ Close</button>
-    <h3 style="color:#f97316;">⚙️ Panel Konfigurasi Batas Jatah Maksimal Bulanan</h3>
-    <input id="searchGlobalLimit" placeholder="🔍 Cari..." oninput="renderGlobalLimitTable()" style="margin-bottom:10px;">
+    <button class="close-btn" onclick="closeGlobalLimitModal()">Close</button>
+    <h3 style="color:#f97316;">Panel Konfigurasi Batas Jatah Maksimal Bulanan</h3>
+    <input id="searchGlobalLimit" placeholder="Cari..." oninput="renderGlobalLimitTable()" style="margin-bottom:10px;">
     <div style="overflow-y:auto; max-height:50vh;">
       <table>
         <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Section / Line</th><th>Max / Bulan</th><th class="admin-only" style="text-align:center; width:120px;">Aksi</th></tr></thead>
@@ -533,8 +533,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
 <div id="adjustBudgetModal" class="modal">
   <div class="modal-content" style="max-width:620px;">
-    <button class="close-btn" onclick="closeAdjustBudgetModal()">✕ Close</button>
-    <h3 style="color:#f59e0b;">✏️ Adjust Jatah Maksimal Bulanan</h3>
+    <button class="close-btn" onclick="closeAdjustBudgetModal()">Close</button>
+    <h3 style="color:#f59e0b;">Adjust Jatah Maksimal Bulanan</h3>
     <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #f59e0b; font-size:13px;">
       <strong>Kode:</strong> <span id="abKode"></span> &nbsp;|&nbsp;
       <strong>Nama Barang:</strong> <span id="abNama"></span> &nbsp;|&nbsp;
@@ -554,10 +554,10 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <label>Keterangan (mis. Penambahan Max/Bulan 1, untuk lain-lain)</label>
       <input id="abKeterangan" placeholder="Contoh: Penambahan 1 untuk kebutuhan lain-lain">
     </div>
-    <button class="btn-success" style="width:100%; padding:10px; margin-top:6px;" onclick="simpanAdjustBudget()">💾 Simpan Perubahan</button>
+    <button class="btn-success" style="width:100%; padding:10px; margin-top:6px;" onclick="simpanAdjustBudget()">Simpan Perubahan</button>
 
     <hr style="border:0; border-top:1px dashed #cbd5e1; margin:22px 0 14px;">
-    <h3 style="margin-bottom:10px;">🕒 Riwayat Perubahan Limit</h3>
+    <h3 style="margin-bottom:10px;">Riwayat Perubahan Limit</h3>
     <div style="overflow-y:auto; max-height:260px;">
       <table>
         <thead><tr style="background:#f8fafc"><th>Tanggal & Jam</th><th>Lama → Baru</th><th>Keterangan</th><th>Oleh</th></tr></thead>
@@ -569,8 +569,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 
 <div id="spbExportModal" class="modal">
   <div class="modal-content" style="max-width:480px;">
-    <button class="close-btn" onclick="closeSpbExportModal()">✕ Close</button>
-    <h3 style="color:#0284c7;">📥 Export Data FPB ke Excel</h3>
+    <button class="close-btn" onclick="closeSpbExportModal()">Close</button>
+    <h3 style="color:#0284c7;">Export Data FPB ke Excel</h3>
     <p style="font-size:13px; color:#64748b; margin-top:-8px;">Kosongkan filter untuk mengambil seluruh data FPB.</p>
 
     <div class="input-group">
@@ -589,7 +589,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
         <option value="DONE">DONE</option>
       </select>
     </div>
-    <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">⬇️ Download Excel (Ringkasan + Detail Item)</button>
+    <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">Download Excel (Ringkasan + Detail Item)</button>
   </div>
 </div>
 
@@ -631,22 +631,16 @@ function applyCompanyLogo() {
   try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
 
   const sidebarImg = document.getElementById('companyLogoSidebar');
-  const sidebarEmoji = document.getElementById('sidebarLogoEmoji');
   const loginImg = document.getElementById('companyLogoLoginImg');
-  const loginEmoji = document.getElementById('loginLogoEmoji');
   const previewAdmin = document.getElementById('logoPreviewAdmin');
 
   if(logoData) {
     if(sidebarImg){ sidebarImg.src = logoData; sidebarImg.style.display = 'block'; }
-    if(sidebarEmoji) sidebarEmoji.style.display = 'none';
     if(loginImg){ loginImg.src = logoData; loginImg.style.display = 'block'; }
-    if(loginEmoji) loginEmoji.style.display = 'none';
     if(previewAdmin){ previewAdmin.src = logoData; previewAdmin.style.display = 'inline-block'; }
   } else {
     if(sidebarImg) sidebarImg.style.display = 'none';
-    if(sidebarEmoji) sidebarEmoji.style.display = 'inline';
     if(loginImg) loginImg.style.display = 'none';
-    if(loginEmoji) loginEmoji.style.display = 'inline';
     if(previewAdmin) previewAdmin.style.display = 'none';
   }
 }
@@ -663,7 +657,7 @@ function uploadCompanyLogo() {
     try {
       localStorage.setItem('companyLogo', e.target.result);
       applyCompanyLogo();
-      showDoneMessage('🖼️ Logo perusahaan berhasil diperbarui.');
+      showDoneMessage('Logo perusahaan berhasil diperbarui.');
       fileInput.value = "";
     } catch(err) {
       alert('Gagal menyimpan logo (kemungkinan ukuran terlalu besar untuk penyimpanan browser).');
@@ -681,16 +675,16 @@ function hapusCompanyLogo() {
 
 // ---------- NAVIGASI SIDEBAR (baru) ----------
 const TAB_TITLES = {
-  dashboard: "📊 Dashboard",
-  buatfpb: "📝 Buat FPB",
-  monitoring: "🗂️ Monitoring FPB",
-  stokmasuk: "📦 Stok Masuk",
-  sinkronisasi: "⚡ Sinkronisasi Stok",
-  budget: "💰 Budget Kontrol",
-  stok: "📋 Sisa Stok",
-  laporan: "🧾 Log Transaksi",
-  master: "🗄️ Master Data",
-  akun: "🔐 Account Management"
+  dashboard: "Dashboard",
+  buatfpb: "Buat FPB",
+  monitoring: "Monitoring FPB",
+  stokmasuk: "Stok Masuk",
+  sinkronisasi: "Sinkronisasi Stok",
+  budget: "Budget Kontrol",
+  stok: "Sisa Stok",
+  laporan: "Log Transaksi",
+  master: "Master Data",
+  akun: "Account Management"
 };
 
 function switchTab(id, btnEl) {
@@ -921,7 +915,7 @@ function simpanAkunBaru() {
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        showDoneMessage(`✅ Akun [${username}] berhasil disimpan.`);
+        showDoneMessage(`Akun [${username}] berhasil disimpan.`);
         document.getElementById("uUsername").value = "";
         document.getElementById("uPassword").value = "";
         document.getElementById("uNama").value = "";
@@ -934,7 +928,7 @@ function hapusAkun(username) {
   if(!confirm(`Hapus hak akses login untuk user [${username}]?`)) return;
   showLoading(true, "Menghapus Akun...");
   fetch(`${BASE_CLOUD_URL}?target=hapusUser`, { method: "POST", body: JSON.stringify({ username }) })
-    .then(() => { showDoneMessage("🗑️ Akun berhasil dihapus."); fetchDatabaseAll(); });
+    .then(() => { showDoneMessage("Akun berhasil dihapus."); fetchDatabaseAll(); });
 }
 
 function renderUsersTable() {
@@ -1003,7 +997,7 @@ function renderGlobalLimitTable() {
       SECTION_MAP[dept].forEach(line => {
         const key = `${m.barcode}_${line}`; const currentLimit = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
         if (searchKeyword && !(m.nama.toLowerCase().includes(searchKeyword) || m.barcode.toLowerCase().includes(searchKeyword) || line.toLowerCase().includes(searchKeyword))) return;
-        rowsHtml += `<tr><td><strong>${m.barcode}</strong></td><td>${m.nama}</td><td><span style="font-size:12px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${dept} - ${line}</span></td><td><strong>${currentLimit}</strong></td><td class="admin-only" style="text-align:center;"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td></tr>`;
+        rowsHtml += `<tr><td><strong>${m.barcode}</strong></td><td>${m.nama}</td><td><span style="font-size:12px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${dept} - ${line}</span></td><td><strong>${currentLimit}</strong></td><td class="admin-only" style="text-align:center;"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">Adjust</button></td></tr>`;
       });
     }
   });
@@ -1081,7 +1075,7 @@ function simpanAdjustBudget() {
   .then(resObj => {
     if(resObj.status === "SUCCESS") {
       MEMORY.budgetLimits[key] = val;
-      showDoneMessage("⚙️ Limit jatah diupdate & tercatat di riwayat.");
+      showDoneMessage("Limit jatah diupdate & tercatat di riwayat.");
       document.getElementById("abLimitLama").value = val;
       loadAdjustHistory(key);
       if(document.getElementById("globalLimitModal").style.display === "flex") renderGlobalLimitTable();
@@ -1145,7 +1139,7 @@ function renderKeranjang() {
       <td>${item.kategori}</td>
       <td><strong>${item.qty}</strong></td>
       <td>${item.satuan}</td>
-      <td><button class="btn-mini btn-danger" onclick="hapusItemKeranjang(${index})">✕ Hapus</button></td>
+      <td><button class="btn-mini btn-danger" onclick="hapusItemKeranjang(${index})">Hapus</button></td>
     </tr>`;
   });
 }
@@ -1162,8 +1156,8 @@ function simpanSPBOpen() {
   const line = document.getElementById("spbLine").value;
   const pic = document.getElementById("spbPic").value.trim();
 
-  if(!dept || !line || !pic) return alert("⚠️ Department, Section, dan PIC Pemohon wajib diisi!");
-  if(keranjangItems.length === 0) return alert("⚠️ Keranjang FPB masih kosong!");
+  if(!dept || !line || !pic) return alert("Department, Section, dan PIC Pemohon wajib diisi!");
+  if(keranjangItems.length === 0) return alert("Keranjang FPB masih kosong!");
 
   showLoading(true, "Menyimpan Dokumen FPB ke Cloud...");
   const payload = { nomorSpb: noSpb, department: dept, line: line, pic: pic, items: keranjangItems };
@@ -1172,7 +1166,7 @@ function simpanSPBOpen() {
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        showDoneMessage(`✅ FPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
+        showDoneMessage(`FPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
         document.getElementById("spbPic").value = "";
         keranjangItems = [];
         renderKeranjang();
@@ -1197,8 +1191,8 @@ function renderSpbReport() {
     const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb || "KODE-UNKNOWN";
     
     const badge = x.status === "DONE" 
-      ? `<span class="badge-done" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">✔️ DONE</span>` 
-      : `<span class="badge-open" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">⏳ OPEN</span>`;
+      ? `<span class="badge-done" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">DONE</span>` 
+      : `<span class="badge-open" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">OPEN</span>`;
     
     let tgl = "-";
     if (x.tanggal) {
@@ -1244,7 +1238,7 @@ function openSpbDetailModal(noSpb) {
 
   itemsAktif.forEach((it) => {
     const isDone = matchSpb.status === "DONE";
-    const chk = isDone ? `✔️` : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
+    const chk = isDone ? `<span style="color:#15803d; font-weight:bold;">OK</span>` : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
     tbody.innerHTML += `<tr>
       <td style="text-align:center;">${chk}</td>
       <td><strong>${it.kode || it.kodeBarang}</strong></td>
@@ -1289,7 +1283,7 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
   .then(res => res.json())
   .then(resObj => {
     if(resObj.status === "SUCCESS") {
-      showDoneMessage(`✔️ FPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
+      showDoneMessage(`FPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
       fetchDatabaseAll();
 
       // Ubah tampilan modal jadi DONE tanpa menutup, supaya bisa langsung print struk
@@ -1298,7 +1292,7 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
       document.getElementById("btnPrintSpb").style.display = "inline-flex";
       document.getElementById("checkHint").style.display = "none";
       document.querySelectorAll(".chk-verify").forEach(chk => {
-        chk.closest("td").innerHTML = "✔️";
+        chk.closest("td").innerHTML = `<span style="color:#15803d; font-weight:bold;">OK</span>`;
       });
     } else { alert("Gagal mengeksekusi: " + resObj.message); }
   })
@@ -1319,7 +1313,7 @@ function printSpbDetail() {
       totalJenis++;
       rows += `
         <div class="item-row">
-          <div class="item-checkbox">☐</div>
+          <div class="item-checkbox"></div>
           <div class="item-text">
             <div class="item-name">${tds[2].innerText}</div>
             <div class="item-sub">${tds[1].innerText}</div>
@@ -1351,7 +1345,7 @@ function printSpbDetail() {
         .header p { margin: 2px 0; font-size: 10px; }
         .info p { margin: 2px 0; }
         .item-row { margin: 8px 0; display: flex; gap: 6px; align-items: flex-start; }
-        .item-checkbox { font-size: 15px; line-height: 1.2; flex-shrink: 0; }
+        .item-checkbox { width:12px; height:12px; border:1px solid #000; flex-shrink: 0; margin-top:2px; }
         .item-text { flex: 1; }
         .item-name { font-weight: bold; }
         .item-sub { font-size: 10px; color: #333; }
@@ -1430,7 +1424,7 @@ function simpanBarangMasuk() {
     body: JSON.stringify({ kode, qty, pic: currentActiveName })
   })
   .then(() => {
-    showDoneMessage("📦 Stok masuk berhasil direkam! Sisa stok & log transaksi sudah diperbarui.");
+    showDoneMessage("Stok masuk berhasil direkam! Sisa stok & log transaksi sudah diperbarui.");
     document.getElementById("kodeMasuk").value = "";
     document.getElementById("namaMasuk").value = "";
     document.getElementById("qtyMasuk").value = "1";
@@ -1477,7 +1471,7 @@ function renderBudgetControl() {
             <td><strong>${limitMax}</strong></td>
             <td>${aktualPakai}</td>
             <td>${statusEff}</td>
-            <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">✏️ Adjust</button></td>
+            <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">Adjust</button></td>
           </tr>`
         });
       });
@@ -1528,7 +1522,7 @@ function refreshBudgetControl() {
       if(resObj.status === "SUCCESS") {
         MEMORY = resObj.data;
         renderBudgetControl();
-        showDoneMessage("🔄 Data Budget Kontrol berhasil di-refresh.");
+        showDoneMessage("Data Budget Kontrol berhasil di-refresh.");
       } else { alert("Gagal me-refresh: " + resObj.message); }
     })
     .catch(err => alert("Kesalahan Jaringan: " + err))
@@ -1563,8 +1557,8 @@ function renderStock() {
 
     let statusKondisi = `<span class="status-aman">Stok Aman</span>`;
     let priority = 2; // 0 = Habis, 1 = Warning, 2 = Aman
-    if(sisa <= Number(m.minStock || 0)) { statusKondisi = `<span class="status-warning">⚠️ Reorder Limit</span>`; priority = 1; }
-    if(sisa <= 0) { statusKondisi = `<span class="status-habis">❌ HABIS</span>`; priority = 0; }
+    if(sisa <= Number(m.minStock || 0)) { statusKondisi = `<span class="status-warning">Reorder Limit</span>`; priority = 1; }
+    if(sisa <= 0) { statusKondisi = `<span class="status-habis">HABIS</span>`; priority = 0; }
 
     rows.push({
       priority,
@@ -1682,7 +1676,7 @@ function prosesUploadStokAktual() {
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        alert("⚡ Sinkronisasi Berhasil! Sisa stok telah diperbarui sesuai data aktual.");
+        alert("Sinkronisasi Berhasil! Sisa stok telah diperbarui sesuai data aktual.");
         fileInput.value = "";
         fetchDatabaseAll();
       }
