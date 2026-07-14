@@ -782,7 +782,7 @@ function buildLogoBitmap() {
     const img = new Image();
     img.onload = function() {
       try {
-        const targetWidth = 320; // dot, kelipatan 8, aman untuk kertas 58mm
+        const targetWidth = 160; // dot (50% dari sebelumnya), kelipatan 8, aman untuk kertas 58mm
         const widthBytes = targetWidth / 8;
         const scale = targetWidth / img.width;
         const targetHeight = Math.max(8, Math.round(img.height * scale));
@@ -876,10 +876,10 @@ async function buildEscPosReceipt({ noSpb, line, pic, items, tglCetak, fontSize,
 
   items.forEach(it => {
     push(SIZE_BODY);
-    push(enc.encode(`${it.nama}\n`));
+    push(enc.encode(`[ ] ${it.nama}\n`));
     push(SIZE_NORMAL);
-    push(enc.encode(`  ${it.kode}\n`));
-    push(enc.encode(`  Qty: ${it.qty} ${it.satuan}\n`));
+    push(enc.encode(`      ${it.kode}\n`));
+    push(enc.encode(`      Qty: ${it.qty} ${it.satuan}\n`));
   });
 
   push(enc.encode('--------------------------------\n'));
