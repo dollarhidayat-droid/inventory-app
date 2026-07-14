@@ -8,11 +8,6 @@
 body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;margin:0;background:#f1f5f9;color:#334155;line-height:1.5}
 .container{max-width:1200px;margin:30px auto;padding:0 20px}
 
-/* DASHBOARD HEADER & CARDS */
-.main-header {background:#fff; padding:24px; border-radius:16px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.05); margin-bottom:25px; border-left:6px solid #1e40af; display:flex; justify-content:space-between; align-items:center}
-.main-header h1 {margin:0; color:#1e3a8a; font-size:26px; font-weight:700; letter-spacing:-0.5px}
-.main-header p {margin:4px 0 0 0; color:#64748b; font-size:14px}
-
 h2{color:#0f172a;margin-top:35px;font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
 h2::before{content:''; display:inline-block; width:4px; height:20px; background:#2563eb; border-radius:2px}
 h3{color:#1e40af; font-size:16px; margin-top:0; margin-bottom:15px; font-weight:600}
@@ -58,7 +53,6 @@ tr:hover {background-color:#f8fafc}
 .input-group { text-align: left; margin-bottom: 20px; }
 .input-group label { font-size: 13px; font-weight: 600; color: #475569; }
 
-#logoutBtn{background:#ef4444; font-size:13px; padding:8px 14px}
 .scanner-area{display:none;margin-top:10px}
 #doneMsg{font-size:14px;color:#10b981;margin-bottom:10px;font-weight:bold}
 tr:nth-child(even) { background-color: #fcfdfe; }
@@ -72,6 +66,35 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 .modal-content {background:#fff; padding:25px; border-radius:16px; width:95%; max-width:800px; max-height: 85vh; overflow-y: auto;}
 .close-btn {background:#64748b; color:#fff; padding:6px 12px; float:right; border-radius:6px; cursor:pointer; font-weight:600; border:none;}
 .chk-verify {width: 20px; height: 20px; margin: 0; cursor: pointer;}
+
+/* ==================== APP SHELL / SIDEBAR (baru) ==================== */
+.app-shell{display:flex; min-height:100vh;}
+.sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.15); z-index:10;}
+.sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px;}
+.sidebar-brand p{margin:4px 0 20px; font-size:12px; color:#bfdbfe; font-weight:600;}
+.sidebar-userbox{background:rgba(255,255,255,0.1); border-radius:10px; padding:10px 12px; font-size:12px; margin-bottom:18px; line-height:1.4;}
+.sidebar-userbox strong{color:#fff; font-size:13px;}
+.sidebar-nav{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px;}
+.nav-btn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:#dbeafe; padding:11px 14px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:none; justify-content:flex-start;}
+.nav-btn:hover{background:rgba(255,255,255,0.14); transform:none; box-shadow:none;}
+.nav-btn.active{background:#ffffff; color:#1e3a8a;}
+.nav-section-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.7px; color:#93c5fd; margin:14px 0 2px 12px; font-weight:700;}
+.sidebar-logout{margin-top:14px; width:100%;}
+.main-content{margin-left:250px; flex:1; min-width:0; background:#f1f5f9;}
+.topbar{background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5;}
+.topbar h2{margin:0; font-size:18px; border:0;}
+.topbar h2::before{display:none;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+@media (max-width: 900px){
+  .sidebar{position:relative; width:100%; height:auto; flex-direction:row; flex-wrap:wrap; padding:14px;}
+  .sidebar-brand{width:100%;}
+  .sidebar-userbox{width:100%;}
+  .sidebar-nav{flex-direction:row; flex-wrap:wrap; width:100%;}
+  .sidebar-logout{width:auto;}
+  .main-content{margin-left:0;}
+  .app-shell{flex-direction:column;}
+}
 </style>
 </head>
 <body>
@@ -96,257 +119,316 @@ tr:nth-child(even) { background-color: #fcfdfe; }
   </div>
 </div>
 
-<div id="appRoot" class="container" style="display:none">
+<div id="appRoot" class="app-shell" style="display:none">
 
-  <div class="main-header">
-    <div>
-      <h1>PT Argapura</h1>
-      <p>Sistem Management Inventory & Kontrol Stok HR-GA | Akun: <strong id="lblActiveUser" style="color:#2563eb"></strong></p>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <h1>🏭 PT Argapura</h1>
+      <p>Inventory Stok HR-GA</p>
     </div>
-    <div>
-      <button id="logoutBtn" onclick="doLogout()">🔒 Secure Logout</button>
+    <div class="sidebar-userbox">
+      Masuk sebagai:<br><strong id="lblActiveUser"></strong>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">📊 Dashboard</button>
+      <button class="nav-btn" data-tab="buatfpb" onclick="switchTab('buatfpb', this)">📝 Buat FPB</button>
+      <button class="nav-btn" data-tab="monitoring" onclick="switchTab('monitoring', this)">🗂️ Monitoring FPB</button>
+      <button class="nav-btn" data-tab="stokmasuk" onclick="switchTab('stokmasuk', this)">📦 Stok Masuk</button>
+      <button class="nav-btn admin-only" data-tab="sinkronisasi" onclick="switchTab('sinkronisasi', this)">⚡ Sinkronisasi Stok</button>
+      <button class="nav-btn" data-tab="budget" onclick="switchTab('budget', this)">💰 Budget Kontrol</button>
+      <button class="nav-btn" data-tab="stok" onclick="switchTab('stok', this)">📋 Sisa Stok</button>
+      <button class="nav-btn" data-tab="laporan" onclick="switchTab('laporan', this)">🧾 Log Transaksi</button>
+      <div class="nav-section-label admin-only">Admin</div>
+      <button class="nav-btn admin-only" data-tab="master" onclick="switchTab('master', this)">🗄️ Master Data</button>
+      <button class="nav-btn admin-only" data-tab="akun" onclick="switchTab('akun', this)">🔐 Account Management</button>
+    </nav>
+    <button id="logoutBtn" class="btn-danger sidebar-logout" onclick="doLogout()">🔒 Secure Logout</button>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2 id="topbarTitle">📊 Dashboard</h2>
+    </div>
+    <div class="container">
+
+      <div id="doneMsg"></div>
+
+      <!-- ================= DASHBOARD ================= -->
+      <div id="dashboard" class="tab-content active">
+        <div class="row">
+          <div class="card" style="flex:1; min-width:340px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
+              <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta (per FPB)</h3>
+              <select id="dashDeptFilter" onchange="renderDashboardTopSpbDept()" style="max-width:220px; margin-top:0;">
+                <option value="">-- Semua Department --</option>
+              </select>
+            </div>
+            <div style="overflow-x:auto; margin-top:15px;">
+              <table>
+                <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Frekuensi</th><th>Total Qty Diminta</th></tr></thead>
+                <tbody id="dashTopSpbBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="flex:1; min-width:340px;">
+            <h3 style="margin:0;">🔥 Barang Paling Banyak Keluar (Realisasi)</h3>
+            <div style="overflow-x:auto; margin-top:15px;">
+              <table>
+                <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
+                <tbody id="dashTopKeluarBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="margin-top:15px;">
+          <h3 style="margin:0;">🏢 Rekap Total FPB per Department</h3>
+          <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Total jumlah FPB yang diajukan dan total quantity barang yang diminta, dikelompokkan per department.</p>
+          <div style="overflow-x:auto; margin-top:10px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>#</th><th>Department</th><th>Total FPB (Frekuensi)</th><th>Total Qty Diminta</th></tr></thead>
+              <tbody id="dashRekapDeptBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= BUAT FPB ================= -->
+      <div id="buatfpb" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <div style="flex:1; min-width:200px;">
+              <label>Nomor FPB (Otomatis)</label>
+              <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#1e40af;">
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Department *</label>
+              <select id="spbDepartment" onchange="updateSectionDropdown()">
+                <option value="">-- Pilih Department --</option>
+                <option value="Accounting">Accounting</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Finance">Finance</option>
+                <option value="HR">HR</option>
+                <option value="IT">IT</option>
+                <option value="Logistic">Logistic</option>
+                <option value="Marketing">Marketing</option>
+                <option value="OS">OS</option>
+                <option value="Production">Production</option>
+                <option value="Purchasing">Purchasing</option>
+                <option value="QA / QC">QA / QC</option>
+                <option value="Technical">Technical</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Section / Line *</label>
+              <select id="spbLine" onchange="updateJatahInfoHint()">
+                <option value="">-- Pilih Section/Line --</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Nama Pemohon (PIC)</label>
+              <input id="spbPic" placeholder="Nama Lengkap">
+            </div>
+          </div>
+
+          <h3 style="margin-top:25px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">Pilih Item Komoditas</h3>
+          <div class="row">
+            <button class="btn-small btn-warning" onclick="startScanner()">📷 Scan Barcode</button>
+            <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">⌨️ Manual Input</button>
+            <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">⚙️ Adjust Jatah Max</button>
+          </div>
+
+          <div class="scanner-area" id="scannerArea"><video id="preview" style="width:100%;border-radius:8px"></video></div>
+
+          <div class="row" style="margin-top:15px;">
+            <div style="flex:1; min-width:120px;"><label>Kode Barang</label><input id="kodeBarang" oninput="isiOtomatis()"></div>
+            <div style="flex:2; min-width:180px;"><label>Nama Barang *</label><input id="namaBarang" placeholder="Nama otomatis"></div>
+            <div style="flex:1; min-width:100px;"><label>Qty Diminta</label><input id="qty" type="number" value="1" oninput="evaluasiSisaJatahLive()"></div>
+            <div style="flex:1; min-width:110px;"><label>Max / Bulan</label><input id="jatahMaxBulanView" readonly style="background:#f8fafc; text-align:center;"></div>
+            <div style="flex:1; min-width:90px;"><label>Satuan</label><input id="satuan" placeholder="Satuan"></div>
+            <input type="hidden" id="kategoriBarang">
+            <div style="display:flex; align-items:flex-end;"><button onclick="tambahItemKeKeranjang()" style="height:42px;">+ Tambah</button></div>
+          </div>
+
+          <div id="jatahInfoBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+            📊 Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
+          </div>
+
+          <h4 style="margin-top:25px; margin-bottom:5px;">Daftar Item Sementara (Keranjang FPB):</h4>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Qty</th><th>Satuan</th><th>Aksi</th></tr></thead>
+              <tbody id="keranjangBody"><tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top:25px; justify-content: flex-end;">
+            <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">💾 SIMPAN SEBAGAI FPB OPEN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MONITORING FPB ================= -->
+      <div id="monitoring" class="tab-content">
+        <div class="card">
+          <div class="row" style="margin-bottom:5px;">
+            <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">📥 Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Tanggal Pembuatan</th><th>Nomor FPB</th><th>Department</th><th>Line / Dept</th><th>PIC Pemohon</th><th>Jumlah Jenis</th><th>Status Validasi</th></tr></thead>
+              <tbody id="spbReportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= STOK MASUK (Untuk User & Admin) ================= -->
+      <div id="stokmasuk" class="tab-content">
+        <div class="card">
+          <p style="font-size:13px; color:#64748b; margin-top:0;">Form ini digunakan untuk mencatat barang masuk ke stok. Data akan otomatis terhubung dengan <strong>Master Data</strong>, <strong>Log Transaksi</strong>, dan <strong>Sisa Stok</strong>.</p>
+          <div class="row">
+            <div style="flex:1; min-width:150px;"><label>Kode Barang</label><input id="kodeMasuk" oninput="isiOtomatisMasuk()"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="namaMasuk" readonly style="background:#f8fafc"></div>
+            <div style="flex:1; min-width:80px;"><label>Qty Masuk</label><input id="qtyMasuk" type="number" value="1"></div>
+            <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">💾 Simpan Barang Masuk</button></div>
+          </div>
+          <div id="infoStokMasukBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+            📦 Stok Saat Ini: <strong id="infoStokSaatIni">0</strong> <span id="infoStokSatuan"></span> &nbsp;|&nbsp; Kategori: <strong id="infoStokKategori">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SINKRONISASI STOK (Admin Only) ================= -->
+      <div id="sinkronisasi" class="tab-content admin-only">
+        <div class="card">
+          <h3>Upload Excel Penyesuaian Sisa Stok Aktual (Overwrite/Reset)</h3>
+          <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
+            <div style="flex:1;"><input type="file" id="excelStockFile" accept=".xlsx, .xls"></div>
+            <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">⚡ Jalankan Sinkronisasi Stok Aktual</button></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= BUDGET KONTROL ================= -->
+      <div id="budget" class="tab-content">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
+            <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>✏️ Adjust</strong> untuk merubah jatah limit bulanan.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">📊 Download Excel</button>
+              <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">🔄 Refresh</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
+              <tbody id="budgetControlBody"></tbody>
+            </table>
+          </div>
+          <p id="budgetControlNote" style="font-size:12px; color:#94a3b8; margin-top:10px;"></p>
+        </div>
+      </div>
+
+      <!-- ================= SISA STOK ================= -->
+      <div id="stok" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">📊 Download Sisa Stok (Excel)</button>
+            <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
+            <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
+          </div>
+          <div style="overflow-x:auto; margin-top:15px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Kode</th><th>Nama Barang</th><th>Sisa Stok</th><th>Min Stok</th><th>Status Kondisi</th></tr></thead>
+              <tbody id="stockBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= LOG TRANSAKSI ================= -->
+      <div id="laporan" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <input type="date" id="reportTanggal" onchange="renderReport()" style="max-width:200px;">
+            <select id="reportJenis" onchange="renderReport()" style="max-width:200px;"><option value="">-- Semua Jenis --</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option></select>
+            <input id="searchReport" placeholder="Cari Kode/Nama/FPB" oninput="renderReport()" style="max-width:250px;">
+            <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">💾 Download Semua Log Excel</button>
+          </div>
+          <div style="overflow-x:auto; margin-top:15px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Tanggal</th><th>No. FPB</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Line</th><th>PIC</th><th>Qty</th><th>Satuan</th><th>Jenis</th><th>Status FPB</th></tr></thead>
+              <tbody id="reportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MASTER DATA (Admin Only) ================= -->
+      <div id="master" class="tab-content admin-only">
+        <div class="card">
+          <h3>Add / Update Data Barang Master</h3>
+          <div class="row">
+            <div style="flex:1; min-width:130px;"><label>Barcode/Kode</label><input id="mBarcode" oninput="isiMasterOtomatis()"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="mNama"></div>
+            <div style="flex:1; min-width:100px;"><label>Satuan</label><input id="mSatuan"></div>
+            <div style="flex:1; min-width:100px;"><label>Min Stock</label><input id="mMinimal" type="number" value="0"></div>
+            <div style="flex:1; min-width:130px;"><label>Kategori</label><input id="mKategori"></div>
+          </div>
+          <div class="row" style="margin-top:20px;">
+            <button onclick="tambahMaster()" class="btn-success">➕ Simpan ke Master Data</button>
+            <button onclick="resetFormMaster()" style="background:#64748b;">Clear Form</button>
+          </div>
+          <div style="overflow-x:auto; margin-top:20px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Barcode / Kode</th><th>Nama Barang</th><th>Satuan</th><th>Min Stock</th><th>Kategori</th><th>Aksi</th></tr></thead>
+              <tbody id="masterBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ACCOUNT MANAGEMENT (Admin Only) ================= -->
+      <div id="akun" class="tab-content admin-only">
+        <div class="card">
+          <h3>Daftarkan / Update Akun Akses Baru</h3>
+          <div class="row">
+            <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
+            <div style="flex:1; min-width:150px;"><label>Password Akses *</label><input id="uPassword" type="text" placeholder="Password"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Lengkap Karyawan</label><input id="uNama" placeholder="Nama Karyawan"></div>
+            <div style="flex:1; min-width:150px;">
+              <label>Role Tingkat Akses *</label>
+              <select id="uRole">
+                <option value="user">User biasa (Hanya FPB)</option>
+                <option value="admin">Admin HRGA (Full Akses)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:15px;">
+            <button class="btn-success" onclick="simpanAkunBaru()">💾 Simpan Akun Ke Cloud</button>
+          </div>
+
+          <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:100px; text-align:center;">Aksi</th></tr></thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
     </div>
   </div>
-
-<div id="doneMsg"></div>
-
-<h2>📊 Dashboard Analitik Barang</h2>
-<div class="row">
-  <div class="card" style="flex:1; min-width:340px;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px;">
-      <h3 style="margin:0;">🏆 Barang Paling Banyak Diminta (per SPB)</h3>
-      <select id="dashDeptFilter" onchange="renderDashboardTopSpbDept()" style="max-width:220px; margin-top:0;">
-        <option value="">-- Semua Department --</option>
-      </select>
-    </div>
-    <div style="overflow-x:auto; margin-top:15px;">
-      <table>
-        <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Frekuensi</th><th>Total Qty Diminta</th></tr></thead>
-        <tbody id="dashTopSpbBody"></tbody>
-      </table>
-    </div>
-  </div>
-
-  <div class="card" style="flex:1; min-width:340px;">
-    <h3 style="margin:0;">🔥 Barang Paling Banyak Keluar (Realisasi Gudang)</h3>
-    <div style="overflow-x:auto; margin-top:15px;">
-      <table>
-        <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
-        <tbody id="dashTopKeluarBody"></tbody>
-      </table>
-    </div>
-  </div>
-</div>
-
-<h2>1. Buat Permintaan Konsep SPB Baru (Drafting)</h2>
-<div class="card">
-  <div class="row">
-    <div style="flex:1; min-width:200px;">
-      <label>Nomor SPB (Otomatis)</label>
-      <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#1e40af;">
-    </div>
-    <div style="flex:1; min-width:200px;">
-      <label>Department *</label>
-      <select id="spbDepartment" onchange="updateSectionDropdown()">
-        <option value="">-- Pilih Department --</option>
-        <option value="Accounting">Accounting</option>
-        <option value="Engineering">Engineering</option>
-        <option value="Finance">Finance</option>
-        <option value="HR">HR</option>
-        <option value="IT">IT</option>
-        <option value="Logistic">Logistic</option>
-        <option value="Marketing">Marketing</option>
-        <option value="OS">OS</option>
-        <option value="Production">Production</option>
-        <option value="Purchasing">Purchasing</option>
-        <option value="QA / QC">QA / QC</option>
-        <option value="Technical">Technical</option>
-      </select>
-    </div>
-    <div style="flex:1; min-width:200px;">
-      <label>Section / Line *</label>
-      <select id="spbLine" onchange="updateJatahInfoHint()">
-        <option value="">-- Pilih Section/Line --</option>
-      </select>
-    </div>
-    <div style="flex:1; min-width:200px;">
-      <label>Nama Pemohon (PIC)</label>
-      <input id="spbPic" placeholder="Nama Lengkap">
-    </div>
-  </div>
-
-  <h3 style="margin-top:25px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">Pilih Item Komoditas</h3>
-  <div class="row">
-    <button class="btn-small btn-warning" onclick="startScanner()">📷 Scan Barcode</button>
-    <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">⌨️ Manual Input</button>
-    <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">⚙️ Adjust Jatah Max</button>
-  </div>
-
-  <div class="scanner-area" id="scannerArea"><video id="preview" style="width:100%;border-radius:8px"></video></div>
-
-  <div class="row" style="margin-top:15px;">
-    <div style="flex:1; min-width:120px;"><label>Kode Barang</label><input id="kodeBarang" oninput="isiOtomatis()"></div>
-    <div style="flex:2; min-width:180px;"><label>Nama Barang *</label><input id="namaBarang" placeholder="Nama otomatis"></div>
-    <div style="flex:1; min-width:100px;"><label>Qty Diminta</label><input id="qty" type="number" value="1" oninput="evaluasiSisaJatahLive()"></div>
-    <div style="flex:1; min-width:110px;"><label>Max / Bulan</label><input id="jatahMaxBulanView" readonly style="background:#f8fafc; text-align:center;"></div>
-    <div style="flex:1; min-width:90px;"><label>Satuan</label><input id="satuan" placeholder="Satuan"></div>
-    <input type="hidden" id="kategoriBarang">
-    <div style="display:flex; align-items:flex-end;"><button onclick="tambahItemKeKeranjang()" style="height:42px;">+ Tambah</button></div>
-  </div>
-
-  <div id="jatahInfoBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
-    📊 Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
-  </div>
-
-  <h4 style="margin-top:25px; margin-bottom:5px;">Daftar Item Sementara (Keranjang SPB):</h4>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Qty</th><th>Satuan</th><th>Aksi</th></tr></thead>
-      <tbody id="keranjangBody"><tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr></tbody>
-    </table>
-  </div>
-  <div class="row" style="margin-top:25px; justify-content: flex-end;">
-    <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">💾 SIMPAN SEBAGAI SPB OPEN</button>
-  </div>
-</div>
-
-<h2>| Monitoring Data Status Surat Permintaan Barang (SPB)</h2>
-<div class="card">
-  <div class="row" style="margin-bottom:5px;">
-    <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">📥 Export SPB ke Excel (Filter Department/Tanggal/Status)</button>
-  </div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Tanggal Pembuatan</th><th>Nomor SPB</th><th>Department</th><th>Line / Dept</th><th>PIC Pemohon</th><th>Jumlah Jenis</th><th>Status Validasi</th></tr></thead>
-      <tbody id="spbReportBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<h2 class="admin-only">2. Input Update Stok & Upload Penyesuaian Aktual</h2>
-<div class="card admin-only">
-  <h3>Opsi A: Koreksi Input Manual (Barang Masuk)</h3>
-  <div class="row">
-    <div style="flex:1; min-width:150px;"><label>Kode Barang</label><input id="kodeMasuk" oninput="isiOtomatisMasuk()"></div>
-    <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="namaMasuk" readonly style="background:#f8fafc"></div>
-    <div style="flex:1; min-width:80px;"><label>Qty Masuk</label><input id="qtyMasuk" type="number" value="1"></div>
-    <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">Simpan Masuk</button></div>
-  </div>
-  <hr style="border:0; border-top: 1px dashed #cbd5e1; margin: 25px 0;">
-  <h3>Opsi B: Upload Excel Penyesuaian Sisa Stok Aktual (Overwrite/Reset)</h3>
-  <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
-    <div style="flex:1;"><input type="file" id="excelStockFile" accept=".xlsx, .xls"></div>
-    <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">⚡ Jalankan Sinkronisasi Stok Aktual</button></div>
-  </div>
-</div>
-
-<h2>3. Budget Kontrol & Limit Bulanan</h2>
-<div class="card">
-  <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
-    <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>✏️ Adjust</strong> untuk merubah jatah limit bulanan.</p>
-    <div style="display:flex; gap:8px; flex-wrap:wrap;">
-      <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">📊 Download Excel</button>
-      <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">🔄 Refresh</button>
-    </div>
-  </div>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
-      <tbody id="budgetControlBody"></tbody>
-    </table>
-  </div>
-  <p id="budgetControlNote" style="font-size:12px; color:#94a3b8; margin-top:10px;"></p>
-</div>
-
-<h2>Sisa Stock Gudang Aktif</h2>
-<div class="card">
-  <div class="row">
-    <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">📊 Download Sisa Stok (Excel)</button>
-    <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
-    <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
-  </div>
-  <div style="overflow-x:auto; margin-top:15px;">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Kode</th><th>Nama Barang</th><th>Sisa Stok</th><th>Min Stok</th><th>Status Kondisi</th></tr></thead>
-      <tbody id="stockBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<h2>Report Log Transaksi Masuk/Keluar Realtime</h2>
-<div class="card">
-  <div class="row">
-    <input type="date" id="reportTanggal" onchange="renderReport()" style="max-width:200px;">
-    <select id="reportJenis" onchange="renderReport()" style="max-width:200px;"><option value="">-- Semua Jenis --</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option></select>
-    <input id="searchReport" placeholder="Cari Kode/Nama/SPB" oninput="renderReport()" style="max-width:250px;">
-    <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">💾 Download Semua Log Excel</button>
-  </div>
-  <div style="overflow-x:auto; margin-top:15px;">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Tanggal</th><th>No. SPB</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Line</th><th>PIC</th><th>Qty</th><th>Satuan</th><th>Jenis</th><th>Status SPB</th></tr></thead>
-      <tbody id="reportBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<h2 class="admin-only">Master Data Management</h2>
-<div class="card admin-only">
-  <h3>Add / Update Data Barang Master</h3>
-  <div class="row">
-    <div style="flex:1; min-width:130px;"><label>Barcode/Kode</label><input id="mBarcode" oninput="isiMasterOtomatis()"></div>
-    <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="mNama"></div>
-    <div style="flex:1; min-width:100px;"><label>Satuan</label><input id="mSatuan"></div>
-    <div style="flex:1; min-width:100px;"><label>Min Stock</label><input id="mMinimal" type="number" value="0"></div>
-    <div style="flex:1; min-width:130px;"><label>Kategori</label><input id="mKategori"></div>
-  </div>
-  <div class="row" style="margin-top:20px;">
-    <button onclick="tambahMaster()" class="btn-success">➕ Simpan ke Master Data</button>
-    <button onclick="resetFormMaster()" style="background:#64748b;">Clear Form</button>
-  </div>
-  <div style="overflow-x:auto; margin-top:20px;">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Barcode / Kode</th><th>Nama Barang</th><th>Satuan</th><th>Min Stock</th><th>Kategori</th><th>Aksi</th></tr></thead>
-      <tbody id="masterBody"></tbody>
-    </table>
-  </div>
-</div>
-
-<h2 class="admin-only">🔐 Account Management (User Access Control)</h2>
-<div class="card admin-only">
-  <h3>Daftarkan / Update Akun Akses Baru</h3>
-  <div class="row">
-    <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
-    <div style="flex:1; min-width:150px;"><label>Password Akses *</label><input id="uPassword" type="text" placeholder="Password"></div>
-    <div style="flex:2; min-width:200px;"><label>Nama Lengkap Karyawan</label><input id="uNama" placeholder="Nama Karyawan"></div>
-    <div style="flex:1; min-width:150px;">
-      <label>Role Tingkat Akses *</label>
-      <select id="uRole">
-        <option value="user">User biasa (Hanya SPB)</option>
-        <option value="admin">Admin HRGA (Full Akses)</option>
-      </select>
-    </div>
-  </div>
-  <div class="row" style="margin-top:15px;">
-    <button class="btn-success" onclick="simpanAkunBaru()">💾 Simpan Akun Ke Cloud</button>
-  </div>
-  
-  <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
-  <div style="overflow-x:auto">
-    <table>
-      <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:100px; text-align:center;">Aksi</th></tr></thead>
-      <tbody id="usersTableBody"></tbody>
-    </table>
-  </div>
-</div>
-
 </div>
 
 <div id="historyModal" class="modal">
   <div class="modal-content">
     <button class="close-btn" onclick="closeModal()">✕ Close</button>
-    <h3>Verifikasi Eksekusi Item SPB</h3>
+    <h3>Verifikasi Eksekusi Item FPB</h3>
     <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #2563eb;">
-      <strong>No SPB:</strong> <span id="mdNoSpb" style="color:#2563eb; font-weight:bold;"></span> | 
+      <strong>No FPB:</strong> <span id="mdNoSpb" style="color:#2563eb; font-weight:bold;"></span> | 
       <strong>Line/Dept:</strong> <span id="mdLine"></span> | 
       <strong>PIC:</strong> <span id="mdPic"></span> | 
       <strong>Status:</strong> <span id="mdStatusBadge"></span>
@@ -416,8 +498,8 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 <div id="spbExportModal" class="modal">
   <div class="modal-content" style="max-width:480px;">
     <button class="close-btn" onclick="closeSpbExportModal()">✕ Close</button>
-    <h3 style="color:#0284c7;">📥 Export Data SPB ke Excel</h3>
-    <p style="font-size:13px; color:#64748b; margin-top:-8px;">Kosongkan filter untuk mengambil seluruh data SPB.</p>
+    <h3 style="color:#0284c7;">📥 Export Data FPB ke Excel</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:-8px;">Kosongkan filter untuk mengambil seluruh data FPB.</p>
 
     <div class="input-group">
       <label>Filter Department</label>
@@ -469,6 +551,37 @@ const SECTION_MAP = {
   "Marketing": ["Marketing"]
 };
 
+// ---------- NAVIGASI SIDEBAR (baru) ----------
+const TAB_TITLES = {
+  dashboard: "📊 Dashboard",
+  buatfpb: "📝 Buat FPB",
+  monitoring: "🗂️ Monitoring FPB",
+  stokmasuk: "📦 Stok Masuk",
+  sinkronisasi: "⚡ Sinkronisasi Stok",
+  budget: "💰 Budget Kontrol",
+  stok: "📋 Sisa Stok",
+  laporan: "🧾 Log Transaksi",
+  master: "🗄️ Master Data",
+  akun: "🔐 Account Management"
+};
+
+function switchTab(id, btnEl) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  const target = document.getElementById(id);
+  if (target) target.classList.add("active");
+
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  if (btnEl) {
+    btnEl.classList.add("active");
+  } else {
+    const fallbackBtn = document.querySelector(`.nav-btn[data-tab="${id}"]`);
+    if (fallbackBtn) fallbackBtn.classList.add("active");
+  }
+
+  const titleEl = document.getElementById("topbarTitle");
+  if (titleEl) titleEl.innerText = TAB_TITLES[id] || "";
+}
+
 function showLoading(sts, txt = "Sinkronisasi Data Google Sheets...") { 
   document.getElementById("loadingText").innerText = txt;
   document.getElementById("loadingOverlay").style.display = sts ? "flex" : "none"; 
@@ -499,6 +612,7 @@ function fetchDatabaseAll() {
         renderUsersTable();
         renderDashboardTopSpbDept();
         renderDashboardTopKeluar();
+        renderDashboardRekapDept();
       } else { alert("Gagal memuat database cloud: " + resObj.message); }
     })
     .catch(err => alert("Kesalahan Jaringan: " + err))
@@ -542,7 +656,7 @@ function renderDashboardTopSpbDept() {
           <div style="background:#2563eb; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty}</div>
         </div>
       </td>
-    </tr>`).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data SPB untuk filter ini.</td></tr>`;
+    </tr>`).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data FPB untuk filter ini.</td></tr>`;
 }
 
 function renderDashboardTopKeluar() {
@@ -567,6 +681,31 @@ function renderDashboardTopKeluar() {
         </div>
       </td>
     </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data transaksi keluar.</td></tr>`;
+}
+
+// BARU: Rekap total FPB (frekuensi) & total qty diminta, dikelompokkan per Department
+function renderDashboardRekapDept() {
+  const tbody = document.getElementById("dashRekapDeptBody"); if(!tbody) return;
+
+  const tally = {};
+  (MEMORY.spbList || []).forEach(spb => {
+    const dept = spb.department || spb.Department || "-";
+    if(!tally[dept]) tally[dept] = { totalFpb: 0, totalQty: 0 };
+    tally[dept].totalFpb += 1;
+    (spb.items || []).forEach(it => { tally[dept].totalQty += Number(it.qty || 0); });
+  });
+
+  const sorted = Object.entries(tally)
+    .map(([dept, v]) => ({ dept, ...v }))
+    .sort((a,b) => b.totalQty - a.totalQty);
+
+  tbody.innerHTML = sorted.length ? sorted.map((r, idx) => `
+    <tr>
+      <td style="width:30px;">${idx+1}</td>
+      <td><strong>${r.dept}</strong></td>
+      <td>${r.totalFpb}x FPB</td>
+      <td><strong>${r.totalQty}</strong> item</td>
+    </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data FPB.</td></tr>`;
 }
 
 function doLogin(){
@@ -594,8 +733,9 @@ function doLogin(){
 
 function masukSistem() {
   document.getElementById("loginOverlay").style.display = "none";
-  document.getElementById("appRoot").style.display = "block";
+  document.getElementById("appRoot").style.display = "flex";
   document.getElementById("lblActiveUser").innerText = `${currentActiveName} (${currentRole.toUpperCase()})`;
+  switchTab("dashboard");
   fetchDatabaseAll();
 }
 
@@ -867,16 +1007,16 @@ function simpanSPBOpen() {
   const pic = document.getElementById("spbPic").value.trim();
 
   if(!dept || !line || !pic) return alert("⚠️ Department, Section, dan PIC Pemohon wajib diisi!");
-  if(keranjangItems.length === 0) return alert("⚠️ Keranjang SPB masih kosong!");
+  if(keranjangItems.length === 0) return alert("⚠️ Keranjang FPB masih kosong!");
 
-  showLoading(true, "Menyimpan Dokumen SPB ke Cloud...");
+  showLoading(true, "Menyimpan Dokumen FPB ke Cloud...");
   const payload = { nomorSpb: noSpb, department: dept, line: line, pic: pic, items: keranjangItems };
 
   fetch(`${BASE_CLOUD_URL}?target=simpanSPB`, { method: "POST", body: JSON.stringify(payload) })
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        showDoneMessage(`✅ SPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
+        showDoneMessage(`✅ FPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
         document.getElementById("spbPic").value = "";
         keranjangItems = [];
         renderKeranjang();
@@ -893,7 +1033,7 @@ function renderSpbReport() {
   tbody.innerHTML = "";
   
   if(!MEMORY.spbList || MEMORY.spbList.length === 0) { 
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data SPB.</td></tr>`; 
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data FPB.</td></tr>`; 
     return; 
   }
 
@@ -926,7 +1066,7 @@ function renderSpbReport() {
 function openSpbDetailModal(noSpb) {
   currentSelectedSpbNo = noSpb;
   const matchSpb = MEMORY.spbList.find(x => (x.nomorSpb === noSpb || x.noSpb === noSpb || x.NoSpb === noSpb));
-  if(!matchSpb) return alert("Data SPB tidak ditemukan!");
+  if(!matchSpb) return alert("Data FPB tidak ditemukan!");
 
   const nomorSpbAktif = matchSpb.nomorSpb || matchSpb.noSpb || matchSpb.NoSpb;
   document.getElementById("mdNoSpb").innerText = nomorSpbAktif;
@@ -960,7 +1100,7 @@ function openSpbDetailModal(noSpb) {
 
   bSelesai.disabled = true;
 
-  // Atur tombol sesuai status SPB: OPEN -> tombol Selesai aktif, DONE -> langsung tampilkan tombol Print
+  // Atur tombol sesuai status FPB: OPEN -> tombol Selesai aktif, DONE -> langsung tampilkan tombol Print
   if (matchSpb.status === "DONE") {
     bSelesai.style.display = "none";
     bPrint.style.display = "inline-flex";
@@ -993,7 +1133,7 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
   .then(res => res.json())
   .then(resObj => {
     if(resObj.status === "SUCCESS") {
-      showDoneMessage(`✔️ SPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
+      showDoneMessage(`✔️ FPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
       fetchDatabaseAll();
 
       // Ubah tampilan modal jadi DONE tanpa menutup, supaya bisa langsung print struk
@@ -1037,7 +1177,7 @@ function printSpbDetail() {
   win.document.write(`
     <html>
     <head>
-      <title>Struk SPB ${noSpb}</title>
+      <title>Struk FPB ${noSpb}</title>
       <style>
         @page { margin: 0; }
         body {
@@ -1068,11 +1208,11 @@ function printSpbDetail() {
     <body>
       <div class="header center">
         <h2>PT ARGAPURA</h2>
-        <p>Surat Permintaan Barang</p>
+        <p>Formulir Permintaan Barang</p>
       </div>
       <div class="line"></div>
       <div class="info">
-        <p><strong>No SPB:</strong> ${noSpb}</p>
+        <p><strong>No FPB:</strong> ${noSpb}</p>
         <p><strong>Line/Dept:</strong> ${line}</p>
         <p><strong>PIC:</strong> ${pic}</p>
         <p><strong>Status:</strong> DONE</p>
@@ -1101,9 +1241,23 @@ function printSpbDetail() {
   };
 }
 
+// ---------- STOK MASUK (Tersedia untuk User & Admin) ----------
 function isiOtomatisMasuk() {
-  const m = MEMORY.masterData.find(x => x.barcode === document.getElementById("kodeMasuk").value.trim());
+  const kode = document.getElementById("kodeMasuk").value.trim();
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  const infoBox = document.getElementById("infoStokMasukBox");
+
   document.getElementById("namaMasuk").value = m ? m.nama : "";
+
+  if(m) {
+    const r = hitungSisaStok(m.barcode, m.minStock);
+    document.getElementById("infoStokSaatIni").innerText = r.sisa;
+    document.getElementById("infoStokSatuan").innerText = m.satuan || "";
+    document.getElementById("infoStokKategori").innerText = m.kategori || "-";
+    infoBox.style.display = "block";
+  } else {
+    infoBox.style.display = "none";
+  }
 }
 
 function simpanBarangMasuk() {
@@ -1111,15 +1265,20 @@ function simpanBarangMasuk() {
   const qty = Number(document.getElementById("qtyMasuk").value);
   if(!kode || qty <= 0) return alert("Lengkapi data barang masuk dengan valid!");
 
+  const master = MEMORY.masterData.find(x => x.barcode === kode);
+  if(!master) return alert("Kode barang tidak ditemukan di Master Data! Silakan tambahkan dahulu di menu Master Data (Admin).");
+
   showLoading(true, "Menyimpan barang masuk...");
   fetch(`${BASE_CLOUD_URL}?target=barangMasuk`, {
     method: "POST",
-    body: JSON.stringify({ kode, qty })
+    body: JSON.stringify({ kode, qty, pic: currentActiveName })
   })
   .then(() => {
-    showDoneMessage("📦 Stok masuk manual berhasil direkam!");
+    showDoneMessage("📦 Stok masuk berhasil direkam! Sisa stok & log transaksi sudah diperbarui.");
     document.getElementById("kodeMasuk").value = "";
     document.getElementById("namaMasuk").value = "";
+    document.getElementById("qtyMasuk").value = "1";
+    document.getElementById("infoStokMasukBox").style.display = "none";
     fetchDatabaseAll();
   });
 }
@@ -1367,7 +1526,7 @@ function prosesUploadStokAktual() {
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        alert("⚡ Sinkronisasi Berhasil! Sisa stok gudang telah diperbarui sesuai data aktual.");
+        alert("⚡ Sinkronisasi Berhasil! Sisa stok telah diperbarui sesuai data aktual.");
         fileInput.value = "";
         fetchDatabaseAll();
       }
@@ -1406,15 +1565,15 @@ function downloadStockExcel() {
   });
   const ws = XLSX.utils.json_to_sheet(dataExport);
   ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16}];
-  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok Gudang");
-  XLSX.writeFile(wb, `Sisa_Stok_Gudang_${new Date().toISOString().split('T')[0]}.xlsx`);
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok");
+  XLSX.writeFile(wb, `Sisa_Stok_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
 function downloadReportExcel() {
   if(MEMORY.transaksi.length === 0) return alert("Tidak ada data log transaksi untuk diexport!");
   const dataExport = MEMORY.transaksi.map(t => ({
     "Tanggal": t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-",
-    "No. SPB": t.noSpb || "-",
+    "No. FPB": t.noSpb || "-",
     "Kode Barang": t.kode,
     "Nama Barang": t.nama,
     "Kategori": t.kategori || "-",
@@ -1423,7 +1582,7 @@ function downloadReportExcel() {
     "Qty": t.qty,
     "Satuan": t.satuan,
     "Jenis": t.jenis,
-    "Status SPB": t.statusSpb || "DONE"
+    "Status FPB": t.statusSpb || "DONE"
   }));
   const ws = XLSX.utils.json_to_sheet(dataExport);
   ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:30},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:12}];
@@ -1431,7 +1590,7 @@ function downloadReportExcel() {
   XLSX.writeFile(wb, `Log_Transaksi_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// ---------- EXPORT SPB DENGAN FILTER (Department / Tanggal / Status) ----------
+// ---------- EXPORT FPB DENGAN FILTER (Department / Tanggal / Status) ----------
 function openSpbExportModal() {
   const deptSelect = document.getElementById("exportDept");
   if(deptSelect.options.length <= 1) {
@@ -1462,10 +1621,10 @@ function downloadSpbExcelFiltered() {
     return true;
   });
 
-  if(filtered.length === 0) return alert("Tidak ada data SPB yang sesuai dengan filter dipilih!");
+  if(filtered.length === 0) return alert("Tidak ada data FPB yang sesuai dengan filter dipilih!");
 
   const ringkasan = filtered.map(x => ({
-    "Nomor SPB": x.nomorSpb || x.noSpb || x.NoSpb,
+    "Nomor FPB": x.nomorSpb || x.noSpb || x.NoSpb,
     "Tanggal": (x.tanggal || x.Tanggal) ? new Date(x.tanggal || x.Tanggal).toLocaleDateString('id-ID') : "-",
     "Department": x.department || x.Department || "-",
     "Section / Line": x.line || x.Line || "-",
@@ -1479,7 +1638,7 @@ function downloadSpbExcelFiltered() {
     const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb;
     (x.items || []).forEach(it => {
       detail.push({
-        "Nomor SPB": nomorSpbAktif,
+        "Nomor FPB": nomorSpbAktif,
         "Department": x.department || x.Department || "-",
         "Section / Line": x.line || x.Line || "-",
         "PIC": x.pic || x.Pic || x.PIC || "-",
@@ -1488,7 +1647,7 @@ function downloadSpbExcelFiltered() {
         "Kategori": it.kategori || "-",
         "Qty": it.qty,
         "Satuan": it.satuan,
-        "Status SPB": x.status || x.Status || "OPEN"
+        "Status FPB": x.status || x.Status || "OPEN"
       });
     });
   });
@@ -1498,11 +1657,11 @@ function downloadSpbExcelFiltered() {
   wsRingkasan['!cols'] = [{wch:20},{wch:12},{wch:14},{wch:16},{wch:18},{wch:16},{wch:10}];
   const wsDetail = XLSX.utils.json_to_sheet(detail);
   wsDetail['!cols'] = [{wch:20},{wch:14},{wch:16},{wch:18},{wch:14},{wch:30},{wch:16},{wch:8},{wch:10},{wch:10}];
-  XLSX.utils.book_append_sheet(wb, wsRingkasan, "Ringkasan SPB");
-  XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Item SPB");
+  XLSX.utils.book_append_sheet(wb, wsRingkasan, "Ringkasan FPB");
+  XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Item FPB");
 
   const labelDept = dept || "SemuaDept";
-  XLSX.writeFile(wb, `Export_SPB_${labelDept}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  XLSX.writeFile(wb, `Export_FPB_${labelDept}_${new Date().toISOString().split('T')[0]}.xlsx`);
   closeSpbExportModal();
 }
 
