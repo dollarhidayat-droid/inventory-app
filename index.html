@@ -1,375 +1,2357 @@
-/**
- * ====================================================================
- * BACKEND APPS SCRIPT - Inventory Stok HR-GA PT Argapura
- * ====================================================================
- * Struktur ini didesain SESUAI dengan kontrak API yang dipanggil oleh
- * frontend HTML (BASE_CLOUD_URL?target=xxx).
- *
- * CATATAN: Nama field/target internal (contoh: "spbList", "simpanSPB",
- * "eksekusiSPB", "nomorSpb") SENGAJA TIDAK diubah menjadi "FPB" supaya
- * kontrak data antara frontend <-> backend tetap kompatibel. Perubahan
- * penamaan "SPB" -> "FPB" hanya dilakukan pada teks yang tampil ke user
- * di frontend (label, judul, tombol, dsb).
- *
- * CARA PASANG:
- * 1. Buka Google Sheets baru (atau yang sudah ada).
- * 2. Extensions > Apps Script, hapus isi Code.gs, paste semua isi file ini.
- * 3. Jalankan function `setupSheets` sekali (pilih dari dropdown function,
- *    lalu klik Run) untuk membuat semua sheet + header otomatis.
- *    -> AMAN dijalankan ulang: sheet yang SUDAH ADA tidak akan diubah/reset,
- *       hanya sheet baru yang akan dibuat.
- * 4. Deploy > New deployment > Web app.
- *    - Execute as: Me
- *    - Who has access: Anyone
- * 5. Copy URL /exec, tempel ke variabel BASE_CLOUD_URL di HTML.
- * ====================================================================
- */
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Stok HR-GA PT Argapura</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;margin:0;background:#f1f5f9;color:#334155;line-height:1.5;overflow-x:hidden}
+.container{max-width:1200px;margin:30px auto;padding:0 20px}
 
-const SS = SpreadsheetApp.getActiveSpreadsheet();
+h2{color:#0f172a;margin-top:35px;font-size:20px;font-weight:700;display:flex;align-items:center;gap:8px}
+h2::before{content:''; display:inline-block; width:4px; height:20px; background:#10b981; border-radius:2px}
+h3{color:#0f172a; font-size:16px; margin-top:0; margin-bottom:15px; font-weight:600}
 
-// ---------- SETUP AWAL (jalankan manual sekali) ----------
-function setupSheets() {
-  getOrCreateSheet("master_data", ["barcode", "nama", "satuan", "minStock", "kategori"]);
-  getOrCreateSheet("spb_list", ["nomorSpb", "tanggal", "department", "line", "pic", "status"]);
-  getOrCreateSheet("spb_items", ["nomorSpb", "kode", "nama", "kategori", "qty", "satuan"]);
-  getOrCreateSheet("transaksi", ["tanggal", "noSpb", "kode", "nama", "kategori", "line", "pic", "qty", "satuan", "jenis", "statusSpb"]);
-  getOrCreateSheet("budget_limits", ["key", "limit"]);
-  getOrCreateSheet("stock_awal", ["kode", "qty"]);
-  getOrCreateSheet("users", ["username", "password", "nama", "role"]);
-  getOrCreateSheet("adjust_history", ["timestamp", "key", "kode", "line", "limitLama", "limitBaru", "keterangan", "username", "nama"]);
+input,select{width:100%;padding:10px 14px;margin-top:6px;border:1px solid #cbd5e1;border-radius:8px;box-sizing:border-box;font-size:14px;background:#fff;transition:all 0.2s}
+input:focus,select:focus{border-color:#10b981;outline:none;box-shadow:0 0 0 3px rgba(16,185,129,0.15)}
+button{padding:10px 18px;border:none;border-radius:8px;background:#10b981;color:#fff;font-weight:600;font-size:14px;cursor:pointer;transition:all 0.2s;display:inline-flex;align-items:center;justify-content:center}
+button:hover{background:#059669;transform:translateY(-1px);box-shadow:0 4px 6px -1px rgba(16,185,129,0.25)}
+button:disabled{background:#cbd5e1 !important; color:#94a3b8 !important; cursor:not-allowed; transform:none !important; box-shadow:none !important;}
+
+.btn-mini{padding:4px 8px; font-size:11px; border-radius:4px; font-weight:600}
+.btn-small{padding:8px 14px;font-size:13px}
+.btn-danger{background:#ef4444}.btn-danger:hover{background:#dc2626}
+.btn-success{background:#10b981}.btn-success:hover{background:#059669}
+.btn-warning{background:#f59e0b;color:#fff}.btn-warning:hover{background:#d97706}
+.btn-orange{background:#f97316;color:#fff}.btn-orange:hover{background:#ea580c}
+
+.row{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px}
+.card{background:#fff;padding:24px;border-radius:16px;margin-top:15px;box-shadow:0 4px 6px -1px rgba(0,0,0,0.03);border:1px solid #e2e8f0}
+
+/* TABEL */
+table{width:100%;border-collapse:collapse;margin-top:12px;background:#fff}
+th,td{padding:12px 16px;border-bottom:1px solid #e2e8f0;font-size:14px;text-align:left}
+th{background:#f8fafc;color:#475569;font-weight:600;font-size:13px;text-transform:uppercase;letter-spacing:0.5px}
+tr:hover {background-color:#f8fafc}
+
+/* STATUS BADGES */
+.status-aman{color:#15803d;font-weight:bold;background:#dcfce7;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+.status-warning{color:#b45309;font-weight:bold;background:#fef3c7;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+.status-habis{color:#b91c1c;font-weight:bold;background:#fee2e2;padding:4px 8px;border-radius:6px;font-size:12px;display:inline-block}
+
+.badge-normal{background:#dcfce7;color:#15803d;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-over{background:#fee2e2;color:#b91c1c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-adjusted{background:#ffedd5;color:#c2410c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
+.badge-open {background:#ffedd5; color:#c2410c; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
+.badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
+
+/* LOGIN OVERLAY */
+#loginOverlay {position: fixed; inset: 0; background: linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); display: flex; align-items: center; justify-content: center; z-index: 999; padding:16px;}
+#loginPanel {background: #ffffff; width: 440px; max-width:100%; padding: 40px; border-radius: 24px; box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3);}
+.login-header{text-align:center}
+.login-header img{width:64px;height:64px;border-radius:14px;object-fit:cover;margin:0 auto 12px;display:none;box-shadow:0 4px 10px rgba(0,0,0,0.1)}
+.login-header h2 { margin: 0; color: #0f172a; font-size: 26px; font-weight: 800; display:flex; align-items:center; justify-content:center; gap:8px;}
+.login-header p { margin: 5px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600; }
+.input-group { text-align: left; margin-bottom: 20px; }
+.input-group label { font-size: 13px; font-weight: 600; color: #475569; }
+
+/* STATUS PILL (topbar) */
+.status-pill{display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#15803d; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
+.status-pill .dot{width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.25); animation:pulseDot 1.6s infinite;}
+@keyframes pulseDot{0%{box-shadow:0 0 0 0 rgba(34,197,94,0.4);} 70%{box-shadow:0 0 0 6px rgba(34,197,94,0);} 100%{box-shadow:0 0 0 0 rgba(34,197,94,0);}}
+
+/* DASHBOARD STAT CARDS */
+.stat-card{flex:1; min-width:200px; background:#fff; border:1px solid #e2e8f0; border-radius:16px; padding:20px 22px; box-shadow:0 4px 6px -1px rgba(0,0,0,0.03);}
+.stat-card .stat-label{font-size:11.5px; font-weight:700; color:#94a3b8; text-transform:uppercase; letter-spacing:0.5px;}
+.stat-card .stat-value{font-size:24px; font-weight:800; color:#0369a1; margin-top:6px;}
+.progress-outer{background:#e2e8f0; border-radius:8px; overflow:hidden; height:10px; margin-top:10px;}
+.progress-inner{background:linear-gradient(90deg,#10b981,#34d399); height:100%; border-radius:8px;}
+
+/* PARETO TOOLTIP */
+.pareto-tip{position:relative; cursor:help; border-bottom:1px dashed #94a3b8;}
+.pareto-tip .tip-box{display:none; position:absolute; left:0; top:calc(100% + 8px); background:#0f172a; color:#e2e8f0; font-size:11.5px; font-weight:500; padding:10px 12px; border-radius:8px; box-shadow:0 10px 25px -5px rgba(0,0,0,0.3); z-index:50; min-width:190px; max-width:260px; max-height:180px; overflow-y:auto; line-height:1.6; white-space:normal;}
+.pareto-tip:hover .tip-box{display:block;}
+.pareto-tip .tip-box b{color:#6ee7b7;}
+
+.scanner-area{display:none;margin-top:10px}
+#doneMsg{font-size:14px;color:#10b981;margin-bottom:10px;font-weight:bold}
+tr:nth-child(even) { background-color: #fcfdfe; }
+
+/* LOADING SCREEN */
+#loadingOverlay { display:none; position:fixed; inset:0; background:rgba(255,255,255,0.8); z-index:2000; align-items:center; justify-content:center; flex-direction:column; font-weight:bold; color:#0f172a; font-size:16px;}
+.spinner { width: 40px; height: 40px; border: 4px solid #cbd5e1; border-top: 4px solid #10b981; border-radius: 50%; animation: spin 1s linear infinite; margin-bottom:10px; }
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+.modal {display:none; position:fixed; inset:0; background:rgba(15,23,42,0.4); backdrop-filter:blur(4px); z-index:1000; align-items:center; justify-content:center; padding:12px;}
+.modal-content {background:#fff; padding:25px; border-radius:16px; width:95%; max-width:800px; max-height: 85vh; overflow-y: auto;}
+.close-btn {background:#64748b; color:#fff; padding:6px 12px; float:right; border-radius:6px; cursor:pointer; font-weight:600; border:none;}
+.chk-verify {width: 20px; height: 20px; margin: 0; cursor: pointer;}
+
+/* PRINTER STATUS PILL */
+.printer-pill{display:inline-flex; align-items:center; gap:6px; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; cursor:pointer; border:1px solid transparent;}
+.printer-pill.connected{background:#dcfce7; color:#15803d; border-color:#86efac;}
+.printer-pill.disconnected{background:#fee2e2; color:#b91c1c; border-color:#fca5a5;}
+.printer-pill .dot{width:7px; height:7px; border-radius:50%;}
+.printer-pill.connected .dot{background:#22c55e;}
+.printer-pill.disconnected .dot{background:#ef4444;}
+
+/* ==================== APP SHELL / SIDEBAR (baru) ==================== */
+.app-shell{display:flex; min-height:100vh;}
+.sidebar{width:250px; flex-shrink:0; background:linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); color:#fff; padding:26px 18px; display:flex; flex-direction:column; position:fixed; top:0; left:0; bottom:0; overflow-y:auto; box-shadow:4px 0 15px rgba(0,0,0,0.25); z-index:10; border-right:1px solid rgba(255,255,255,0.06);}
+.sidebar-brand{display:flex; align-items:center; gap:10px; margin-bottom:22px;}
+.sidebar-brand img{width:40px; height:40px; border-radius:10px; object-fit:cover; display:none; flex-shrink:0; box-shadow:0 4px 10px rgba(0,0,0,0.25);}
+.sidebar-brand h1{margin:0; font-size:19px; font-weight:800; letter-spacing:-0.3px; line-height:1.2;}
+.sidebar-brand p{margin:4px 0 0; font-size:12px; color:#94a3b8; font-weight:600; line-height:1.2;}
+.sidebar-userbox{background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.08); border-radius:12px; padding:12px 14px; font-size:12px; margin-bottom:18px; line-height:1.5; color:#94a3b8;}
+.sidebar-userbox strong{color:#fff; font-size:13.5px;}
+.sidebar-userbox .role-pill{display:inline-block; margin-top:7px; background:#10b981; color:#052e1f; font-weight:800; font-size:10.5px; padding:3px 10px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
+.sidebar-userbox .change-pass-link{display:block; margin-top:9px; background:transparent; border:none; color:#93c5fd; font-size:11.5px; font-weight:700; padding:0; text-decoration:underline; cursor:pointer; box-shadow:none; justify-content:flex-start; width:auto;}
+.sidebar-userbox .change-pass-link:hover{color:#bfdbfe; background:transparent; transform:none; box-shadow:none;}
+.sidebar-nav{flex:1; overflow-y:auto; display:flex; flex-direction:column; gap:3px;}
+.nav-btn{display:flex; align-items:center; gap:10px; width:100%; text-align:left; background:transparent; color:#94a3b8; padding:11px 14px; border-radius:10px; font-size:13.5px; font-weight:600; box-shadow:none; justify-content:flex-start;}
+.nav-btn:hover{background:rgba(255,255,255,0.06); transform:none; box-shadow:none; color:#fff;}
+.nav-btn.active{background:#ffffff; color:#1e3a8a; box-shadow:0 4px 10px -2px rgba(0,0,0,0.25);}
+.nav-section-label{font-size:10.5px; text-transform:uppercase; letter-spacing:0.7px; color:#475569; margin:14px 0 2px 12px; font-weight:700;}
+.sidebar-logout{margin-top:14px; width:100%; background:transparent !important; border:1px solid rgba(239,68,68,0.4) !important; color:#f87171 !important;}
+.sidebar-logout:hover{background:rgba(239,68,68,0.12) !important; color:#fca5a5 !important;}
+.main-content{margin-left:250px; flex:1; min-width:0; background:#f1f5f9; max-width:calc(100% - 250px);}
+.topbar{background:#fff; padding:16px 24px; border-bottom:1px solid #e2e8f0; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:5; flex-wrap:wrap; gap:10px;}
+.topbar h2{margin:0; font-size:18px; border:0;}
+.topbar h2::before{display:none;}
+.topbar-right{display:flex; align-items:center; gap:10px; flex-wrap:wrap;}
+.tab-content{display:none;}
+.tab-content.active{display:block;}
+@media (max-width: 900px){
+  .sidebar{position:relative; width:100%; height:auto; flex-direction:row; flex-wrap:wrap; padding:14px;}
+  .sidebar-brand{width:100%;}
+  .sidebar-userbox{width:100%;}
+  .sidebar-nav{flex-direction:row; flex-wrap:wrap; width:100%;}
+  .sidebar-logout{width:auto;}
+  .main-content{margin-left:0; max-width:100%;}
+  .app-shell{flex-direction:column;}
 }
-
-function getOrCreateSheet(name, headers) {
-  let sh = SS.getSheetByName(name);
-  if (!sh) {
-    sh = SS.insertSheet(name);
-    sh.appendRow(headers);
-  }
-  return sh;
+@media (max-width: 640px){
+  .container{padding:0 12px; margin:16px auto;}
+  .card{padding:16px}
+  .row{gap:10px}
+  .stat-card{min-width:100%; padding:16px}
+  .topbar{padding:12px 14px}
+  .topbar h2{font-size:16px}
+  #loginPanel{padding:26px 22px}
+  .modal-content{padding:16px}
+  table{font-size:12.5px}
+  th,td{padding:8px 10px}
+  .sidebar-brand h1{font-size:16px}
 }
+</style>
+</head>
+<body>
 
-// ---------- ENTRY POINT ----------
-function doGet(e) {
+<div id="loadingOverlay"><div class="spinner"></div><div id="loadingText">Menghubungkan ke Cloud...</div></div>
+
+<div id="loginOverlay">
+  <div id="loginPanel">
+    <div class="login-header">
+      <img id="companyLogoLoginImg" src="" alt="Logo Perusahaan">
+      <h2>Inventory Stok HR-GA</h2>
+      <p>PT ARGAPURA</p>
+    </div>
+    <div class="input-group">
+      <label>Username</label>
+      <input id="loginUser" placeholder="Masukkan username">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input id="loginPass" type="password" placeholder="Masukkan password">
+    </div>
+    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
+  </div>
+</div>
+
+<div id="appRoot" class="app-shell" style="display:none">
+
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <img id="companyLogoSidebar" src="" alt="Logo Perusahaan">
+      <div>
+        <h1>PT Argapura</h1>
+        <p>Inventory Stok HR-GA</p>
+      </div>
+    </div>
+    <div class="sidebar-userbox">
+      Masuk sebagai:<br><strong id="lblActiveUser"></strong><br>
+      <span class="role-pill" id="lblActiveRole"></span>
+      <button type="button" class="change-pass-link" onclick="openChangePasswordModal()">Ubah Password</button>
+    </div>
+    <nav class="sidebar-nav">
+      <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard', this)">Dashboard</button>
+      <button class="nav-btn" data-tab="buatfpb" onclick="switchTab('buatfpb', this)">Buat FPB</button>
+      <button class="nav-btn" data-tab="monitoring" onclick="switchTab('monitoring', this)">Monitoring FPB</button>
+      <button class="nav-btn" data-tab="stokmasuk" onclick="switchTab('stokmasuk', this)">Stok Masuk</button>
+      <button class="nav-btn admin-only" data-tab="sinkronisasi" onclick="switchTab('sinkronisasi', this)">Sinkronisasi Stok</button>
+      <button class="nav-btn" data-tab="budget" onclick="switchTab('budget', this)">Budget Kontrol</button>
+      <button class="nav-btn" data-tab="stok" onclick="switchTab('stok', this)">Sisa Stok</button>
+      <button class="nav-btn" data-tab="laporan" onclick="switchTab('laporan', this)">Log Transaksi</button>
+      <div class="nav-section-label admin-only">Admin</div>
+      <button class="nav-btn admin-only" data-tab="master" onclick="switchTab('master', this)">Master Data</button>
+      <button class="nav-btn admin-only" data-tab="akun" onclick="switchTab('akun', this)">Account Management</button>
+    </nav>
+    <button id="logoutBtn" class="btn-danger sidebar-logout" onclick="doLogout()">Secure Logout</button>
+  </aside>
+
+  <div class="main-content">
+    <div class="topbar">
+      <h2 id="topbarTitle">Dashboard</h2>
+      <div class="topbar-right">
+        <span id="printerStatusPill" class="printer-pill disconnected" onclick="togglePrinterConnection()">
+          <span class="dot"></span><span id="printerStatusText">Printer Belum Terhubung</span>
+        </span>
+        <span class="status-pill"><span class="dot"></span>Sistem Aktif</span>
+      </div>
+    </div>
+    <div class="container">
+
+      <div id="doneMsg"></div>
+
+      <!-- ================= DASHBOARD ================= -->
+      <div id="dashboard" class="tab-content active">
+
+        <div class="card" style="margin-top:0;">
+          <h3 style="margin:0; font-size:20px;">Selamat Datang, <span id="dashGreetName">-</span></h3>
+          <p style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:0;">Berikut ringkasan aktivitas FPB & stok HR-GA bulan <span id="dashCurrentMonth">-</span>.</p>
+        </div>
+
+        <div class="row">
+          <div class="stat-card">
+            <div class="stat-label">Total FPB <span id="lblBulanFpb"></span></div>
+            <div class="stat-value" id="statTotalFpb">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Total Qty Diminta <span id="lblBulanQty"></span></div>
+            <div class="stat-value" id="statTotalQty">0</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Department Teraktif</div>
+            <div class="stat-value" id="statTopDept" style="font-size:18px;">-</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-label">Item Perlu Reorder</div>
+            <div class="stat-value" id="statReorder" style="color:#dc2626;">0</div>
+          </div>
+        </div>
+
+        <div class="row" style="margin-top:15px; align-items:stretch;">
+          <div class="card" style="flex:2; min-width:320px; display:flex; flex-direction:column; max-height:480px;">
+            <h3 style="margin:0;">Barang Paling Banyak Diminta per Department</h3>
+            <p style="font-size:12px; color:#94a3b8; margin-top:4px;">Diurutkan dari yang paling banyak mengajukan FPB (Pareto). Arahkan kursor ke "Jumlah FPB" untuk melihat daftar nomor FPB.</p>
+            <div style="overflow-x:auto; overflow-y:auto; margin-top:15px; flex:1;">
+              <table>
+                <thead><tr style="background:#f1f5f9"><th>#</th><th>Department</th><th>Jumlah FPB</th><th>Total Qty Diminta</th><th>Kumulatif %</th></tr></thead>
+                <tbody id="dashTopSpbBody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card" style="flex:1; min-width:280px; display:flex; flex-direction:column; max-height:480px;">
+            <h3 style="margin:0;">Barang Paling Banyak Keluar (Realisasi)</h3>
+            <div style="overflow-x:auto; overflow-y:auto; margin-top:15px; flex:1;">
+              <table>
+                <thead><tr style="background:#f1f5f9"><th>#</th><th>Kode</th><th>Nama Barang</th><th>Total Qty Keluar</th></tr></thead>
+                <tbody id="dashTopKeluarBody"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= BUAT FPB ================= -->
+      <div id="buatfpb" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <div style="flex:1; min-width:200px;">
+              <label>Nomor FPB (Otomatis)</label>
+              <input id="spbNomor" readonly style="background:#f1f5f9; font-weight:bold; color:#059669;">
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Department *</label>
+              <select id="spbDepartment" onchange="updateSectionDropdown()">
+                <option value="">-- Pilih Department --</option>
+                <option value="Accounting">Accounting</option>
+                <option value="Engineering">Engineering</option>
+                <option value="Finance">Finance</option>
+                <option value="HR">HR</option>
+                <option value="IT">IT</option>
+                <option value="Logistic">Logistic</option>
+                <option value="Marketing">Marketing</option>
+                <option value="OS">OS</option>
+                <option value="Production">Production</option>
+                <option value="Purchasing">Purchasing</option>
+                <option value="QA / QC">QA / QC</option>
+                <option value="Technical">Technical</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Section / Line *</label>
+              <select id="spbLine" onchange="updateJatahInfoHint()">
+                <option value="">-- Pilih Section/Line --</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px;">
+              <label>Nama Pemohon (PIC)</label>
+              <input id="spbPic" placeholder="Nama Lengkap">
+            </div>
+          </div>
+
+          <h3 style="margin-top:25px; border-bottom:2px solid #e2e8f0; padding-bottom:8px;">Pilih Item Komoditas</h3>
+          <div class="row">
+            <button class="btn-small btn-warning" onclick="startScanner()">Scan Barcode</button>
+            <button class="btn-small" style="background:#64748b" onclick="document.getElementById('kodeBarang').focus()">Manual Input</button>
+            <button class="btn-small btn-orange admin-only" onclick="openGlobalLimitModal()">Adjust Jatah Max</button>
+          </div>
+
+          <div class="scanner-area" id="scannerArea"><video id="preview" style="width:100%;border-radius:8px"></video></div>
+
+          <div class="row" style="margin-top:15px;">
+            <div style="flex:1; min-width:120px;"><label>Kode Barang</label><input id="kodeBarang" oninput="isiOtomatis()"></div>
+            <div style="flex:2; min-width:180px;"><label>Nama Barang *</label><input id="namaBarang" placeholder="Nama otomatis"></div>
+            <div style="flex:1; min-width:100px;"><label>Qty Diminta</label><input id="qty" type="number" value="1" oninput="evaluasiSisaJatahLive()"></div>
+            <div style="flex:1; min-width:110px;"><label>Max / Bulan</label><input id="jatahMaxBulanView" readonly style="background:#f8fafc; text-align:center;"></div>
+            <div style="flex:1; min-width:90px;"><label>Satuan</label><input id="satuan" placeholder="Satuan"></div>
+            <input type="hidden" id="kategoriBarang">
+            <div style="display:flex; align-items:flex-end;"><button onclick="tambahItemKeKeranjang()" style="height:42px;">+ Tambah</button></div>
+          </div>
+
+          <div id="jatahInfoBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+            Detail Kuota: Batas Max: <strong id="jiMax">2</strong> | Diambil Bulan Ini (DONE): <strong id="jiDone">0</strong> | Di Keranjang: <strong id="jiKeranjang">0</strong> | Sisa Kuota Bersih: <span id="jiSisa" style="font-weight: bold;">2</span>
+          </div>
+
+          <h4 style="margin-top:25px; margin-bottom:5px;">Daftar Item Sementara (Keranjang FPB):</h4>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Kategori</th><th>Qty</th><th>Satuan</th><th>Aksi</th></tr></thead>
+              <tbody id="keranjangBody"><tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr></tbody>
+            </table>
+          </div>
+          <div class="row" style="margin-top:25px; justify-content: flex-end;">
+            <button id="btnSimpanSpbMain" onclick="simpanSPBOpen()" class="btn-success" style="padding:12px 24px;">SIMPAN SEBAGAI FPB OPEN</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MONITORING FPB ================= -->
+      <div id="monitoring" class="tab-content">
+        <div class="card">
+          <div class="row" style="margin-bottom:5px;">
+            <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Tanggal Pembuatan</th><th>Nomor FPB</th><th>Department</th><th>Line / Dept</th><th>PIC Pemohon</th><th>Jumlah Jenis</th><th>Status Validasi</th></tr></thead>
+              <tbody id="spbReportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= STOK MASUK (Untuk User & Admin) ================= -->
+      <div id="stokmasuk" class="tab-content">
+        <div class="card">
+          <p style="font-size:13px; color:#64748b; margin-top:0;">Form ini digunakan untuk mencatat barang masuk ke stok. Data akan otomatis terhubung dengan <strong>Master Data</strong>, <strong>Log Transaksi</strong>, dan <strong>Sisa Stok</strong>.</p>
+          <div class="row">
+            <div style="flex:1; min-width:150px;"><label>Kode Barang</label><input id="kodeMasuk" oninput="isiOtomatisMasuk()"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="namaMasuk" readonly style="background:#f8fafc"></div>
+            <div style="flex:1; min-width:80px;"><label>Qty Masuk</label><input id="qtyMasuk" type="number" value="1"></div>
+            <div style="display:flex; align-items:flex-end;"><button onclick="simpanBarangMasuk()" class="btn-success" style="height:42px;">Simpan Barang Masuk</button></div>
+          </div>
+          <div id="infoStokMasukBox" style="margin-top: 14px; font-size: 13px; display: none; background: #f8fafc; padding: 10px 14px; border-radius: 6px; border: 1px dashed #cbd5e1;">
+            Stok Saat Ini: <strong id="infoStokSaatIni">0</strong> <span id="infoStokSatuan"></span> &nbsp;|&nbsp; Kategori: <strong id="infoStokKategori">-</strong>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= SINKRONISASI STOK (Admin Only) ================= -->
+      <div id="sinkronisasi" class="tab-content admin-only">
+        <div class="card">
+          <h3>Upload Excel Penyesuaian Sisa Stok Aktual (Overwrite/Reset)</h3>
+          <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
+            <div style="flex:1;"><input type="file" id="excelStockFile" accept=".xlsx, .xls"></div>
+            <div><button onclick="prosesUploadStokAktual()" style="background:#0284c7;">Jalankan Sinkronisasi Stok Aktual</button></div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Upload Excel Batas Jatah / Minimal Stok per Item per Line (Bulanan)</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">
+            Upload 1x untuk mengubah <strong>Batas Max (Jatah Pemakaian Bulanan)</strong> banyak kombinasi Item x Line sekaligus — ini adalah kolom yang sama dengan "Batas Max" pada menu <strong>Budget Kontrol</strong> / tombol <strong>Adjust Jatah Max</strong> di menu Buat FPB.
+          </p>
+          <p style="font-size:12.5px; color:#b45309; margin-top:0; background:#fffbeb; border:1px dashed #fcd34d; padding:8px 12px; border-radius:6px;">
+            *Nilai ini <strong>TIDAK</strong> berhubungan / tidak menimpa "Min Stock" di menu <strong>Sisa Stok</strong> atau <strong>Master Data</strong>. Fungsinya murni untuk kontrol batas pemakaian per item per line setiap bulan.
+          </p>
+          <p style="font-size:12px; color:#64748b; margin-top:0;">
+            Format kolom Excel yang wajib ada (nama kolom fleksibel, tidak case-sensitive): <strong>barcode</strong> (kode barang), <strong>line</strong> (section/line), dan <strong>minStock</strong> (angka batas max per line). Kolom lain seperti nama, satuan, department, kategori boleh ikut disertakan tapi akan diabaikan sistem (hanya sebagai referensi). Contoh format sama persis dengan tabel department/line pada menu <strong>Adjust Jatah Max</strong>.
+          </p>
+          <div class="row" style="background:#f8fafc; padding:15px; border-radius:8px; border:1px solid #cbd5e1">
+            <div style="flex:1;"><input type="file" id="excelBudgetLineFile" accept=".xlsx, .xls"></div>
+            <div><button onclick="prosesUploadBudgetLine()" style="background:#f97316;">Jalankan Sinkronisasi Batas Per Line</button></div>
+          </div>
+          <p id="budgetLineUploadNote" style="font-size:12px; color:#94a3b8; margin-top:10px;"></p>
+        </div>
+      </div>
+
+      <!-- ================= BUDGET KONTROL ================= -->
+      <div id="budget" class="tab-content">
+        <div class="card">
+          <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:15px; gap:10px;">
+            <p style="font-size:13px; color:#64748b; margin:0;">*Gunakan <strong>Adjust</strong> untuk merubah jatah limit bulanan.</p>
+            <div style="display:flex; gap:8px; flex-wrap:wrap;">
+              <button class="btn-small" style="background:#0284c7" onclick="downloadBudgetControlExcel()">Download Excel</button>
+              <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">Refresh</button>
+            </div>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
+              <tbody id="budgetControlBody"></tbody>
+            </table>
+          </div>
+          <p id="budgetControlNote" style="font-size:12px; color:#94a3b8; margin-top:10px;"></p>
+        </div>
+      </div>
+
+      <!-- ================= SISA STOK ================= -->
+      <div id="stok" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">Download Sisa Stok (Excel)</button>
+            <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
+            <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
+          </div>
+          <div style="overflow-x:auto; margin-top:15px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Kode</th><th>Nama Barang</th><th>Sisa Stok</th><th>Min Stok</th><th>Status Kondisi</th></tr></thead>
+              <tbody id="stockBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= LOG TRANSAKSI ================= -->
+      <div id="laporan" class="tab-content">
+        <div class="card">
+          <div class="row">
+            <input type="date" id="reportTanggal" onchange="renderReport()" style="max-width:200px;">
+            <select id="reportJenis" onchange="renderReport()" style="max-width:200px;"><option value="">-- Semua Jenis --</option><option value="Masuk">Masuk</option><option value="Keluar">Keluar</option></select>
+            <input id="searchReport" placeholder="Cari Kode/Nama/FPB" oninput="renderReport()" style="max-width:250px;">
+            <button class="btn-small" style="background:#0284c7" onclick="downloadReportExcel()">Download Semua Log Excel</button>
+          </div>
+          <div style="overflow-x:auto; margin-top:15px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Tanggal</th><th>No. FPB</th><th>Kode</th><th>Nama</th><th>Kategori</th><th>Line</th><th>PIC</th><th>Qty</th><th>Satuan</th><th>Jenis</th><th>Status FPB</th></tr></thead>
+              <tbody id="reportBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= MASTER DATA (Admin Only) ================= -->
+      <div id="master" class="tab-content admin-only">
+        <div class="card">
+          <h3>Add / Update Data Barang Master</h3>
+          <div class="row">
+            <div style="flex:1; min-width:130px;"><label>Barcode/Kode</label><input id="mBarcode" oninput="isiMasterOtomatis()"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Barang</label><input id="mNama"></div>
+            <div style="flex:1; min-width:100px;"><label>Satuan</label><input id="mSatuan"></div>
+            <div style="flex:1; min-width:100px;"><label>Min Stock</label><input id="mMinimal" type="number" value="0"></div>
+            <div style="flex:1; min-width:130px;"><label>Kategori</label><input id="mKategori"></div>
+          </div>
+          <div class="row" style="margin-top:20px;">
+            <button onclick="tambahMaster()" class="btn-success">Simpan ke Master Data</button>
+            <button onclick="resetFormMaster()" style="background:#64748b;">Clear Form</button>
+          </div>
+          <div style="overflow-x:auto; margin-top:20px;">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Barcode / Kode</th><th>Nama Barang</th><th>Satuan</th><th>Min Stock</th><th>Kategori</th><th>Aksi</th></tr></thead>
+              <tbody id="masterBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- ================= ACCOUNT MANAGEMENT (Admin Only) ================= -->
+      <div id="akun" class="tab-content admin-only">
+        <div class="card">
+          <h3>Logo Perusahaan</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Logo akan tampil di sebelah kiri tulisan "PT Argapura" (setelah login) dan di halaman login. Ukuran file maksimal 1MB.</p>
+          <div class="row" style="align-items:center;">
+            <div style="flex:0 0 auto;">
+              <img id="logoPreviewAdmin" src="" style="display:none; width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e2e8f0;">
+            </div>
+            <div style="flex:1; min-width:220px;">
+              <label>Pilih File Logo (PNG/JPG)</label>
+              <input type="file" id="logoFileInput" accept="image/*">
+            </div>
+            <div style="display:flex; align-items:flex-end; gap:8px;">
+              <button class="btn-success" onclick="uploadCompanyLogo()">Simpan Logo</button>
+              <button class="btn-danger" onclick="hapusCompanyLogo()">Hapus Logo</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <h3>Printer Struk Bluetooth (BLE)</h3>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Sambungkan printer thermal Bluetooth (contoh: RPP02N / TM-58V) supaya tombol "Print Struk" pada Monitoring FPB bisa cetak langsung tanpa dialog print browser.</p>
+          <div class="row" style="align-items:center;">
+            <button class="btn-success" onclick="connectBluetoothPrinter()">Hubungkan Printer Bluetooth</button>
+            <button class="btn-danger" onclick="disconnectBluetoothPrinter()">Putuskan Koneksi</button>
+            <span id="printerNameLabel" style="font-size:13px; color:#64748b;">Belum ada printer terhubung.</span>
+          </div>
+
+          <div class="row" style="margin-top:18px; align-items:center; border-top:1px dashed #e2e8f0; padding-top:16px;">
+            <div style="flex:1; min-width:200px;">
+              <label>Ukuran Font Struk</label>
+              <select id="printerFontSize" onchange="savePrinterPrefs()">
+                <option value="normal">Normal</option>
+                <option value="besar">Besar (Lebih Mudah Dibaca)</option>
+              </select>
+            </div>
+            <div style="flex:1; min-width:200px; display:flex; align-items:center; gap:8px; margin-top:22px;">
+              <input type="checkbox" id="printerIncludeLogo" onchange="savePrinterPrefs()" style="width:20px; height:20px; margin-top:0;">
+              <label style="margin:0;">Sertakan Logo Perusahaan di Struk</label>
+            </div>
+          </div>
+          <p style="font-size:12px; color:#94a3b8; margin-top:8px; margin-bottom:0;">*Logo diambil dari logo yang sudah diupload di bagian "Logo Perusahaan" di atas. Printer thermal 58mm akan mencetak logo dalam hitam-putih.</p>
+        </div>
+
+        <div class="card">
+          <h3>Daftarkan / Update Akun Akses Baru</h3>
+          <div class="row">
+            <div style="flex:1; min-width:150px;"><label>Username Akses *</label><input id="uUsername" placeholder="Contoh: budi.setiawan"></div>
+            <div style="flex:1; min-width:150px;"><label>Password Akses *</label><input id="uPassword" type="text" placeholder="Password"></div>
+            <div style="flex:2; min-width:200px;"><label>Nama Lengkap Karyawan</label><input id="uNama" placeholder="Nama Karyawan"></div>
+            <div style="flex:1; min-width:150px;">
+              <label>Role Tingkat Akses *</label>
+              <select id="uRole">
+                <option value="user">User biasa (Hanya FPB)</option>
+                <option value="admin">Admin HRGA (Full Akses)</option>
+              </select>
+            </div>
+          </div>
+          <div class="row" style="margin-top:15px;">
+            <button class="btn-success" onclick="simpanAkunBaru()">Simpan Akun Ke Cloud</button>
+          </div>
+
+          <h3 style="margin-top:30px;">Daftar Pengguna Akses Aktif</h3>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr style="background:#f1f5f9"><th>Username</th><th>Password</th><th>Nama Pemilik Akun</th><th>Level Akses (Role)</th><th style="width:170px; text-align:center;">Aksi</th></tr></thead>
+              <tbody id="usersTableBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="historyModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeModal()">Close</button>
+    <h3>Verifikasi Eksekusi Item FPB</h3>
+    <div style="background:#f1f5f9; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #10b981;">
+      <strong>No FPB:</strong> <span id="mdNoSpb" style="color:#059669; font-weight:bold;"></span> | 
+      <strong>Line/Dept:</strong> <span id="mdLine"></span> | 
+      <strong>PIC:</strong> <span id="mdPic"></span> | 
+      <strong>Status:</strong> <span id="mdStatusBadge"></span>
+    </div>
+    <div style="display:flex; gap:10px; margin-bottom:15px;">
+      <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
+      <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">Print Struk</button>
+    </div>
+    <p id="checkHint" style="font-size:12px; color:#ef4444; font-weight: 600;">*Seluruh item aktif wajib dicentang untuk menyerahkan barang!</p>
+    <table style="width:100%">
+      <thead><tr style="background:#e2e8f0"><th style="width:60px; text-align:center;">Cek</th><th>Kode Barang</th><th>Nama Barang</th><th>Jumlah Qty</th><th>Satuan</th></tr></thead>
+      <tbody id="modalTableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<div id="globalLimitModal" class="modal">
+  <div class="modal-content">
+    <button class="close-btn" onclick="closeGlobalLimitModal()">Close</button>
+    <h3 style="color:#f97316;">Panel Konfigurasi Batas Jatah Maksimal Bulanan</h3>
+    <input id="searchGlobalLimit" placeholder="Cari..." oninput="renderGlobalLimitTable()" style="margin-bottom:10px;">
+    <div style="overflow-y:auto; max-height:50vh;">
+      <table>
+        <thead><tr style="background:#f8fafc"><th>Kode</th><th>Nama Barang</th><th>Section / Line</th><th>Max / Bulan</th><th class="admin-only" style="text-align:center; width:120px;">Aksi</th></tr></thead>
+        <tbody id="globalLimitTableBody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="adjustBudgetModal" class="modal">
+  <div class="modal-content" style="max-width:620px;">
+    <button class="close-btn" onclick="closeAdjustBudgetModal()">Close</button>
+    <h3 style="color:#f59e0b;">Adjust Jatah Maksimal Bulanan</h3>
+    <div style="background:#f8fafc; padding:12px; border-radius:8px; margin-bottom:15px; border-left:4px solid #f59e0b; font-size:13px;">
+      <strong>Kode:</strong> <span id="abKode"></span> &nbsp;|&nbsp;
+      <strong>Nama Barang:</strong> <span id="abNama"></span> &nbsp;|&nbsp;
+      <strong>Section / Line:</strong> <span id="abLine"></span>
+    </div>
+    <div class="row">
+      <div style="flex:1; min-width:150px;" class="input-group">
+        <label>Limit Saat Ini</label>
+        <input id="abLimitLama" readonly style="background:#f1f5f9; font-weight:bold;">
+      </div>
+      <div style="flex:1; min-width:150px;" class="input-group">
+        <label>Limit Baru *</label>
+        <input id="abLimitBaru" type="number" min="0">
+      </div>
+    </div>
+    <div class="input-group">
+      <label>Keterangan (mis. Penambahan Max/Bulan 1, untuk lain-lain)</label>
+      <input id="abKeterangan" placeholder="Contoh: Penambahan 1 untuk kebutuhan lain-lain">
+    </div>
+    <button class="btn-success" style="width:100%; padding:10px; margin-top:6px;" onclick="simpanAdjustBudget()">Simpan Perubahan</button>
+
+    <hr style="border:0; border-top:1px dashed #cbd5e1; margin:22px 0 14px;">
+    <h3 style="margin-bottom:10px;">Riwayat Perubahan Limit</h3>
+    <div style="overflow-y:auto; max-height:260px;">
+      <table>
+        <thead><tr style="background:#f8fafc"><th>Tanggal & Jam</th><th>Lama → Baru</th><th>Keterangan</th><th>Oleh</th></tr></thead>
+        <tbody id="adjustHistoryBody"><tr><td colspan="4" style="text-align:center; color:#94a3b8;">Memuat riwayat...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="spbExportModal" class="modal">
+  <div class="modal-content" style="max-width:480px;">
+    <button class="close-btn" onclick="closeSpbExportModal()">Close</button>
+    <h3 style="color:#0284c7;">Export Data FPB ke Excel</h3>
+    <p style="font-size:13px; color:#64748b; margin-top:-8px;">Kosongkan filter untuk mengambil seluruh data FPB.</p>
+
+    <div class="input-group">
+      <label>Filter Department</label>
+      <select id="exportDept"><option value="">-- Semua Department --</option></select>
+    </div>
+    <div class="row">
+      <div style="flex:1; min-width:150px;" class="input-group"><label>Dari Tanggal</label><input type="date" id="exportTglDari"></div>
+      <div style="flex:1; min-width:150px;" class="input-group"><label>Sampai Tanggal</label><input type="date" id="exportTglSampai"></div>
+    </div>
+    <div class="input-group">
+      <label>Filter Status</label>
+      <select id="exportStatus">
+        <option value="">-- Semua Status --</option>
+        <option value="OPEN">OPEN</option>
+        <option value="DONE">DONE</option>
+      </select>
+    </div>
+    <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">Download Excel (Ringkasan + Detail Item)</button>
+  </div>
+</div>
+
+<div id="changePasswordModal" class="modal">
+  <div class="modal-content" style="max-width:420px;">
+    <button class="close-btn" onclick="closeChangePasswordModal()">Close</button>
+    <h3 style="color:#10b981;">Ubah Password Akun Saya</h3>
+    <div class="input-group">
+      <label>Password Baru *</label>
+      <input id="cpBaru" type="password" placeholder="Masukkan password baru">
+    </div>
+    <div class="input-group">
+      <label>Konfirmasi Password Baru *</label>
+      <input id="cpKonfirmasi" type="password" placeholder="Ulangi password baru">
+    </div>
+    <button class="btn-success" style="width:100%; padding:12px; margin-top:6px;" onclick="simpanChangePassword()">Simpan Password Baru</button>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/instascan@1.0.0/build/instascan.min.js"></script>
+
+<script>
+const BASE_CLOUD_URL = "https://script.google.com/macros/s/AKfycbxDGYGBCl5rCarC8REaFpYhtIDlNiFd9KVbjwFpZeyax0LrqkuFbCB1MhsemKqbsaco6g/exec";
+
+let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, stockAwal: {}, users: [] };
+let keranjangItems = [];
+let currentSelectedSpbNo = "";
+let currentRole = null;
+let currentActiveName = "";
+let currentUsername = "";
+let abCurrentKode = "";
+let abCurrentLine = "";
+
+// ---------- PRINTER BLUETOOTH (ESC/POS via Web Bluetooth) ----------
+// UUID ditemukan lewat halaman tes koneksi (test-bluetooth-printer.html) khusus untuk printer RPP02N.
+const PRINTER_SERVICE_UUID = 'e7810a71-73ae-499d-8c15-faa9aef0c3f2';
+const PRINTER_CHAR_UUID = 'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f';
+let btPrinterDevice = null;
+let btPrinterCharacteristic = null;
+let printerFontSizePref = 'normal';
+let printerIncludeLogoPref = false;
+
+function loadPrinterPrefs() {
   try {
-    const target = e.parameter.target;
-    if (target === "loadAll") {
-      return jsonOutput({ status: "SUCCESS", data: loadAllData() });
-    }
-    if (target === "getAdjustHistory") {
-      const key = e.parameter.key;
-      return jsonOutput({ status: "SUCCESS", data: getAdjustHistory(key) });
-    }
-    return jsonOutput({ status: "ERROR", message: "Target GET tidak dikenali: " + target });
-  } catch (err) {
-    return jsonOutput({ status: "ERROR", message: err.toString() });
+    printerFontSizePref = localStorage.getItem('printerFontSize') || 'normal';
+    printerIncludeLogoPref = localStorage.getItem('printerIncludeLogo') === 'true';
+  } catch(e) {
+    printerFontSizePref = 'normal';
+    printerIncludeLogoPref = false;
   }
+  const selFont = document.getElementById('printerFontSize');
+  const chkLogo = document.getElementById('printerIncludeLogo');
+  if(selFont) selFont.value = printerFontSizePref;
+  if(chkLogo) chkLogo.checked = printerIncludeLogoPref;
 }
 
-function doPost(e) {
+function savePrinterPrefs() {
+  const selFont = document.getElementById('printerFontSize');
+  const chkLogo = document.getElementById('printerIncludeLogo');
+  printerFontSizePref = selFont ? selFont.value : 'normal';
+  printerIncludeLogoPref = chkLogo ? chkLogo.checked : false;
   try {
-    const target = e.parameter.target;
-    const payload = e.postData && e.postData.contents ? JSON.parse(e.postData.contents) : {};
+    localStorage.setItem('printerFontSize', printerFontSizePref);
+    localStorage.setItem('printerIncludeLogo', String(printerIncludeLogoPref));
+  } catch(e) {}
+  showDoneMessage('Preferensi struk disimpan.');
+}
 
-    switch (target) {
-      case "tambahUser": return jsonOutput(tambahUser(payload));
-      case "hapusUser": return jsonOutput(hapusUser(payload));
-      case "simpanSPB": return jsonOutput(simpanSPB(payload));
-      case "eksekusiSPB": return jsonOutput(eksekusiSPB(payload));
-      case "barangMasuk": return jsonOutput(barangMasuk(payload));
-      case "tambahMaster": return jsonOutput(tambahMaster(payload));
-      case "adjustBudget": return jsonOutput(adjustBudget(payload));
-      case "overwriteStokAktual": return jsonOutput(overwriteStokAktual(payload));
-      case "overwriteBudgetLineExcel": return jsonOutput(overwriteBudgetLineExcel(payload));
-      default: return jsonOutput({ status: "ERROR", message: "Target POST tidak dikenali: " + target });
-    }
+function updatePrinterStatusUI() {
+  const pill = document.getElementById('printerStatusPill');
+  const text = document.getElementById('printerStatusText');
+  const label = document.getElementById('printerNameLabel');
+  const connected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+
+  if (pill) pill.className = 'printer-pill ' + (connected ? 'connected' : 'disconnected');
+  if (text) text.innerText = connected ? `Printer Tersambung (${btPrinterDevice.name || 'Unknown'})` : 'Printer Belum Terhubung';
+  if (label) label.innerText = connected ? `Terhubung ke: ${btPrinterDevice.name || 'Unknown'}` : 'Belum ada printer terhubung.';
+}
+
+async function connectBluetoothPrinter() {
+  if (!navigator.bluetooth) {
+    alert('Browser ini tidak mendukung Web Bluetooth. Gunakan Chrome/Edge terbaru di desktop.');
+    return;
+  }
+  try {
+    const device = await navigator.bluetooth.requestDevice({
+      acceptAllDevices: true,
+      optionalServices: [PRINTER_SERVICE_UUID, '49535343-fe7d-4ae5-8fa9-9fafd205e455', '000018f0-0000-1000-8000-00805f9b34fb']
+    });
+    await bindPrinterDevice(device);
+    showDoneMessage(`Printer "${device.name || 'perangkat'}" berhasil terhubung.`);
   } catch (err) {
-    return jsonOutput({ status: "ERROR", message: err.toString() });
+    if (err.name !== 'NotFoundError') alert('Gagal menghubungkan printer: ' + err.message);
   }
 }
 
-function jsonOutput(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+async function bindPrinterDevice(device) {
+  btPrinterDevice = device;
+  device.addEventListener('gattserverdisconnected', () => {
+    btPrinterCharacteristic = null;
+    updatePrinterStatusUI();
+  });
+  const server = await device.gatt.connect();
+  const service = await server.getPrimaryService(PRINTER_SERVICE_UUID);
+  const characteristic = await service.getCharacteristic(PRINTER_CHAR_UUID);
+  btPrinterCharacteristic = characteristic;
+  updatePrinterStatusUI();
 }
 
-// ---------- HELPER BACA SHEET ----------
-function sheetToObjects(name) {
-  const sh = SS.getSheetByName(name);
-  if (!sh) return [];
-  const data = sh.getDataRange().getValues();
-  if (data.length < 2) return [];
-  const headers = data[0];
-  return data.slice(1)
-    .filter(r => r.some(c => c !== "" && c !== null))
-    .map(r => {
-      const obj = {};
-      headers.forEach((h, i) => obj[h] = r[i]);
-      return obj;
+function disconnectBluetoothPrinter() {
+  if (btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected) {
+    btPrinterDevice.gatt.disconnect();
+  }
+  btPrinterDevice = null;
+  btPrinterCharacteristic = null;
+  updatePrinterStatusUI();
+  showDoneMessage('Koneksi printer diputuskan.');
+}
+
+function togglePrinterConnection() {
+  const connected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+  if (connected) disconnectBluetoothPrinter(); else connectBluetoothPrinter();
+}
+
+// Coba sambung ulang otomatis ke printer yang sebelumnya sudah diberi izin,
+// TANPA memunculkan dialog pilih perangkat (butuh dukungan Persistent Permissions di Chrome).
+async function tryAutoReconnectPrinter() {
+  if (!navigator.bluetooth || !navigator.bluetooth.getDevices) return;
+  try {
+    const knownDevices = await navigator.bluetooth.getDevices();
+    if (knownDevices.length > 0) {
+      await bindPrinterDevice(knownDevices[0]);
+    }
+  } catch (e) {
+    // Diam saja jika gagal auto-reconnect; user tinggal klik "Hubungkan Printer Bluetooth" manual.
+  }
+}
+
+// Konversi logo perusahaan (data URL di localStorage) menjadi bitmap ESC/POS (perintah GS v 0)
+// supaya bisa ikut tercetak di bagian atas struk pada printer thermal 58mm (lebar cetak ~384 dot).
+function buildLogoBitmap() {
+  return new Promise((resolve) => {
+    let logoData = null;
+    try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+    if (!logoData) { resolve(new Uint8Array(0)); return; }
+
+    const img = new Image();
+    img.onload = function() {
+      try {
+        const targetWidth = 160; // dot (50% dari sebelumnya), kelipatan 8, aman untuk kertas 58mm
+        const widthBytes = targetWidth / 8;
+        const scale = targetWidth / img.width;
+        const targetHeight = Math.max(8, Math.round(img.height * scale));
+
+        const canvas = document.createElement('canvas');
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
+        const ctx = canvas.getContext('2d');
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(0, 0, targetWidth, targetHeight);
+        ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+
+        const imgData = ctx.getImageData(0, 0, targetWidth, targetHeight).data;
+        const raster = new Uint8Array(widthBytes * targetHeight);
+
+        for (let y = 0; y < targetHeight; y++) {
+          for (let x = 0; x < targetWidth; x++) {
+            const idx = (y * targetWidth + x) * 4;
+            const r = imgData[idx], g = imgData[idx+1], b = imgData[idx+2], a = imgData[idx+3];
+            const gray = (r * 0.3 + g * 0.59 + b * 0.11);
+            const isBlack = a > 100 && gray < 160;
+            if (isBlack) {
+              const byteIndex = y * widthBytes + (x >> 3);
+              raster[byteIndex] |= (0x80 >> (x % 8));
+            }
+          }
+        }
+
+        const xL = widthBytes & 0xFF, xH = (widthBytes >> 8) & 0xFF;
+        const yL = targetHeight & 0xFF, yH = (targetHeight >> 8) & 0xFF;
+        const header = new Uint8Array([0x1D, 0x76, 0x30, 0x00, xL, xH, yL, yH]);
+
+        const result = new Uint8Array(header.length + raster.length + 1);
+        result.set(header, 0);
+        result.set(raster, header.length);
+        result[result.length - 1] = 0x0A; // feed satu baris setelah logo
+        resolve(result);
+      } catch(e) {
+        resolve(new Uint8Array(0));
+      }
+    };
+    img.onerror = function() { resolve(new Uint8Array(0)); };
+    img.src = logoData;
+  });
+}
+
+// Encoder ESC/POS sederhana untuk kertas 58mm (32 karakter per baris umumnya)
+async function buildEscPosReceipt({ noSpb, line, pic, items, tglCetak, fontSize, includeLogo }) {
+  const enc = new TextEncoder();
+  const chunks = [];
+  const push = (arr) => chunks.push(arr);
+
+  const ESC_INIT = new Uint8Array([0x1B, 0x40]);
+  const ALIGN_CENTER = new Uint8Array([0x1B, 0x61, 0x01]);
+  const ALIGN_LEFT = new Uint8Array([0x1B, 0x61, 0x00]);
+  const BOLD_ON = new Uint8Array([0x1B, 0x45, 0x01]);
+  const BOLD_OFF = new Uint8Array([0x1B, 0x45, 0x00]);
+  const FEED_CUT = new Uint8Array([0x1D, 0x56, 0x01]);
+
+  // GS ! n -> n=0x00 normal, n=0x11 lebar 2x + tinggi 2x (untuk mode "Besar")
+  const SIZE_BIG = new Uint8Array([0x1D, 0x21, 0x11]);
+  const SIZE_NORMAL = new Uint8Array([0x1D, 0x21, 0x00]);
+  const SIZE_BODY = fontSize === 'besar' ? new Uint8Array([0x1D, 0x21, 0x01]) : SIZE_NORMAL; // 0x01 = tinggi 2x saja untuk body, biar tetap muat lebar
+
+  push(ESC_INIT);
+
+  if (includeLogo) {
+    const logoBytes = await buildLogoBitmap();
+    if (logoBytes.length > 0) {
+      push(ALIGN_CENTER);
+      push(logoBytes);
+    }
+  }
+
+  push(ALIGN_CENTER);
+  push(fontSize === 'besar' ? SIZE_BIG : SIZE_NORMAL);
+  push(BOLD_ON);
+  push(enc.encode('PT ARGAPURA\n'));
+  push(BOLD_OFF);
+  push(SIZE_NORMAL);
+  push(enc.encode('Formulir Permintaan Barang\n'));
+  push(enc.encode('--------------------------------\n'));
+  push(ALIGN_LEFT);
+  push(SIZE_BODY);
+  push(enc.encode(`No FPB : ${noSpb}\n`));
+  push(enc.encode(`Line   : ${line}\n`));
+  push(enc.encode(`PIC    : ${pic}\n`));
+  push(enc.encode(`Status : DONE\n`));
+  push(SIZE_NORMAL);
+  push(enc.encode('--------------------------------\n'));
+
+  items.forEach(it => {
+    push(SIZE_BODY);
+    push(enc.encode(`[ ] ${it.nama}\n`));
+    push(SIZE_NORMAL);
+    push(enc.encode(`      ${it.kode}\n`));
+    push(enc.encode(`      Qty: ${it.qty} ${it.satuan}\n`));
+  });
+
+  push(enc.encode('--------------------------------\n'));
+  push(BOLD_ON);
+  push(enc.encode(`Total Jenis Barang: ${items.length}\n`));
+  push(BOLD_OFF);
+  push(enc.encode('\nTanda Tangan Penerima:\n\n\n'));
+  push(enc.encode(`( ${pic} )\n`));
+  push(enc.encode('--------------------------------\n'));
+  push(ALIGN_CENTER);
+  push(enc.encode(`Dicetak: ${tglCetak}\n`));
+  push(enc.encode('-- Terima Kasih --\n\n\n\n'));
+  push(FEED_CUT);
+
+  let totalLen = 0;
+  chunks.forEach(c => totalLen += c.length);
+  const result = new Uint8Array(totalLen);
+  let offset = 0;
+  chunks.forEach(c => { result.set(c, offset); offset += c.length; });
+  return result;
+}
+
+// Kirim data ke printer per-potongan (BLE punya batas ukuran paket / MTU)
+async function sendToBluetoothPrinter(bytes) {
+  if (!btPrinterCharacteristic) throw new Error('Printer belum terhubung.');
+  const CHUNK_SIZE = 180;
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.slice(i, i + CHUNK_SIZE);
+    if (btPrinterCharacteristic.properties.writeWithoutResponse) {
+      await btPrinterCharacteristic.writeValueWithoutResponse(chunk);
+    } else {
+      await btPrinterCharacteristic.writeValue(chunk);
+    }
+  }
+}
+
+const SECTION_MAP = {
+  "Production": ["Butyl tape", "D-Foam", "Pad Pillar", "Repacking", "PVC", "SMS", "Stiffener", "Office", "KRB", "Asphalt sheet"],
+  "Logistic": ["Drum", "WHS Cikarang", "WHS Tangerang", "Shipping", "PPIC", "Office"],
+  "HR": ["HR-GA", "HR-MTC", "HR-SEC", "HR-PER"],
+  "Engineering": ["Engineering Field", "Engineering Project"],
+  "OS": ["SHE", "System"],
+  "QA / QC": ["QA", "QC"],
+  "Technical": ["Office"],
+  "Finance": ["Finance Cikarang", "Finance Kedoya"],
+  "IT": ["IT Cikarang", "IT Kedoya"],
+  "Accounting": ["Accounting"],
+  "Purchasing": ["Purchasing"],
+  "Marketing": ["Marketing"]
+};
+
+const BULAN_INDO = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
+
+// ---------- LOGO PERUSAHAAN (tampil di login & sidebar setelah login) ----------
+function applyCompanyLogo() {
+  let logoData = null;
+  try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+
+  const sidebarImg = document.getElementById('companyLogoSidebar');
+  const loginImg = document.getElementById('companyLogoLoginImg');
+  const previewAdmin = document.getElementById('logoPreviewAdmin');
+
+  if(logoData) {
+    if(sidebarImg){ sidebarImg.src = logoData; sidebarImg.style.display = 'block'; }
+    if(loginImg){ loginImg.src = logoData; loginImg.style.display = 'block'; }
+    if(previewAdmin){ previewAdmin.src = logoData; previewAdmin.style.display = 'inline-block'; }
+  } else {
+    if(sidebarImg) sidebarImg.style.display = 'none';
+    if(loginImg) loginImg.style.display = 'none';
+    if(previewAdmin) previewAdmin.style.display = 'none';
+  }
+}
+
+function uploadCompanyLogo() {
+  const fileInput = document.getElementById('logoFileInput');
+  const file = fileInput.files[0];
+  if(!file) return alert('Pilih file logo terlebih dahulu!');
+  if(!file.type.startsWith('image/')) return alert('File harus berupa gambar (PNG/JPG)!');
+  if(file.size > 1024 * 1024) return alert('Ukuran file logo maksimal 1MB!');
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      localStorage.setItem('companyLogo', e.target.result);
+      applyCompanyLogo();
+      showDoneMessage('Logo perusahaan berhasil diperbarui.');
+      fileInput.value = "";
+    } catch(err) {
+      alert('Gagal menyimpan logo (kemungkinan ukuran terlalu besar untuk penyimpanan browser).');
+    }
+  };
+  reader.readAsDataURL(file);
+}
+
+function hapusCompanyLogo() {
+  if(!confirm('Hapus logo perusahaan dan kembali ke ikon default?')) return;
+  try { localStorage.removeItem('companyLogo'); } catch(e) {}
+  applyCompanyLogo();
+  showDoneMessage('Logo perusahaan telah dihapus.');
+}
+
+// ---------- NAVIGASI SIDEBAR (baru) ----------
+const TAB_TITLES = {
+  dashboard: "Dashboard",
+  buatfpb: "Buat FPB",
+  monitoring: "Monitoring FPB",
+  stokmasuk: "Stok Masuk",
+  sinkronisasi: "Sinkronisasi Stok",
+  budget: "Budget Kontrol",
+  stok: "Sisa Stok",
+  laporan: "Log Transaksi",
+  master: "Master Data",
+  akun: "Account Management"
+};
+
+function switchTab(id, btnEl) {
+  document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active"));
+  const target = document.getElementById(id);
+  if (target) target.classList.add("active");
+
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
+  if (btnEl) {
+    btnEl.classList.add("active");
+  } else {
+    const fallbackBtn = document.querySelector(`.nav-btn[data-tab="${id}"]`);
+    if (fallbackBtn) fallbackBtn.classList.add("active");
+  }
+
+  const titleEl = document.getElementById("topbarTitle");
+  if (titleEl) titleEl.innerText = TAB_TITLES[id] || "";
+}
+
+function showLoading(sts, txt = "Sinkronisasi Data Google Sheets...") { 
+  document.getElementById("loadingText").innerText = txt;
+  document.getElementById("loadingOverlay").style.display = sts ? "flex" : "none"; 
+}
+function showDoneMessage(msg){ const div = document.getElementById("doneMsg"); div.innerText = msg; setTimeout(() => { div.innerText = "" }, 3000); }
+function getRomanMonth(m) { return ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"][m]; }
+
+window.onload = function() {
+  applyCompanyLogo();
+  updatePrinterStatusUI();
+  loadPrinterPrefs();
+  tryAutoReconnectPrinter();
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => { if(resObj.status === "SUCCESS") MEMORY = resObj.data; });
+};
+
+function fetchDatabaseAll() {
+  showLoading(true, "Mendownload Database Cloud...");
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        MEMORY = resObj.data;
+        generateNoSPB();
+        renderSpbReport();
+        tampilMaster();
+        renderStock();
+        renderReport();
+        renderBudgetControl();
+        updateJatahInfoHint();
+        renderUsersTable();
+        renderDashboardTopSpbDept();
+        renderDashboardTopKeluar();
+        renderDashboardStats();
+      } else { alert("Gagal memuat database cloud: " + resObj.message); }
+    })
+    .catch(err => alert("Kesalahan Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
+
+// ---------- DASHBOARD ANALITIK ----------
+function renderDashboardTopSpbDept() {
+  const tally = {};
+  (MEMORY.spbList || []).forEach(spb => {
+    const dept = spb.department || spb.Department || "-";
+    const nomorSpbAktif = spb.nomorSpb || spb.noSpb || spb.NoSpb || "-";
+    if(!tally[dept]) tally[dept] = { totalFpb: 0, totalQty: 0, nomorList: [] };
+    tally[dept].totalFpb += 1;
+    tally[dept].nomorList.push(nomorSpbAktif);
+    (spb.items || []).forEach(it => { tally[dept].totalQty += Number(it.qty || 0); });
+  });
+
+  const sorted = Object.entries(tally).map(([dept, v]) => ({ dept, ...v })).sort((a,b) => b.totalQty - a.totalQty);
+  const grandTotalQty = sorted.reduce((sum, r) => sum + r.totalQty, 0) || 1;
+  const maxQty = sorted.length ? sorted[0].totalQty : 1;
+
+  let running = 0;
+  const tbody = document.getElementById("dashTopSpbBody");
+  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => {
+    running += item.totalQty;
+    const kumulatifPct = ((running / grandTotalQty) * 100).toFixed(0);
+    const daftarSpbHtml = item.nomorList.map(n => `• ${n}`).join("<br>");
+    return `
+    <tr>
+      <td style="width:30px;">${idx+1}</td>
+      <td><strong>${item.dept}</strong></td>
+      <td style="white-space:nowrap;">
+        <span class="pareto-tip">${item.totalFpb}x FPB
+          <div class="tip-box"><b>Nomor FPB — ${item.dept}</b><br>${daftarSpbHtml}</div>
+        </span>
+      </td>
+      <td style="min-width:160px;">
+        <div style="background:#e2e8f0; border-radius:6px; overflow:hidden; height:22px;">
+          <div style="background:#10b981; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty}</div>
+        </div>
+      </td>
+      <td style="white-space:nowrap; color:#64748b; font-size:12.5px;">${kumulatifPct}%</td>
+    </tr>`;
+  }).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Belum ada data FPB.</td></tr>`;
+}
+
+function renderDashboardStats() {
+  const now = new Date();
+  const bln = now.getMonth(); const thn = now.getFullYear();
+  const labelBulan = `${BULAN_INDO[bln]} ${thn}`;
+
+  let totalFpbBulanIni = 0, totalQtyBulanIni = 0;
+  const tallyDept = {};
+  (MEMORY.spbList || []).forEach(spb => {
+    const d = spb.tanggal ? new Date(spb.tanggal) : null;
+    if(!d || d.getMonth() !== bln || d.getFullYear() !== thn) return;
+    totalFpbBulanIni += 1;
+    const dept = spb.department || spb.Department || "-";
+    let qtySpb = 0;
+    (spb.items || []).forEach(it => { qtySpb += Number(it.qty || 0); });
+    totalQtyBulanIni += qtySpb;
+    tallyDept[dept] = (tallyDept[dept] || 0) + qtySpb;
+  });
+
+  const topDeptEntry = Object.entries(tallyDept).sort((a,b) => b[1]-a[1])[0];
+
+  let reorderCount = 0;
+  (MEMORY.masterData || []).forEach(m => {
+    let sisa = Number(MEMORY.stockAwal[m.barcode] || 0);
+    MEMORY.transaksi.forEach(t => {
+      if(t.kode === m.barcode) {
+        if(t.jenis === "Masuk") sisa += Number(t.qty);
+        if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
+      }
+    });
+    if(sisa <= Number(m.minStock || 0)) reorderCount++;
+  });
+
+  const setText = (id, val) => { const el = document.getElementById(id); if(el) el.innerText = val; };
+  setText("dashGreetName", currentActiveName || "-");
+  setText("dashCurrentMonth", labelBulan);
+  setText("lblBulanFpb", `- ${labelBulan}`);
+  setText("lblBulanQty", `- ${labelBulan}`);
+  setText("statTotalFpb", totalFpbBulanIni);
+  setText("statTotalQty", totalQtyBulanIni);
+  setText("statTopDept", topDeptEntry ? topDeptEntry[0] : "-");
+  setText("statReorder", reorderCount);
+}
+
+function renderDashboardTopKeluar() {
+  const tally = {};
+  (MEMORY.transaksi || []).forEach(t => {
+    if(t.jenis !== "Keluar") return;
+    if(!tally[t.kode]) tally[t.kode] = { nama: t.nama, totalQty: 0, satuan: t.satuan };
+    tally[t.kode].totalQty += Number(t.qty || 0);
+  });
+
+  const sorted = Object.entries(tally).map(([kode, v]) => ({ kode, ...v })).sort((a,b) => b.totalQty - a.totalQty).slice(0, 10);
+  const maxQty = sorted.length ? sorted[0].totalQty : 1;
+  const tbody = document.getElementById("dashTopKeluarBody");
+  tbody.innerHTML = sorted.length ? sorted.map((item, idx) => `
+    <tr>
+      <td style="width:30px;">${idx+1}</td>
+      <td><strong>${item.kode}</strong></td>
+      <td>${item.nama}</td>
+      <td style="min-width:160px;">
+        <div style="background:#e2e8f0; border-radius:6px; overflow:hidden; height:22px;">
+          <div style="background:#f97316; height:100%; width:${Math.max((item.totalQty/maxQty*100),8)}%; display:flex; align-items:center; padding-left:8px; color:#fff; font-size:11px; font-weight:bold; white-space:nowrap;">${item.totalQty} ${item.satuan||""}</div>
+        </div>
+      </td>
+    </tr>`).join("") : `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada data transaksi keluar.</td></tr>`;
+}
+
+function doLogin(){
+  const uInput = document.getElementById("loginUser").value.trim().toLowerCase();
+  const pInput = document.getElementById("loginPass").value.trim();
+
+  if(uInput === "adminmaster" && pInput === "ptargapura2026"){
+    currentRole = "admin";
+    currentActiveName = "Super Administrator";
+    currentUsername = "adminmaster";
+    masukSistem(); return;
+  }
+
+  const matchUser = MEMORY.users.find(x => String(x.username).toLowerCase() === uInput && String(x.password) === pInput);
+  
+  if(matchUser) {
+    currentRole = matchUser.role;
+    currentActiveName = matchUser.nama || matchUser.username;
+    currentUsername = matchUser.username;
+    masukSistem();
+  } else {
+    alert("Username atau Password salah!");
+  }
+}
+
+function masukSistem() {
+  document.getElementById("loginOverlay").style.display = "none";
+  document.getElementById("appRoot").style.display = "flex";
+  document.getElementById("lblActiveUser").innerText = currentActiveName;
+  document.getElementById("lblActiveRole").innerText = currentRole === "admin" ? "Admin" : "User";
+  applyCompanyLogo();
+  switchTab("dashboard");
+  fetchDatabaseAll();
+}
+
+function doLogout(){ 
+  currentRole = null; currentActiveName = ""; currentUsername = "";
+  document.getElementById("loginUser").value = ""; document.getElementById("loginPass").value = "";
+  document.getElementById("appRoot").style.display = "none"; 
+  document.getElementById("loginOverlay").style.display = "flex"; 
+}
+
+function applyRole() { 
+  document.querySelectorAll(".admin-only").forEach(el => el.style.display = (currentRole === "admin") ? "" : "none"); 
+}
+
+// ---------- UBAH PASSWORD AKUN SENDIRI ----------
+function openChangePasswordModal() {
+  if(!currentUsername) return;
+  document.getElementById("cpBaru").value = "";
+  document.getElementById("cpKonfirmasi").value = "";
+  document.getElementById("changePasswordModal").style.display = "flex";
+}
+
+function closeChangePasswordModal() {
+  document.getElementById("changePasswordModal").style.display = "none";
+}
+
+function simpanChangePassword() {
+  if(currentUsername === "adminmaster") {
+    return alert("Password akun Super Administrator (adminmaster) tidak dapat diubah melalui panel ini.");
+  }
+
+  const baru = document.getElementById("cpBaru").value.trim();
+  const konfirmasi = document.getElementById("cpKonfirmasi").value.trim();
+
+  if(!baru || baru.length < 4) return alert("Password baru minimal 4 karakter!");
+  if(baru !== konfirmasi) return alert("Konfirmasi password tidak sama dengan password baru!");
+
+  showLoading(true, "Menyimpan Password Baru...");
+  const payload = { username: currentUsername, password: baru, nama: currentActiveName, role: currentRole };
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage("Password akun berhasil diperbarui.");
+        closeChangePasswordModal();
+        fetchDatabaseAll();
+      } else { alert("Gagal mengubah password: " + resObj.message); }
+    })
+    .catch(err => alert("Error Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
+
+function simpanAkunBaru() {
+  const username = document.getElementById("uUsername").value.trim().toLowerCase();
+  const password = document.getElementById("uPassword").value.trim();
+  const nama = document.getElementById("uNama").value.trim();
+  const role = document.getElementById("uRole").value;
+
+  if(!username || !password) return alert("Username dan Password wajib diisi!");
+
+  showLoading(true, "Mendaftarkan Akun ke Cloud...");
+  const payload = { username, password, nama, role };
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`Akun [${username}] berhasil disimpan.`);
+        document.getElementById("uUsername").value = "";
+        document.getElementById("uPassword").value = "";
+        document.getElementById("uNama").value = "";
+        fetchDatabaseAll();
+      }
     });
 }
 
-function findRowIndexByValue(sheet, colIndex1based, value) {
-  const data = sheet.getDataRange().getValues();
-  for (let i = 1; i < data.length; i++) {
-    if (String(data[i][colIndex1based - 1]) === String(value)) return i + 1; // 1-based row
-  }
-  return -1;
+function hapusAkun(username) {
+  if(!confirm(`Hapus hak akses login untuk user [${username}]?`)) return;
+  showLoading(true, "Menghapus Akun...");
+  fetch(`${BASE_CLOUD_URL}?target=hapusUser`, { method: "POST", body: JSON.stringify({ username }) })
+    .then(() => { showDoneMessage("Akun berhasil dihapus."); fetchDatabaseAll(); });
 }
 
-// ---------- LOAD ALL ----------
-function loadAllData() {
-  const masterData = sheetToObjects("master_data");
-  const transaksi = sheetToObjects("transaksi");
-  const usersRaw = sheetToObjects("users");
-  const spbListRaw = sheetToObjects("spb_list");
-  const spbItemsRaw = sheetToObjects("spb_items");
+// ---------- UBAH ROLE PENGGUNA (Admin) ----------
+function ubahRoleAkun(username, selectEl) {
+  const newRole = selectEl.value;
+  const u = MEMORY.users.find(x => x.username === username);
+  if(!u) return alert("Data user tidak ditemukan!");
 
-  // Gabungkan item ke masing-masing FPB
-  const spbList = spbListRaw.map(spb => {
-    const items = spbItemsRaw.filter(it => String(it.nomorSpb) === String(spb.nomorSpb));
+  if(!confirm(`Ubah role user [${username}] menjadi "${newRole === 'admin' ? 'Admin' : 'User'}"?`)) {
+    selectEl.value = u.role;
+    return;
+  }
+
+  showLoading(true, "Mengubah Role Akun...");
+  const payload = { username: u.username, password: u.password, nama: u.nama, role: newRole };
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahUser`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`Role akun [${username}] berhasil diubah menjadi ${newRole.toUpperCase()}.`);
+        fetchDatabaseAll();
+      } else {
+        alert("Gagal mengubah role: " + resObj.message);
+        selectEl.value = u.role;
+      }
+    })
+    .catch(err => { alert("Error Jaringan: " + err); selectEl.value = u.role; })
+    .finally(() => showLoading(false));
+}
+
+function renderUsersTable() {
+  const tbody = document.getElementById("usersTableBody"); if(!tbody) return; tbody.innerHTML = "";
+  MEMORY.users.forEach(u => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${u.username}</strong></td>
+      <td>•••••• (terproteksi)</td>
+      <td>${u.nama || "-"}</td>
+      <td>
+        <select onchange="ubahRoleAkun('${u.username}', this)" style="width:auto; min-width:110px; margin-top:0; padding:5px 8px; font-size:12px; font-weight:bold; color:${u.role==='admin'?'#b91c1c':'#0369a1'};">
+          <option value="user" ${u.role!=='admin' ? 'selected' : ''}>USER</option>
+          <option value="admin" ${u.role==='admin' ? 'selected' : ''}>ADMIN</option>
+        </select>
+      </td>
+      <td style="text-align:center;"><button class="btn-mini btn-danger" onclick="hapusAkun('${u.username}')">Hapus</button></td>
+    </tr>`;
+  });
+  applyRole();
+}
+
+function updateSectionDropdown() {
+  const deptSelect = document.getElementById("spbDepartment"); const lineSelect = document.getElementById("spbLine"); const selectedDept = deptSelect.value;
+  lineSelect.innerHTML = `<option value="">-- Pilih Section/Line --</option>`;
+  if (selectedDept && SECTION_MAP[selectedDept]) {
+    SECTION_MAP[selectedDept].forEach(item => { const opt = document.createElement("option"); opt.value = item; opt.textContent = item; lineSelect.appendChild(opt); });
+  }
+  updateJatahInfoHint();
+}
+
+function generateNoSPB() {
+  const now = new Date(); const yr = now.getFullYear(); const rm = getRomanMonth(now.getMonth());
+  let currentCounter = 0; MEMORY.spbList.forEach(x => { if(x.tanggal && new Date(x.tanggal).getFullYear() === yr) currentCounter++; });
+  document.getElementById("spbNomor").value = `${String(currentCounter + 1).padStart(4, '0')}/${rm}/${yr}/HR-GA`;
+}
+
+function getKategoriDariKode(kode) {
+  if(!kode) return "Umum";
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  if(m && m.kategori && String(m.kategori).trim() !== "") return m.kategori;
+  const idx = kode.indexOf("-");
+  if(idx > 0) return kode.substring(0, idx).trim().toUpperCase();
+  return "Umum";
+}
+
+function isiOtomatis(){
+  const kode = document.getElementById("kodeBarang").value.trim();
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  if(m){ document.getElementById("namaBarang").value = m.nama || ""; document.getElementById("satuan").value = m.satuan || ""; }
+  document.getElementById("kategoriBarang").value = getKategoriDariKode(kode);
+  updateJatahInfoHint();
+}
+
+function hitungKuotaJatahAktif(kode, line) {
+  if(!kode || !line) return { maxBulan: 2, aktualDone: 0, diKeranjang: 0, sisa: 2 };
+  const key = `${kode}_${line}`; const maxBulan = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+  const bln = new Date().getMonth(); const thn = new Date().getFullYear();
+  let aktualDone = 0; MEMORY.transaksi.forEach(t => { if(t.kode === kode && t.line === line && t.jenis === "Keluar") { const d = new Date(t.tanggal); if(d.getMonth() === bln && d.getFullYear() === thn) { aktualDone += Number(t.qty); } } });
+  let diKeranjang = 0; keranjangItems.forEach(item => { if(item.kode === kode) { diKeranjang += Number(item.qty); } });
+  return { maxBulan, aktualDone, diKeranjang, sisa: maxBulan - (aktualDone + diKeranjang) };
+}
+
+function updateJatahInfoHint() {
+  const kode = document.getElementById("kodeBarang").value.trim(); const line = document.getElementById("spbLine").value;
+  const infoBox = document.getElementById("jatahInfoBox"); const maxViewInput = document.getElementById("jatahMaxBulanView");
+  const data = hitungKuotaJatahAktif(kode, line); maxViewInput.value = data.maxBulan;
+  if(!kode || !line) { infoBox.style.display = "none"; return; }
+  document.getElementById("jiMax").innerText = data.maxBulan; document.getElementById("jiDone").innerText = data.aktualDone; document.getElementById("jiKeranjang").innerText = data.diKeranjang;
+  const sisaSpan = document.getElementById("jiSisa"); sisaSpan.innerText = data.sisa; sisaSpan.style.color = (data.sisa <= 0) ? "#dc2626" : "#16a34a";
+  infoBox.style.display = "block";
+}
+
+function evaluasiSisaJatahLive() { updateJatahInfoHint(); }
+function openGlobalLimitModal() { document.getElementById("globalLimitModal").style.display = "flex"; renderGlobalLimitTable(); }
+function closeGlobalLimitModal() { document.getElementById("globalLimitModal").style.display = "none"; }
+
+function renderGlobalLimitTable() {
+  const searchKeyword = document.getElementById("searchGlobalLimit").value.toLowerCase();
+  const tbody = document.getElementById("globalLimitTableBody"); tbody.innerHTML = ""; let rowsHtml = "";
+  MEMORY.masterData.forEach(m => {
+    for (const dept in SECTION_MAP) {
+      SECTION_MAP[dept].forEach(line => {
+        const key = `${m.barcode}_${line}`; const currentLimit = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+        if (searchKeyword && !(m.nama.toLowerCase().includes(searchKeyword) || m.barcode.toLowerCase().includes(searchKeyword) || line.toLowerCase().includes(searchKeyword))) return;
+        rowsHtml += `<tr><td><strong>${m.barcode}</strong></td><td>${m.nama}</td><td><span style="font-size:12px; background:#e2e8f0; padding:2px 6px; border-radius:4px;">${dept} - ${line}</span></td><td><strong>${currentLimit}</strong></td><td class="admin-only" style="text-align:center;"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">Adjust</button></td></tr>`;
+      });
+    }
+  });
+  tbody.innerHTML = rowsHtml || `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada data.</td></tr>`;
+  applyRole();
+}
+
+// ---------- ADJUST JATAH MAKSIMAL (dengan keterangan + riwayat) ----------
+function adjustMaxBudget(kode, line) {
+  if(currentRole !== 'admin') return;
+  const key = `${kode}_${line}`;
+  const currentLimit = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+  const master = MEMORY.masterData.find(m => m.barcode === kode);
+
+  abCurrentKode = kode;
+  abCurrentLine = line;
+
+  document.getElementById("abKode").innerText = kode;
+  document.getElementById("abNama").innerText = master ? master.nama : "-";
+  document.getElementById("abLine").innerText = line;
+  document.getElementById("abLimitLama").value = currentLimit;
+  document.getElementById("abLimitBaru").value = currentLimit;
+  document.getElementById("abKeterangan").value = "";
+
+  document.getElementById("adjustBudgetModal").style.display = "flex";
+  loadAdjustHistory(key);
+}
+
+function closeAdjustBudgetModal() {
+  document.getElementById("adjustBudgetModal").style.display = "none";
+}
+
+function loadAdjustHistory(key) {
+  const tbody = document.getElementById("adjustHistoryBody");
+  tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Memuat riwayat...</td></tr>`;
+  fetch(`${BASE_CLOUD_URL}?target=getAdjustHistory&key=${encodeURIComponent(key)}`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS" && resObj.data && resObj.data.length > 0) {
+        tbody.innerHTML = resObj.data.map(h => {
+          const tglJam = h.timestamp ? new Date(h.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' }) : "-";
+          return `<tr>
+            <td style="white-space:nowrap;">${tglJam}</td>
+            <td><strong>${h.limitLama}</strong> → <strong style="color:#16a34a;">${h.limitBaru}</strong></td>
+            <td>${h.keterangan || "-"}</td>
+            <td>${h.nama || h.username || "-"}</td>
+          </tr>`;
+        }).join("");
+      } else {
+        tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#94a3b8;">Belum ada riwayat perubahan untuk item ini.</td></tr>`;
+      }
+    })
+    .catch(() => { tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; color:#ef4444;">Gagal memuat riwayat.</td></tr>`; });
+}
+
+function simpanAdjustBudget() {
+  const val = parseInt(document.getElementById("abLimitBaru").value);
+  if(isNaN(val) || val < 0) return alert("Angka limit baru tidak valid!");
+  const keterangan = document.getElementById("abKeterangan").value.trim();
+  const key = `${abCurrentKode}_${abCurrentLine}`;
+
+  showLoading(true, "Mengubah Limit Anggaran...");
+  fetch(`${BASE_CLOUD_URL}?target=adjustBudget`, {
+    method: "POST",
+    body: JSON.stringify({
+      kode: abCurrentKode,
+      line: abCurrentLine,
+      limit: val,
+      keterangan: keterangan,
+      username: currentUsername,
+      nama: currentActiveName
+    })
+  })
+  .then(res => res.json())
+  .then(resObj => {
+    if(resObj.status === "SUCCESS") {
+      MEMORY.budgetLimits[key] = val;
+      showDoneMessage("Limit jatah diupdate & tercatat di riwayat.");
+      document.getElementById("abLimitLama").value = val;
+      loadAdjustHistory(key);
+      if(document.getElementById("globalLimitModal").style.display === "flex") renderGlobalLimitTable();
+      renderBudgetControl();
+      updateJatahInfoHint();
+    } else { alert("Gagal mengubah limit: " + resObj.message); }
+  })
+  .finally(() => showLoading(false));
+}
+
+function tambahItemKeKeranjang() {
+  const line = document.getElementById("spbLine").value; 
+  const dept = document.getElementById("spbDepartment").value; 
+  if(!dept || !line) return alert("Pilih Department & Section / Line terlebih dahulu!");
+
+  const code = document.getElementById("kodeBarang").value.trim(); 
+  const nama = document.getElementById("namaBarang").value.trim(); 
+  const qty = Number(document.getElementById("qty").value); 
+  const satuan = document.getElementById("satuan").value.trim(); 
+  const kat = document.getElementById("kategoriBarang").value || getKategoriDariKode(code);
+
+  if(!code || !nama || qty <= 0) return alert("Pastikan Kode, Nama Barang terisi, dan Qty lebih dari 0!");
+
+  const dataKuota = hitungKuotaJatahAktif(code, line);
+  if(qty > dataKuota.sisa) {
+    return alert(`Permintaan Ditolak!\nSisa kuota bersih bulan ini untuk barang [${nama}] pada line [${line}] adalah ${dataKuota.sisa} ${satuan}.\n(Jumlah yang diminta: ${qty} | Sudah ada di keranjang: ${dataKuota.diKeranjang})`);
+  }
+
+  const existingIndex = keranjangItems.findIndex(item => item.kode === code);
+  if(existingIndex > -1) {
+    keranjangItems[existingIndex].qty += qty;
+  } else {
+    keranjangItems.push({ kode: code, nama: nama, kategori: kat, qty: qty, satuan: satuan });
+  }
+
+  document.getElementById("kodeBarang").value = "";
+  document.getElementById("namaBarang").value = "";
+  document.getElementById("qty").value = "1";
+  document.getElementById("satuan").value = "";
+  document.getElementById("kategoriBarang").value = "";
+  document.getElementById("jatahMaxBulanView").value = "";
+
+  renderKeranjang();
+  updateJatahInfoHint();
+}
+
+function renderKeranjang() {
+  const tbody = document.getElementById("keranjangBody");
+  if(!tbody) return;
+  tbody.innerHTML = "";
+
+  if(keranjangItems.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:#94a3b8;">Belum ada item.</td></tr>`;
+    return;
+  }
+
+  keranjangItems.forEach((item, index) => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${item.kode}</strong></td>
+      <td>${item.nama}</td>
+      <td>${item.kategori}</td>
+      <td><strong>${item.qty}</strong></td>
+      <td>${item.satuan}</td>
+      <td><button class="btn-mini btn-danger" onclick="hapusItemKeranjang(${index})">Hapus</button></td>
+    </tr>`;
+  });
+}
+
+function hapusItemKeranjang(index) {
+  keranjangItems.splice(index, 1);
+  renderKeranjang();
+  updateJatahInfoHint();
+}
+
+function simpanSPBOpen() {
+  const noSpb = document.getElementById("spbNomor").value;
+  const dept = document.getElementById("spbDepartment").value;
+  const line = document.getElementById("spbLine").value;
+  const pic = document.getElementById("spbPic").value.trim();
+
+  if(!dept || !line || !pic) return alert("Department, Section, dan PIC Pemohon wajib diisi!");
+  if(keranjangItems.length === 0) return alert("Keranjang FPB masih kosong!");
+
+  showLoading(true, "Menyimpan Dokumen FPB ke Cloud...");
+  const payload = { nomorSpb: noSpb, department: dept, line: line, pic: pic, items: keranjangItems };
+
+  fetch(`${BASE_CLOUD_URL}?target=simpanSPB`, { method: "POST", body: JSON.stringify(payload) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        showDoneMessage(`FPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
+        document.getElementById("spbPic").value = "";
+        keranjangItems = [];
+        renderKeranjang();
+        fetchDatabaseAll();
+      } else { alert("Gagal: " + resObj.message); }
+    })
+    .catch(err => alert("Error Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
+
+function renderSpbReport() {
+  const tbody = document.getElementById("spbReportBody"); 
+  if(!tbody) return; 
+  tbody.innerHTML = "";
+  
+  if(!MEMORY.spbList || MEMORY.spbList.length === 0) { 
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data FPB.</td></tr>`; 
+    return; 
+  }
+
+  const sortedSpbList = [...MEMORY.spbList].sort((a, b) => {
+    const tglA = new Date(a.tanggal || a.Tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || b.Tanggal || 0).getTime();
+    return tglB - tglA;
+  });
+
+  sortedSpbList.forEach(x => {
+    const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb || "KODE-UNKNOWN";
+    
+    const badge = x.status === "DONE" 
+      ? `<span class="badge-done" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">DONE</span>` 
+      : `<span class="badge-open" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">OPEN</span>`;
+    
+    let tgl = "-";
+    if (x.tanggal) {
+      tgl = new Date(x.tanggal).toLocaleDateString('id-ID');
+    } else if (x.Tanggal) {
+      tgl = new Date(x.Tanggal).toLocaleDateString('id-ID');
+    }
+    
+    tbody.innerHTML += `<tr>
+      <td>${tgl}</td>
+      <td><strong style="color:#059669; cursor:pointer; text-decoration: underline;" onclick="openSpbDetailModal('${nomorSpbAktif}')">${nomorSpbAktif}</strong></td>
+      <td>${x.department || x.Department || "-"}</td>
+      <td>${x.line || x.Line || "-"}</td>
+      <td>${x.pic || x.Pic || x.PIC || "-"}</td>
+      <td><strong>${x.jumlahJenis || (x.items ? x.items.length : 0)} Item</strong></td>
+      <td>${badge}</td>
+    </tr>`;
+  });
+}
+
+function openSpbDetailModal(noSpb) {
+  currentSelectedSpbNo = noSpb;
+  const matchSpb = MEMORY.spbList.find(x => (x.nomorSpb === noSpb || x.noSpb === noSpb || x.NoSpb === noSpb));
+  if(!matchSpb) return alert("Data FPB tidak ditemukan!");
+
+  const nomorSpbAktif = matchSpb.nomorSpb || matchSpb.noSpb || matchSpb.NoSpb;
+  document.getElementById("mdNoSpb").innerText = nomorSpbAktif;
+  document.getElementById("mdLine").innerText = matchSpb.line || matchSpb.Line || "-";
+  document.getElementById("mdPic").innerText = matchSpb.pic || matchSpb.Pic || matchSpb.PIC || "-";
+  
+  const bSelesai = document.getElementById("btnEksekusiSelesai");
+  const bPrint = document.getElementById("btnPrintSpb");
+  const hint = document.getElementById("checkHint");
+  const badgeModal = document.getElementById("mdStatusBadge");
+  badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>` : `<span class="badge-open">OPEN</span>`;
+  
+  const tbody = document.getElementById("modalTableBody"); tbody.innerHTML = "";
+  let itemsAktif = matchSpb.items || [];
+
+  if(itemsAktif.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;">Tidak ada rincian item.</td></tr>`;
+  }
+
+  itemsAktif.forEach((it) => {
+    const isDone = matchSpb.status === "DONE";
+    const chk = isDone ? `<span style="color:#15803d; font-weight:bold;">OK</span>` : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
+    tbody.innerHTML += `<tr>
+      <td style="text-align:center;">${chk}</td>
+      <td><strong>${it.kode || it.kodeBarang}</strong></td>
+      <td>${it.namaBarang || it.nama}</td>
+      <td><strong>${it.qty}</strong></td>
+      <td>${it.satuan}</td>
+    </tr>`;
+  });
+
+  bSelesai.disabled = true;
+
+  if (matchSpb.status === "DONE") {
+    bSelesai.style.display = "none";
+    bPrint.style.display = "inline-flex";
+    hint.style.display = "none";
+  } else {
+    bSelesai.style.display = "inline-flex";
+    bPrint.style.display = "none";
+    hint.style.display = "block";
+  }
+
+  document.getElementById("historyModal").style.display = "flex";
+}
+
+function closeModal() { document.getElementById("historyModal").style.display = "none"; }
+
+function evaluasiCheckboxModal() {
+  const totalCheck = document.querySelectorAll(".chk-verify").length;
+  const totalChecked = document.querySelectorAll(".chk-verify:checked").length;
+  document.getElementById("btnEksekusiSelesai").disabled = (totalCheck !== totalChecked || totalCheck === 0);
+}
+
+document.getElementById("btnEksekusiSelesai").onclick = function() {
+  if(!confirm("Apakah Anda yakin semua barang telah diverifikasi fisik dan siap diserahkan (DONE)?")) return;
+  showLoading(true, "Memproses pengeluaran stok di cloud...");
+
+  fetch(`${BASE_CLOUD_URL}?target=eksekusiSPB`, {
+    method: "POST",
+    body: JSON.stringify({ nomorSpb: currentSelectedSpbNo })
+  })
+  .then(res => res.json())
+  .then(resObj => {
+    if(resObj.status === "SUCCESS") {
+      showDoneMessage(`FPB ${currentSelectedSpbNo} Berhasil diselesaikan! Stok berkurang.`);
+      fetchDatabaseAll();
+
+      document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
+      document.getElementById("btnEksekusiSelesai").style.display = "none";
+      document.getElementById("btnPrintSpb").style.display = "inline-flex";
+      document.getElementById("checkHint").style.display = "none";
+      document.querySelectorAll(".chk-verify").forEach(chk => {
+        chk.closest("td").innerHTML = `<span style="color:#15803d; font-weight:bold;">OK</span>`;
+      });
+    } else { alert("Gagal mengeksekusi: " + resObj.message); }
+  })
+  .finally(() => showLoading(false));
+};
+
+// ---------- PRINT STRUK: coba cetak via Bluetooth dulu, fallback ke jendela print browser ----------
+async function printSpbDetail() {
+  const noSpb = document.getElementById("mdNoSpb").innerText;
+  const line = document.getElementById("mdLine").innerText;
+  const pic = document.getElementById("mdPic").innerText;
+  const tglCetak = new Date().toLocaleString('id-ID');
+
+  const items = [];
+  document.querySelectorAll("#modalTableBody tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length >= 5) {
+      items.push({ kode: tds[1].innerText, nama: tds[2].innerText, qty: tds[3].innerText, satuan: tds[4].innerText });
+    }
+  });
+
+  const printerConnected = !!(btPrinterCharacteristic && btPrinterDevice && btPrinterDevice.gatt && btPrinterDevice.gatt.connected);
+
+  if (printerConnected) {
+    try {
+      showLoading(true, "Mengirim struk ke printer Bluetooth...");
+      const bytes = await buildEscPosReceipt({
+        noSpb, line, pic, items, tglCetak,
+        fontSize: printerFontSizePref,
+        includeLogo: printerIncludeLogoPref
+      });
+      await sendToBluetoothPrinter(bytes);
+      showDoneMessage(`Struk FPB ${noSpb} berhasil dikirim ke printer.`);
+    } catch (err) {
+      alert('Gagal cetak lewat Bluetooth: ' + err.message + '\nMenggunakan jendela print browser sebagai cadangan.');
+      printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak);
+    } finally {
+      showLoading(false);
+    }
+  } else {
+    // Printer belum terhubung -> pakai jendela print browser biasa (perilaku lama)
+    printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak);
+  }
+}
+
+function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
+  let rows = "";
+  let totalJenis = items.length;
+  items.forEach(it => {
+    rows += `
+      <div class="item-row">
+        <div class="item-checkbox"></div>
+        <div class="item-text">
+          <div class="item-name">${it.nama}</div>
+          <div class="item-sub">${it.kode}</div>
+          <div class="item-qty">${it.qty} ${it.satuan}</div>
+        </div>
+      </div>`;
+  });
+
+  const win = window.open('', '_blank', 'width=400,height=600');
+  win.document.write(`
+    <html>
+    <head>
+      <title>Struk FPB ${noSpb}</title>
+      <style>
+        @page { margin: 0; }
+        body {
+          font-family: 'Courier New', monospace;
+          width: 58mm;
+          margin: 0 auto;
+          padding: 8px;
+          font-size: 11px;
+          color: #000;
+        }
+        .center { text-align: center; }
+        .bold { font-weight: bold; }
+        .line { border-top: 1px dashed #000; margin: 6px 0; }
+        .header h2 { margin: 0; font-size: 13px; }
+        .header p { margin: 2px 0; font-size: 10px; }
+        .info p { margin: 2px 0; }
+        .item-row { margin: 8px 0; display: flex; gap: 6px; align-items: flex-start; }
+        .item-checkbox { width:12px; height:12px; border:1px solid #000; flex-shrink: 0; margin-top:2px; }
+        .item-text { flex: 1; }
+        .item-name { font-weight: bold; }
+        .item-sub { font-size: 10px; color: #333; }
+        .item-qty { text-align: right; }
+        .footer { margin-top: 10px; font-size: 10px; }
+        .signature { margin-top: 10px; font-size: 10px; }
+        .signature-box { border-bottom: 1px solid #000; height: 30px; margin-top: 4px; }
+      </style>
+    </head>
+    <body>
+      <div class="header center">
+        <h2>PT ARGAPURA</h2>
+        <p>Formulir Permintaan Barang</p>
+      </div>
+      <div class="line"></div>
+      <div class="info">
+        <p><strong>No FPB:</strong> ${noSpb}</p>
+        <p><strong>Line/Dept:</strong> ${line}</p>
+        <p><strong>PIC:</strong> ${pic}</p>
+        <p><strong>Status:</strong> DONE</p>
+      </div>
+      <div class="line"></div>
+      ${rows}
+      <div class="line"></div>
+      <p class="bold">Total Jenis Barang: ${totalJenis}</p>
+      <div class="line"></div>
+      <div class="signature">
+        <p>Tanda Tangan Penerima:</p>
+        <div class="signature-box"></div>
+        <p style="margin-top:4px;">( ${pic} )</p>
+      </div>
+      <div class="footer center">
+        <p>Dicetak: ${tglCetak}</p>
+        <p>-- Terima Kasih --</p>
+      </div>
+    </body>
+    </html>
+  `);
+  win.document.close();
+  win.onload = function() {
+    win.focus();
+    win.print();
+  };
+}
+
+// ---------- STOK MASUK (Tersedia untuk User & Admin) ----------
+function isiOtomatisMasuk() {
+  const kode = document.getElementById("kodeMasuk").value.trim();
+  const m = MEMORY.masterData.find(x => x.barcode === kode);
+  const infoBox = document.getElementById("infoStokMasukBox");
+
+  document.getElementById("namaMasuk").value = m ? m.nama : "";
+
+  if(m) {
+    const r = hitungSisaStok(m.barcode, m.minStock);
+    document.getElementById("infoStokSaatIni").innerText = r.sisa;
+    document.getElementById("infoStokSatuan").innerText = m.satuan || "";
+    document.getElementById("infoStokKategori").innerText = m.kategori || "-";
+    infoBox.style.display = "block";
+  } else {
+    infoBox.style.display = "none";
+  }
+}
+
+function simpanBarangMasuk() {
+  const kode = document.getElementById("kodeMasuk").value.trim();
+  const qty = Number(document.getElementById("qtyMasuk").value);
+  if(!kode || qty <= 0) return alert("Lengkapi data barang masuk dengan valid!");
+
+  const master = MEMORY.masterData.find(x => x.barcode === kode);
+  if(!master) return alert("Kode barang tidak ditemukan di Master Data! Silakan tambahkan dahulu di menu Master Data (Admin).");
+
+  showLoading(true, "Menyimpan barang masuk...");
+  fetch(`${BASE_CLOUD_URL}?target=barangMasuk`, {
+    method: "POST",
+    body: JSON.stringify({ kode, qty, pic: currentActiveName })
+  })
+  .then(() => {
+    showDoneMessage("Stok masuk berhasil direkam! Sisa stok & log transaksi sudah diperbarui.");
+    document.getElementById("kodeMasuk").value = "";
+    document.getElementById("namaMasuk").value = "";
+    document.getElementById("qtyMasuk").value = "1";
+    document.getElementById("infoStokMasukBox").style.display = "none";
+    fetchDatabaseAll();
+  });
+}
+
+function renderBudgetControl() {
+  const tbody = document.getElementById("budgetControlBody"); if(!tbody) return; tbody.innerHTML = "";
+  const note = document.getElementById("budgetControlNote");
+  let rows = [];
+  MEMORY.masterData.forEach(m => {
+    for (const dept in SECTION_MAP) {
+      SECTION_MAP[dept].forEach(line => {
+        const key = `${m.barcode}_${line}`;
+        let aktualPakai = 0;
+        const bln = new Date().getMonth(); const thn = new Date().getFullYear();
+        MEMORY.transaksi.forEach(t => {
+          if(t.kode === m.barcode && t.line === line && t.jenis === "Keluar") {
+            const d = new Date(t.tanggal);
+            if(d.getMonth() === bln && d.getFullYear() === thn) aktualPakai += Number(t.qty);
+          }
+        });
+
+        const limitMax = MEMORY.budgetLimits[key] !== undefined ? MEMORY.budgetLimits[key] : 2;
+        const sudahDiAdjust = MEMORY.budgetLimits[key] !== undefined && limitMax !== 2;
+        if(aktualPakai === 0 && limitMax == 2) return;
+
+        let priority = 2;
+        let statusLabel = "AMAN (EFISIEN)";
+        let statusEff = `<span class="badge-normal">AMAN (EFISIEN)</span>`;
+        if(sudahDiAdjust) { priority = 1; statusLabel = "OK ADJUSTMENT"; statusEff = `<span class="badge-adjusted">OK ADJUSTMENT</span>`; }
+        if(aktualPakai > limitMax) { priority = 0; statusLabel = "OVER BUDGET"; statusEff = `<span class="badge-over">OVER BUDGET</span>`; }
+
+        rows.push({
+          priority, statusLabel,
+          kode: m.barcode, nama: m.nama, dept, line, limitMax, aktualPakai,
+          html: `<tr>
+            <td>${m.barcode}</td>
+            <td>${m.nama}</td>
+            <td><small>${dept} - ${line}</small></td>
+            <td><strong>${limitMax}</strong></td>
+            <td>${aktualPakai}</td>
+            <td>${statusEff}</td>
+            <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${line}')">Adjust</button></td>
+          </tr>`
+        });
+      });
+    }
+  });
+
+  rows.sort((a, b) => a.priority - b.priority);
+
+  window.__budgetControlAllRows = rows;
+
+  const displayRows = rows.slice(0, 30);
+  tbody.innerHTML = displayRows.length ? displayRows.map(r => r.html).join("") : `<tr><td colspan="7" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
+
+  if(note) {
+    note.innerText = rows.length > 30
+      ? `Menampilkan 30 dari ${rows.length} data (diurutkan: Over Budget → Ok Adjustment → Aman). Gunakan tombol Download Excel untuk melihat seluruh data.`
+      : (rows.length > 0 ? `Menampilkan seluruh ${rows.length} data.` : "");
+  }
+
+  applyRole();
+}
+
+function downloadBudgetControlExcel() {
+  const rows = window.__budgetControlAllRows || [];
+  if(rows.length === 0) return alert("Tidak ada data Budget Kontrol untuk diexport!");
+  const dataExport = rows.map(r => ({
+    "Kode Barang": r.kode,
+    "Nama Barang": r.nama,
+    "Department": r.dept,
+    "Section / Line": r.line,
+    "Batas Max": r.limitMax,
+    "Aktual Pakai": r.aktualPakai,
+    "Status Efisiensi": r.statusLabel
+  }));
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Budget Kontrol");
+  XLSX.writeFile(wb, `Budget_Kontrol_${new Date().toISOString().split('T')[0]}.xlsx`);
+}
+
+function refreshBudgetControl() {
+  showLoading(true, "Me-refresh data Budget Kontrol...");
+  fetch(`${BASE_CLOUD_URL}?target=loadAll`)
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        MEMORY = resObj.data;
+        renderBudgetControl();
+        showDoneMessage("Data Budget Kontrol berhasil di-refresh.");
+      } else { alert("Gagal me-refresh: " + resObj.message); }
+    })
+    .catch(err => alert("Kesalahan Jaringan: " + err))
+    .finally(() => showLoading(false));
+}
+
+function renderStock() {
+  const tbody = document.getElementById("stockBody"); if(!tbody) return; tbody.innerHTML = "";
+  const filterKat = document.getElementById("filterKategori").value;
+  const search = document.getElementById("searchStock").value.toLowerCase();
+  
+  const ddown = document.getElementById("filterKategori");
+  if(ddown.options.length <= 1) {
+    let kats = [...new Set(MEMORY.masterData.map(x => x.kategori).filter(Boolean))];
+    kats.forEach(k => { ddown.innerHTML += `<option value="${k}">${k}</option>`; });
+  }
+
+  let rows = [];
+  MEMORY.masterData.forEach(m => {
+    if(filterKat && m.kategori !== filterKat) return;
+    if(search && !(m.nama.toLowerCase().includes(search) || m.barcode.toLowerCase().includes(search))) return;
+
+    let sisa = Number(MEMORY.stockAwal[m.barcode] || 0);
+    MEMORY.transaksi.forEach(t => {
+      if(t.kode === m.barcode) {
+        if(t.jenis === "Masuk") sisa += Number(t.qty);
+        if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
+      }
+    });
+
+    let statusKondisi = `<span class="status-aman">Stok Aman</span>`;
+    let priority = 2;
+    if(sisa <= Number(m.minStock || 0)) { statusKondisi = `<span class="status-warning">Reorder Limit</span>`; priority = 1; }
+    if(sisa <= 0) { statusKondisi = `<span class="status-habis">HABIS</span>`; priority = 0; }
+
+    rows.push({
+      priority,
+      sisa,
+      html: `<tr>
+        <td><strong>${m.barcode}</strong></td>
+        <td>${m.nama}</td>
+        <td><strong style="color:${sisa<=0?'#ef4444':'#0f172a'}">${sisa}</strong> ${m.satuan}</td>
+        <td>${m.minStock || 0}</td>
+        <td>${statusKondisi}</td>
+      </tr>`
+    });
+  });
+
+  rows.sort((a, b) => a.priority - b.priority || a.sisa - b.sisa);
+
+  tbody.innerHTML = rows.length ? rows.map(r => r.html).join("") : `<tr><td colspan="5" style="text-align:center; color:#94a3b8;">Tidak ada data stok.</td></tr>`;
+}
+
+function renderReport() {
+  const tbody = document.getElementById("reportBody"); if(!tbody) return; tbody.innerHTML = "";
+  const filterTgl = document.getElementById("reportTanggal").value;
+  const filterJenis = document.getElementById("reportJenis").value;
+  const search = document.getElementById("searchReport").value.toLowerCase();
+
+  const sortedTransaksi = [...MEMORY.transaksi].sort((a, b) => {
+    const tglA = new Date(a.tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || 0).getTime();
+    return tglB - tglA;
+  });
+
+  let html = "";
+  sortedTransaksi.forEach(t => {
+    const tglStr = t.tanggal ? new Date(t.tanggal).toISOString().split('T')[0] : "";
+    if(filterTgl && tglStr !== filterTgl) return;
+    if(filterJenis && t.jenis !== filterJenis) return;
+    if(search && !(t.nama.toLowerCase().includes(search) || t.kode.toLowerCase().includes(search) || String(t.noSpb).toLowerCase().includes(search))) return;
+
+    html += `<tr>
+      <td>${t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-"}</td>
+      <td>${t.noSpb || "-"}</td>
+      <td>${t.kode}</td>
+      <td>${t.nama}</td>
+      <td>${t.kategori || "-"}</td>
+      <td>${t.line || "-"}</td>
+      <td>${t.pic || "-"}</td>
+      <td><strong>${t.qty}</strong></td>
+      <td>${t.satuan}</td>
+      <td><span style="font-weight:bold; color:${t.jenis==='Masuk'?'#10b981':'#f97316'}">${t.jenis}</span></td>
+      <td>${t.statusSpb || "DONE"}</td>
+    </tr>`;
+  });
+  tbody.innerHTML = html || `<tr><td colspan="11" style="text-align:center;">Log transaksi kosong.</td></tr>`;
+}
+
+function tampilMaster() {
+  const tbody = document.getElementById("masterBody"); if(!tbody) return; tbody.innerHTML = "";
+  MEMORY.masterData.forEach(m => {
+    tbody.innerHTML += `<tr>
+      <td><strong>${m.barcode}</strong></td>
+      <td>${m.nama}</td>
+      <td>${m.satuan}</td>
+      <td>${m.minStock || 0}</td>
+      <td>${m.kategori}</td>
+      <td><button class="btn-mini btn-danger" onclick="hapusMasterBarang('${m.barcode}')">Hapus</button></td>
+    </tr>`;
+  });
+}
+
+function isiMasterOtomatis() {
+  const ex = MEMORY.masterData.find(x => x.barcode === document.getElementById("mBarcode").value.trim());
+  if(ex) {
+    document.getElementById("mNama").value = ex.nama;
+    document.getElementById("mSatuan").value = ex.satuan;
+    document.getElementById("mMinimal").value = ex.minStock || 0;
+    document.getElementById("mKategori").value = ex.kategori;
+  }
+}
+
+function tambahMaster() {
+  const barcode = document.getElementById("mBarcode").value.trim();
+  const nama = document.getElementById("mNama").value.trim();
+  const satuan = document.getElementById("mSatuan").value.trim();
+  const minStock = Number(document.getElementById("mMinimal").value);
+  const kategori = document.getElementById("mKategori").value.trim() || getKategoriDariKode(barcode);
+
+  if(!barcode || !nama) return alert("Barcode dan Nama Wajib Diisi!");
+  showLoading(true, "Menyimpan ke Master Data...");
+
+  fetch(`${BASE_CLOUD_URL}?target=tambahMaster`, {
+    method: "POST",
+    body: JSON.stringify({ barcode, nama, satuan, minStock, kategori })
+  })
+  .then(() => { resetFormMaster(); fetchDatabaseAll(); });
+}
+
+function resetFormMaster() {
+  document.getElementById("mBarcode").value = ""; document.getElementById("mNama").value = "";
+  document.getElementById("mSatuan").value = ""; document.getElementById("mMinimal").value = "0";
+  document.getElementById("mKategori").value = "";
+}
+
+function prosesUploadStokAktual() {
+  const fileInput = document.getElementById("excelStockFile");
+  if(fileInput.files.length === 0) return alert("Pilih file excel penyesuaian stok terlebih dahulu!");
+  
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const rawData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    showLoading(true, "Membaca dan menimpa database sisa stok aktual...");
+    fetch(`${BASE_CLOUD_URL}?target=overwriteStokAktual`, {
+      method: "POST",
+      body: JSON.stringify({ excelData: rawData })
+    })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        alert("Sinkronisasi Berhasil! Sisa stok telah diperbarui sesuai data aktual.");
+        fileInput.value = "";
+        fetchDatabaseAll();
+      }
+    });
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+// ---------- UPLOAD EXCEL: BATAS JATAH / MINIMAL STOK PER ITEM PER LINE (BULANAN) ----------
+// Catatan: fitur ini menimpa MEMORY.budgetLimits (kolom "Batas Max" di Budget Kontrol / Adjust Jatah Max).
+// TIDAK menyentuh master.minStock (dipakai di menu Sisa Stok/Master Data untuk status Reorder/Habis).
+function prosesUploadBudgetLine() {
+  const fileInput = document.getElementById("excelBudgetLineFile");
+  if(fileInput.files.length === 0) return alert("Pilih file excel batas jatah per line terlebih dahulu!");
+
+  const file = fileInput.files[0];
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const data = new Uint8Array(e.target.result);
+    const workbook = XLSX.read(data, { type: 'array' });
+    const sheetName = workbook.SheetNames[0];
+    const rawRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
+
+    if(rawRows.length === 0) return alert("File Excel kosong atau format tidak terbaca!");
+
+    const normalizedRows = [];
+    const skippedRows = [];
+
+    rawRows.forEach((row, idx) => {
+      // Normalisasi nama kolom: huruf kecil semua & tanpa spasi ekstra, supaya fleksibel
+      // terhadap variasi header seperti "Barcode", "Kode Barang", "MinStock", "Batas Max", dst.
+      const flatRow = {};
+      Object.keys(row).forEach(k => { flatRow[String(k).trim().toLowerCase()] = row[k]; });
+
+      const kode = String(flatRow["barcode"] ?? flatRow["kode barang"] ?? flatRow["kode"] ?? "").trim();
+      const line = String(flatRow["line"] ?? flatRow["section / line"] ?? flatRow["section/line"] ?? flatRow["section"] ?? "").trim();
+      const limitRaw = flatRow["minstock"] ?? flatRow["min stock"] ?? flatRow["batas max"] ?? flatRow["batas max/bulan"] ?? flatRow["max"] ?? flatRow["limit"];
+      const limit = Number(limitRaw);
+
+      if(!kode || !line || isNaN(limit) || limit < 0) { skippedRows.push(idx + 2); return; } // +2 = perkiraan nomor baris di excel (header di baris 1)
+      normalizedRows.push({ kode, line, limit });
+    });
+
+    if(normalizedRows.length === 0) {
+      return alert("Tidak ada baris valid yang bisa diproses!\nPastikan kolom 'barcode' (kode barang), 'line' (section/line), dan 'minStock' (angka batas max) terisi lengkap sesuai contoh.");
+    }
+
+    const konfirmasiMsg = `Akan menimpa Batas Jatah Max untuk ${normalizedRows.length} kombinasi Kode Barang + Line.`
+      + (skippedRows.length ? `\n(${skippedRows.length} baris dilewati karena data tidak lengkap: baris excel ke-${skippedRows.join(", ")})` : "")
+      + `\n\nNilai ini TIDAK mempengaruhi Min Stock di menu Sisa Stok/Master Data. Lanjutkan?`;
+    if(!confirm(konfirmasiMsg)) return;
+
+    showLoading(true, "Menyinkronkan Batas Jatah Per Item Per Line...");
+    fetch(`${BASE_CLOUD_URL}?target=overwriteBudgetLineExcel`, {
+      method: "POST",
+      body: JSON.stringify({ rows: normalizedRows, username: currentUsername, nama: currentActiveName })
+    })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        alert(`Sinkronisasi Berhasil! ${normalizedRows.length} batas jatah per item per line telah diperbarui.`);
+        const noteEl = document.getElementById("budgetLineUploadNote");
+        if(noteEl) {
+          noteEl.innerText = `Terakhir sync: ${new Date().toLocaleString('id-ID')} — ${normalizedRows.length} baris diproses`
+            + (skippedRows.length ? `, ${skippedRows.length} baris dilewati (baris excel: ${skippedRows.join(", ")}).` : ".");
+        }
+        fileInput.value = "";
+        fetchDatabaseAll();
+        renderBudgetControl();
+      } else {
+        alert("Gagal sinkronisasi: " + resObj.message);
+      }
+    })
+    .catch(err => alert("Kesalahan Jaringan: " + err))
+    .finally(() => showLoading(false));
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function hitungSisaStok(barcode, minStock) {
+  let sisa = Number(MEMORY.stockAwal[barcode] || 0);
+  MEMORY.transaksi.forEach(t => {
+    if(t.kode === barcode) {
+      if(t.jenis === "Masuk") sisa += Number(t.qty);
+      if(t.jenis === "Keluar" && t.statusSpb === "DONE") sisa -= Number(t.qty);
+    }
+  });
+  let status = "Stok Aman";
+  if(sisa <= Number(minStock || 0)) status = "Reorder Limit";
+  if(sisa <= 0) status = "HABIS";
+  return { sisa, status };
+}
+
+function downloadStockExcel() {
+  if(MEMORY.masterData.length === 0) return alert("Tidak ada data master barang untuk diexport!");
+  const dataExport = MEMORY.masterData.map(m => {
+    const r = hitungSisaStok(m.barcode, m.minStock);
     return {
-      nomorSpb: spb.nomorSpb,
-      tanggal: spb.tanggal,
-      department: spb.department,
-      line: spb.line,
-      pic: spb.pic,
-      status: spb.status,
-      jumlahJenis: items.length,
-      items: items.map(it => ({ kode: it.kode, nama: it.nama, kategori: it.kategori, qty: it.qty, satuan: it.satuan }))
+      "Kode Barang": m.barcode,
+      "Nama Barang": m.nama,
+      "Kategori": m.kategori || "-",
+      "Sisa Stok": r.sisa,
+      "Satuan": m.satuan || "-",
+      "Min Stock": m.minStock || 0,
+      "Status Kondisi": r.status
     };
   });
-
-  // budgetLimits jadi object map { "kode_line": limit }
-  const budgetLimits = {};
-  sheetToObjects("budget_limits").forEach(r => { budgetLimits[r.key] = Number(r.limit); });
-
-  // stockAwal jadi object map { kode: qty }
-  const stockAwal = {};
-  sheetToObjects("stock_awal").forEach(r => { stockAwal[r.kode] = Number(r.qty); });
-
-  return {
-    masterData,
-    spbList,
-    transaksi,
-    budgetLimits,
-    stockAwal,
-    users: usersRaw
-  };
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok");
+  XLSX.writeFile(wb, `Sisa_Stok_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-// ---------- USERS ----------
-function tambahUser(p) {
-  const sh = SS.getSheetByName("users");
-  const rowIdx = findRowIndexByValue(sh, 1, p.username);
-  if (rowIdx > -1) {
-    sh.getRange(rowIdx, 1, 1, 4).setValues([[p.username, p.password, p.nama || "", p.role || "user"]]);
-  } else {
-    sh.appendRow([p.username, p.password, p.nama || "", p.role || "user"]);
-  }
-  return { status: "SUCCESS", message: "User disimpan" };
-}
-
-function hapusUser(p) {
-  const sh = SS.getSheetByName("users");
-  const rowIdx = findRowIndexByValue(sh, 1, p.username);
-  if (rowIdx > -1) sh.deleteRow(rowIdx);
-  return { status: "SUCCESS", message: "User dihapus" };
-}
-
-// ---------- FPB (internal: spb_list / spb_items) ----------
-function simpanSPB(p) {
-  const shList = SS.getSheetByName("spb_list");
-  const shItems = SS.getSheetByName("spb_items");
-
-  shList.appendRow([p.nomorSpb, new Date(), p.department, p.line, p.pic, "OPEN"]);
-
-  (p.items || []).forEach(it => {
-    shItems.appendRow([p.nomorSpb, it.kode, it.nama, it.kategori, it.qty, it.satuan]);
+function downloadReportExcel() {
+  if(MEMORY.transaksi.length === 0) return alert("Tidak ada data log transaksi untuk diexport!");
+  const sortedTransaksi = [...MEMORY.transaksi].sort((a, b) => {
+    const tglA = new Date(a.tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || 0).getTime();
+    return tglB - tglA;
   });
-
-  return { status: "SUCCESS", message: "FPB tersimpan sebagai OPEN" };
+  const dataExport = sortedTransaksi.map(t => ({
+    "Tanggal": t.tanggal ? new Date(t.tanggal).toLocaleDateString('id-ID') : "-",
+    "No. FPB": t.noSpb || "-",
+    "Kode Barang": t.kode,
+    "Nama Barang": t.nama,
+    "Kategori": t.kategori || "-",
+    "Line / Section": t.line || "-",
+    "PIC": t.pic || "-",
+    "Qty": t.qty,
+    "Satuan": t.satuan,
+    "Jenis": t.jenis,
+    "Status FPB": t.statusSpb || "DONE"
+  }));
+  const ws = XLSX.utils.json_to_sheet(dataExport);
+  ws['!cols'] = [{wch:12},{wch:18},{wch:14},{wch:30},{wch:16},{wch:16},{wch:18},{wch:8},{wch:10},{wch:10},{wch:12}];
+  const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Log Transaksi");
+  XLSX.writeFile(wb, `Log_Transaksi_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
 
-function eksekusiSPB(p) {
-  const shList = SS.getSheetByName("spb_list");
-  const rowIdx = findRowIndexByValue(shList, 1, p.nomorSpb);
-  if (rowIdx === -1) return { status: "ERROR", message: "FPB tidak ditemukan" };
-
-  const rowData = shList.getRange(rowIdx, 1, 1, 6).getValues()[0];
-  const department = rowData[2], line = rowData[3], pic = rowData[4];
-
-  // Update status jadi DONE
-  shList.getRange(rowIdx, 6).setValue("DONE");
-
-  // Catat transaksi keluar untuk setiap item FPB ini
-  const items = sheetToObjects("spb_items").filter(it => String(it.nomorSpb) === String(p.nomorSpb));
-  const shTrx = SS.getSheetByName("transaksi");
-  const now = new Date();
-  items.forEach(it => {
-    shTrx.appendRow([now, p.nomorSpb, it.kode, it.nama, it.kategori, line, pic, it.qty, it.satuan, "Keluar", "DONE"]);
-  });
-
-  return { status: "SUCCESS", message: "FPB diselesaikan, stok terpotong" };
-}
-
-// ---------- STOK MASUK (tersedia untuk user & admin di frontend) ----------
-// BARU: payload sekarang bisa menyertakan { kode, qty, pic } - "pic" adalah
-// nama user yang sedang login saat melakukan input stok masuk, untuk
-// keperluan jejak/audit di Log Transaksi.
-function barangMasuk(p) {
-  const master = sheetToObjects("master_data").find(m => String(m.barcode) === String(p.kode));
-  const shTrx = SS.getSheetByName("transaksi");
-  shTrx.appendRow([
-    new Date(), "-", p.kode, master ? master.nama : "-", master ? master.kategori : "-",
-    "Stok Masuk", p.pic || "-", p.qty, master ? master.satuan : "-", "Masuk", "DONE"
-  ]);
-  return { status: "SUCCESS", message: "Barang masuk dicatat" };
-}
-
-// ---------- MASTER DATA ----------
-function tambahMaster(p) {
-  const sh = SS.getSheetByName("master_data");
-  const rowIdx = findRowIndexByValue(sh, 1, p.barcode);
-  if (rowIdx > -1) {
-    sh.getRange(rowIdx, 1, 1, 5).setValues([[p.barcode, p.nama, p.satuan, p.minStock || 0, p.kategori]]);
-  } else {
-    sh.appendRow([p.barcode, p.nama, p.satuan, p.minStock || 0, p.kategori]);
+// ---------- EXPORT FPB DENGAN FILTER (Department / Tanggal / Status) ----------
+function openSpbExportModal() {
+  const deptSelect = document.getElementById("exportDept");
+  if(deptSelect.options.length <= 1) {
+    Object.keys(SECTION_MAP).forEach(dept => {
+      const opt = document.createElement("option"); opt.value = dept; opt.textContent = dept; deptSelect.appendChild(opt);
+    });
   }
-  return { status: "SUCCESS", message: "Master data disimpan" };
+  document.getElementById("spbExportModal").style.display = "flex";
 }
+function closeSpbExportModal() { document.getElementById("spbExportModal").style.display = "none"; }
 
-// ---------- BUDGET LIMIT (JATAH MAKSIMAL BULANAN) ----------
-// payload wajib kirim { kode, line, limit, keterangan, username, nama }
-// - key otomatis dibentuk backend = `${kode}_${line}`
-// - setiap perubahan otomatis dicatat ke sheet "adjust_history"
-function adjustBudget(p) {
-  const sh = SS.getSheetByName("budget_limits");
-  const kode = p.kode || "";
-  const line = p.line || "";
-  const key = p.key || `${kode}_${line}`;
-  const newLimit = Number(p.limit);
-  const keterangan = p.keterangan && p.keterangan.trim() !== "" ? p.keterangan.trim() : "-";
-  const username = p.username || "-";
-  const namaUser = p.nama || "-";
+function downloadSpbExcelFiltered() {
+  const dept = document.getElementById("exportDept").value;
+  const tglDari = document.getElementById("exportTglDari").value;
+  const tglSampai = document.getElementById("exportTglSampai").value;
+  const status = document.getElementById("exportStatus").value;
 
-  const rowIdx = findRowIndexByValue(sh, 1, key);
-  let oldLimit = 2; // default sistem jika belum pernah di-set sebelumnya
-
-  if (rowIdx > -1) {
-    oldLimit = Number(sh.getRange(rowIdx, 2).getValue());
-    sh.getRange(rowIdx, 2).setValue(newLimit);
-  } else {
-    sh.appendRow([key, newLimit]);
-  }
-
-  logAdjustHistory(key, kode, line, oldLimit, newLimit, keterangan, username, namaUser);
-
-  return { status: "SUCCESS", message: "Limit budget diupdate" };
-}
-
-function logAdjustHistory(key, kode, line, limitLama, limitBaru, keterangan, username, nama) {
-  const sh = SS.getSheetByName("adjust_history");
-  sh.appendRow([new Date(), key, kode, line, limitLama, limitBaru, keterangan, username, nama]);
-}
-
-function getAdjustHistory(key) {
-  const all = sheetToObjects("adjust_history");
-  return all
-    .filter(r => String(r.key) === String(key))
-    .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
-}
-
-// ---------- OVERWRITE BATAS JATAH / MIN STOK PER ITEM PER LINE (dari upload excel) ----------
-// payload: { rows: [{ kode, line, limit }, ...], username, nama }
-// - Menimpa sheet "budget_limits" (key = `${kode}_${line}`) secara massal dalam satu kali panggilan,
-//   TIDAK menyentuh sheet "master_data" (kolom minStock di Master Data/Sisa Stok tetap aman).
-// - Setiap baris yang nilainya benar-benar berubah otomatis dicatat ke "adjust_history" supaya tetap
-//   ada jejak audit, sama seperti perubahan manual lewat tombol Adjust.
-// - Baris dengan limit yang sama persis dengan nilai lama akan dilewati (tidak menulis ulang & tidak
-//   membuat entri histori baru) supaya proses lebih cepat untuk file besar.
-function overwriteBudgetLineExcel(p) {
-  const rows = p.rows || [];
-  if (rows.length === 0) return { status: "ERROR", message: "Tidak ada baris data untuk diproses" };
-
-  const username = p.username || "-";
-  const namaUser = p.nama || "-";
-  const keteranganDefault = "Bulk Upload Excel (Sinkronisasi Batas Per Line)";
-  const now = new Date();
-
-  const sh = SS.getSheetByName("budget_limits");
-  const data = sh.getDataRange().getValues(); // [ [key, limit], ... ] termasuk header
-
-  // Bangun index key -> nomor baris (1-based) supaya lookup cepat tanpa scan ulang tiap baris excel
-  const keyToRow = {};
-  for (let i = 1; i < data.length; i++) {
-    keyToRow[String(data[i][0])] = i + 1;
-  }
-
-  const historyRows = [];
-  let updatedCount = 0;
-  let skippedSameValue = 0;
-
-  rows.forEach(r => {
-    const kode = String(r.kode || "").trim();
-    const line = String(r.line || "").trim();
-    const newLimit = Number(r.limit);
-    if (!kode || !line || isNaN(newLimit) || newLimit < 0) return;
-
-    const key = `${kode}_${line}`;
-    const rowIdx = keyToRow[key];
-    let oldLimit = 2; // default sistem jika belum pernah di-set sebelumnya
-
-    if (rowIdx) {
-      oldLimit = Number(sh.getRange(rowIdx, 2).getValue());
-      if (oldLimit === newLimit) { skippedSameValue++; return; } // nilai sama, tidak perlu ditulis/dicatat lagi
-      sh.getRange(rowIdx, 2).setValue(newLimit);
-    } else {
-      sh.appendRow([key, newLimit]);
-      keyToRow[key] = sh.getLastRow(); // update index supaya baris duplikat kode+line di file excel tidak dobel-append
+  const filtered = (MEMORY.spbList || []).filter(x => {
+    const spbDept = x.department || x.Department || "-";
+    const spbStatus = x.status || x.Status || "OPEN";
+    if(dept && spbDept !== dept) return false;
+    if(status && spbStatus !== status) return false;
+    if(x.tanggal || x.Tanggal) {
+      const dStr = new Date(x.tanggal || x.Tanggal).toISOString().split('T')[0];
+      if(tglDari && dStr < tglDari) return false;
+      if(tglSampai && dStr > tglSampai) return false;
     }
-
-    historyRows.push([now, key, kode, line, oldLimit, newLimit, keteranganDefault, username, namaUser]);
-    updatedCount++;
+    return true;
+  }).sort((a, b) => {
+    const tglA = new Date(a.tanggal || a.Tanggal || 0).getTime();
+    const tglB = new Date(b.tanggal || b.Tanggal || 0).getTime();
+    return tglB - tglA;
   });
 
-  if (historyRows.length > 0) {
-    const shHistory = SS.getSheetByName("adjust_history");
-    shHistory.getRange(shHistory.getLastRow() + 1, 1, historyRows.length, 9).setValues(historyRows);
+  if(filtered.length === 0) return alert("Tidak ada data FPB yang sesuai dengan filter dipilih!");
+
+  const ringkasan = filtered.map(x => ({
+    "Nomor FPB": x.nomorSpb || x.noSpb || x.NoSpb,
+    "Tanggal": (x.tanggal || x.Tanggal) ? new Date(x.tanggal || x.Tanggal).toLocaleDateString('id-ID') : "-",
+    "Department": x.department || x.Department || "-",
+    "Section / Line": x.line || x.Line || "-",
+    "PIC": x.pic || x.Pic || x.PIC || "-",
+    "Jumlah Jenis Item": x.jumlahJenis || (x.items ? x.items.length : 0),
+    "Status": x.status || x.Status || "OPEN"
+  }));
+
+  const detail = [];
+  filtered.forEach(x => {
+    const nomorSpbAktif = x.nomorSpb || x.noSpb || x.NoSpb;
+    (x.items || []).forEach(it => {
+      detail.push({
+        "Nomor FPB": nomorSpbAktif,
+        "Department": x.department || x.Department || "-",
+        "Section / Line": x.line || x.Line || "-",
+        "PIC": x.pic || x.Pic || x.PIC || "-",
+        "Kode Barang": it.kode || it.kodeBarang,
+        "Nama Barang": it.nama || it.namaBarang,
+        "Kategori": it.kategori || "-",
+        "Qty": it.qty,
+        "Satuan": it.satuan,
+        "Status FPB": x.status || x.Status || "OPEN"
+      });
+    });
+  });
+
+  const wb = XLSX.utils.book_new();
+  const wsRingkasan = XLSX.utils.json_to_sheet(ringkasan);
+  wsRingkasan['!cols'] = [{wch:20},{wch:12},{wch:14},{wch:16},{wch:18},{wch:16},{wch:10}];
+  const wsDetail = XLSX.utils.json_to_sheet(detail);
+  wsDetail['!cols'] = [{wch:20},{wch:14},{wch:16},{wch:18},{wch:14},{wch:30},{wch:16},{wch:8},{wch:10},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, wsRingkasan, "Ringkasan FPB");
+  XLSX.utils.book_append_sheet(wb, wsDetail, "Detail Item FPB");
+
+  const labelDept = dept || "SemuaDept";
+  XLSX.writeFile(wb, `Export_FPB_${labelDept}_${new Date().toISOString().split('T')[0]}.xlsx`);
+  closeSpbExportModal();
+}
+
+let scannerObj = null;
+function startScanner() {
+  document.getElementById("scannerArea").style.display = "block";
+  if(!scannerObj) {
+    scannerObj = new Instascan.Scanner({ video: document.getElementById('preview') });
+    scannerObj.addListener('scan', function(content) {
+      document.getElementById("kodeBarang").value = content;
+      isiOtomatis();
+      document.getElementById("scannerArea").style.display = "none";
+      scannerObj.stop();
+    });
   }
-
-  return {
-    status: "SUCCESS",
-    message: `${updatedCount} batas jatah per line diperbarui, ${skippedSameValue} baris dilewati (nilai sama dengan sebelumnya), dari total ${rows.length} baris terkirim.`
-  };
+  Instascan.Camera.getCameras().then(function(cameras) {
+    if (cameras.length > 0) { scannerObj.start(cameras[0]); } else { alert('Kamera tidak ditemukan.'); }
+  }).catch(function(e) { console.error(e); });
 }
-
-// ---------- OVERWRITE STOK AKTUAL (dari upload excel) ----------
-function overwriteStokAktual(p) {
-  const rows = p.excelData || [];
-  const shStockAwal = SS.getSheetByName("stock_awal");
-  const shTrx = SS.getSheetByName("transaksi");
-
-  rows.forEach(row => {
-    // Fleksibel terhadap nama kolom excel: barcode/kode, sisa/stok/qty
-    const kode = row.barcode || row.kode || row.Kode || row.Barcode;
-    const sisaBaru = row.sisa || row.stok || row.qty || row.Sisa || row.Stok || row.Qty;
-    if (!kode || sisaBaru === undefined) return;
-
-    // Hapus semua transaksi lama untuk kode ini supaya perhitungan bersih dari stock_awal baru
-    const dataTrx = shTrx.getDataRange().getValues();
-    for (let i = dataTrx.length - 1; i >= 1; i--) {
-      if (String(dataTrx[i][2]) === String(kode)) { // kolom ke-3 = kode
-        shTrx.deleteRow(i + 1);
-      }
-    }
-
-    // Set stock_awal = sisa aktual
-    const rowIdx = findRowIndexByValue(shStockAwal, 1, kode);
-    if (rowIdx > -1) {
-      shStockAwal.getRange(rowIdx, 2).setValue(sisaBaru);
-    } else {
-      shStockAwal.appendRow([kode, sisaBaru]);
-    }
-  });
-
-  return { status: "SUCCESS", message: "Stok aktual berhasil ditimpa (overwrite)" };
-}
+</script>
+</body>
+</html>
