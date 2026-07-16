@@ -412,6 +412,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
               <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">Refresh</button>
             </div>
           </div>
+          <p id="budgetControlLastUpdate" style="font-size:12px; color:#94a3b8; margin:-8px 0 15px; font-style:italic;"></p>
           <div style="overflow-x:auto">
             <table>
               <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
@@ -571,6 +572,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
     <div style="display:flex; gap:10px; margin-bottom:15px;">
       <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
       <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">Print Struk</button>
+      <button id="btnPrintPreviewSpb" class="btn-small" style="background:#64748b; display:none;" onclick="printPreviewSpbDetail()">🖨️ Print Preview</button>
     </div>
     <p id="checkHint" style="font-size:12px; color:#ef4444; font-weight: 600;">*Seluruh item aktif wajib dicentang untuk menyerahkan barang!</p>
     <table style="width:100%">
@@ -1651,6 +1653,7 @@ function openSpbDetailModal(noSpb) {
   
   const bSelesai = document.getElementById("btnEksekusiSelesai");
   const bPrint = document.getElementById("btnPrintSpb");
+  const bPrintPreview = document.getElementById("btnPrintPreviewSpb");
   const hint = document.getElementById("checkHint");
   const badgeModal = document.getElementById("mdStatusBadge");
   badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>` : `<span class="badge-open">OPEN</span>`;
@@ -1679,10 +1682,12 @@ function openSpbDetailModal(noSpb) {
   if (matchSpb.status === "DONE") {
     bSelesai.style.display = "none";
     bPrint.style.display = "inline-flex";
+    bPrintPreview.style.display = "inline-flex";
     hint.style.display = "none";
   } else {
     bSelesai.style.display = "inline-flex";
     bPrint.style.display = "none";
+    bPrintPreview.style.display = "none";
     hint.style.display = "block";
   }
 
@@ -1714,6 +1719,7 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
       document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
       document.getElementById("btnEksekusiSelesai").style.display = "none";
       document.getElementById("btnPrintSpb").style.display = "inline-flex";
+      document.getElementById("btnPrintPreviewSpb").style.display = "inline-flex";
       document.getElementById("checkHint").style.display = "none";
       document.querySelectorAll(".chk-verify").forEach(chk => {
         chk.closest("td").innerHTML = `<span style="color:#15803d; font-weight:bold;">OK</span>`;
@@ -1762,7 +1768,31 @@ async function printSpbDetail() {
   }
 }
 
+// ---------- PRINT PREVIEW: tampilkan struk di jendela baru untuk dicek dulu sebelum dicetak ----------
+function printPreviewSpbDetail() {
+  const noSpb = document.getElementById("mdNoSpb").innerText;
+  const line = document.getElementById("mdLine").innerText;
+  const pic = document.getElementById("mdPic").innerText;
+  const tglCetak = new Date().toLocaleString('id-ID');
+
+  const items = [];
+  document.querySelectorAll("#modalTableBody tr").forEach(tr => {
+    const tds = tr.querySelectorAll("td");
+    if (tds.length >= 5) {
+      items.push({ kode: tds[1].innerText, nama: tds[2].innerText, qty: tds[3].innerText, satuan: tds[4].innerText });
+    }
+  });
+
+  buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, false);
+}
+
 function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
+  buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, true);
+}
+
+// autoPrint=true -> langsung buka dialog print browser (perilaku lama tombol "Print Struk")
+// autoPrint=false -> hanya preview, ada tombol "Cetak Sekarang" manual di dalam jendela
+function buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, autoPrint) {
   let rows = "";
   let totalJenis = items.length;
   items.forEach(it => {
@@ -1807,9 +1837,19 @@ function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
         .footer { margin-top: 10px; font-size: 10px; }
         .signature { margin-top: 10px; font-size: 10px; }
         .signature-box { border-bottom: 1px solid #000; height: 30px; margin-top: 4px; }
+        .preview-toolbar { display:flex; gap:8px; margin-bottom:12px; }
+        .preview-toolbar button { flex:1; font-family:'Segoe UI', Tahoma, sans-serif; font-size:12px; font-weight:600; padding:8px 6px; border:none; border-radius:6px; cursor:pointer; color:#fff; }
+        .btn-cetak { background:#0284c7; }
+        .btn-tutup { background:#64748b; }
+        @media print { .preview-toolbar { display:none !important; } }
       </style>
     </head>
     <body>
+      ${autoPrint ? "" : `
+      <div class="preview-toolbar">
+        <button class="btn-cetak" onclick="window.print()">🖨️ Cetak Sekarang</button>
+        <button class="btn-tutup" onclick="window.close()">Tutup</button>
+      </div>`}
       <div class="header center">
         <h2>PT ARGAPURA</h2>
         <p>Formulir Permintaan Barang</p>
@@ -1841,7 +1881,7 @@ function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
   win.document.close();
   win.onload = function() {
     win.focus();
-    win.print();
+    if (autoPrint) win.print();
   };
 }
 
@@ -1890,6 +1930,14 @@ function simpanBarangMasuk() {
 function renderBudgetControl() {
   const tbody = document.getElementById("budgetControlBody"); if(!tbody) return; tbody.innerHTML = "";
   const note = document.getElementById("budgetControlNote");
+
+  const lastUpdateEl = document.getElementById("budgetControlLastUpdate");
+  if (lastUpdateEl) {
+    const now = new Date();
+    const tglJam = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' }) + ", " + now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
+    lastUpdateEl.innerText = `Terakhir diperbarui: ${tglJam}`;
+  }
+
   let rows = [];
   MEMORY.masterData.forEach(m => {
     for (const dept in SECTION_MAP) {
