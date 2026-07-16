@@ -412,7 +412,6 @@ tr:nth-child(even) { background-color: #fcfdfe; }
               <button class="btn-small admin-only" style="background:#64748b" onclick="refreshBudgetControl()">Refresh</button>
             </div>
           </div>
-          <p id="budgetControlLastUpdate" style="font-size:12px; color:#94a3b8; margin:-8px 0 15px; font-style:italic;"></p>
           <div style="overflow-x:auto">
             <table>
               <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
@@ -486,7 +485,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="akun" class="tab-content admin-only">
         <div class="card">
           <h3>Logo Perusahaan</h3>
-          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Logo akan tampil di sebelah kiri tulisan "PT Argapura" (setelah login) dan di halaman login. Ukuran file maksimal 1MB.</p>
+          <p style="font-size:13px; color:#64748b; margin-top:-8px;">Logo akan tampil di sebelah kiri tulisan "PT Argapura" (setelah login) dan di halaman login. Logo disimpan di Google Drive & sheet "settings", jadi akan tampil SAMA untuk semua user/device. Ukuran file maksimal 1MB.</p>
           <div class="row" style="align-items:center;">
             <div style="flex:0 0 auto;">
               <img id="logoPreviewAdmin" src="" style="display:none; width:64px; height:64px; border-radius:12px; object-fit:cover; border:1px solid #e2e8f0;">
@@ -572,7 +571,6 @@ tr:nth-child(even) { background-color: #fcfdfe; }
     <div style="display:flex; gap:10px; margin-bottom:15px;">
       <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
       <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">Print Struk</button>
-      <button id="btnPrintPreviewSpb" class="btn-small" style="background:#64748b; display:none;" onclick="printPreviewSpbDetail()">🖨️ Print Preview</button>
     </div>
     <p id="checkHint" style="font-size:12px; color:#ef4444; font-weight: 600;">*Seluruh item aktif wajib dicentang untuk menyerahkan barang!</p>
     <table style="width:100%">
@@ -680,7 +678,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 <script>
 const BASE_CLOUD_URL = "https://script.google.com/macros/s/AKfycbxDGYGBCl5rCarC8REaFpYhtIDlNiFd9KVbjwFpZeyax0LrqkuFbCB1MhsemKqbsaco6g/exec";
 
-let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, stockAwal: {}, users: [] };
+let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, stockAwal: {}, users: [], settings: {} };
 let keranjangItems = [];
 let currentSelectedSpbNo = "";
 let currentRole = null;
@@ -795,12 +793,12 @@ async function tryAutoReconnectPrinter() {
   }
 }
 
-// Konversi logo perusahaan (data URL di localStorage) menjadi bitmap ESC/POS (perintah GS v 0)
-// supaya bisa ikut tercetak di bagian atas struk pada printer thermal 58mm (lebar cetak ~384 dot).
+// Konversi logo perusahaan (data URL dari cloud, sama untuk semua user) menjadi bitmap ESC/POS
+// (perintah GS v 0) supaya bisa ikut tercetak di bagian atas struk pada printer thermal 58mm
+// (lebar cetak ~384 dot).
 function buildLogoBitmap() {
   return new Promise((resolve) => {
-    let logoData = null;
-    try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+    const logoData = (MEMORY.settings && MEMORY.settings.logoDataUrl) ? MEMORY.settings.logoDataUrl : null;
     if (!logoData) { resolve(new Uint8Array(0)); return; }
 
     const img = new Image();
@@ -958,9 +956,12 @@ const SECTION_MAP = {
 const BULAN_INDO = ["Januari","Februari","Maret","April","Mei","Juni","Juli","Agustus","September","Oktober","November","Desember"];
 
 // ---------- LOGO PERUSAHAAN (tampil di login & sidebar setelah login) ----------
+// PENTING: logo sekarang disimpan di Google Drive + dicatat di sheet "settings" lewat backend,
+// BUKAN lagi di localStorage browser. Dengan begini, logo yang diupload admin akan otomatis
+// tampil SAMA untuk semua user & semua device, karena setiap kali fetchDatabaseAll() dipanggil,
+// MEMORY.settings.logoDataUrl ikut terkirim dari cloud (lihat loadAllData() di Code.gs).
 function applyCompanyLogo() {
-  let logoData = null;
-  try { logoData = localStorage.getItem('companyLogo'); } catch(e) { logoData = null; }
+  const logoData = (MEMORY.settings && MEMORY.settings.logoDataUrl) ? MEMORY.settings.logoDataUrl : null;
 
   const sidebarImg = document.getElementById('companyLogoSidebar');
   const loginImg = document.getElementById('companyLogoLoginImg');
@@ -986,23 +987,48 @@ function uploadCompanyLogo() {
 
   const reader = new FileReader();
   reader.onload = function(e) {
-    try {
-      localStorage.setItem('companyLogo', e.target.result);
-      applyCompanyLogo();
-      showDoneMessage('Logo perusahaan berhasil diperbarui.');
-      fileInput.value = "";
-    } catch(err) {
-      alert('Gagal menyimpan logo (kemungkinan ukuran terlalu besar untuk penyimpanan browser).');
-    }
+    const dataUrl = e.target.result;
+    const base64Data = dataUrl.split(',')[1]; // buang prefix "data:image/...;base64,"
+
+    showLoading(true, "Mengupload logo ke Google Drive...");
+    fetch(`${BASE_CLOUD_URL}?target=simpanLogoPerusahaan`, {
+      method: "POST",
+      body: JSON.stringify({ base64Data, mimeType: file.type })
+    })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        fileInput.value = "";
+        // Refresh database cloud supaya MEMORY.settings.logoDataUrl ikut ter-update &
+        // langsung dipakai ulang oleh applyCompanyLogo() di dalam fetchDatabaseAll().
+        fetchDatabaseAll();
+        showDoneMessage('Logo perusahaan berhasil diperbarui untuk semua user.');
+      } else {
+        alert('Gagal menyimpan logo: ' + resObj.message);
+      }
+    })
+    .catch(err => alert('Kesalahan Jaringan saat upload logo: ' + err))
+    .finally(() => showLoading(false));
   };
   reader.readAsDataURL(file);
 }
 
 function hapusCompanyLogo() {
-  if(!confirm('Hapus logo perusahaan dan kembali ke ikon default?')) return;
-  try { localStorage.removeItem('companyLogo'); } catch(e) {}
-  applyCompanyLogo();
-  showDoneMessage('Logo perusahaan telah dihapus.');
+  if(!confirm('Hapus logo perusahaan untuk SEMUA user dan kembali ke ikon default?')) return;
+
+  showLoading(true, "Menghapus logo dari Google Drive...");
+  fetch(`${BASE_CLOUD_URL}?target=hapusLogoPerusahaan`, { method: "POST", body: JSON.stringify({}) })
+    .then(res => res.json())
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        fetchDatabaseAll();
+        showDoneMessage('Logo perusahaan telah dihapus untuk semua user.');
+      } else {
+        alert('Gagal menghapus logo: ' + resObj.message);
+      }
+    })
+    .catch(err => alert('Kesalahan Jaringan saat hapus logo: ' + err))
+    .finally(() => showLoading(false));
 }
 
 // ---------- NAVIGASI SIDEBAR (baru) ----------
@@ -1050,7 +1076,7 @@ window.onload = function() {
   tryAutoReconnectPrinter();
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
-    .then(resObj => { if(resObj.status === "SUCCESS") MEMORY = resObj.data; });
+    .then(resObj => { if(resObj.status === "SUCCESS") { MEMORY = resObj.data; applyCompanyLogo(); } });
 };
 
 function fetchDatabaseAll() {
@@ -1060,6 +1086,7 @@ function fetchDatabaseAll() {
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
         MEMORY = resObj.data;
+        applyCompanyLogo();
         generateNoSPB();
         renderSpbReport();
         tampilMaster();
@@ -1653,7 +1680,6 @@ function openSpbDetailModal(noSpb) {
   
   const bSelesai = document.getElementById("btnEksekusiSelesai");
   const bPrint = document.getElementById("btnPrintSpb");
-  const bPrintPreview = document.getElementById("btnPrintPreviewSpb");
   const hint = document.getElementById("checkHint");
   const badgeModal = document.getElementById("mdStatusBadge");
   badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>` : `<span class="badge-open">OPEN</span>`;
@@ -1682,12 +1708,10 @@ function openSpbDetailModal(noSpb) {
   if (matchSpb.status === "DONE") {
     bSelesai.style.display = "none";
     bPrint.style.display = "inline-flex";
-    bPrintPreview.style.display = "inline-flex";
     hint.style.display = "none";
   } else {
     bSelesai.style.display = "inline-flex";
     bPrint.style.display = "none";
-    bPrintPreview.style.display = "none";
     hint.style.display = "block";
   }
 
@@ -1719,7 +1743,6 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
       document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
       document.getElementById("btnEksekusiSelesai").style.display = "none";
       document.getElementById("btnPrintSpb").style.display = "inline-flex";
-      document.getElementById("btnPrintPreviewSpb").style.display = "inline-flex";
       document.getElementById("checkHint").style.display = "none";
       document.querySelectorAll(".chk-verify").forEach(chk => {
         chk.closest("td").innerHTML = `<span style="color:#15803d; font-weight:bold;">OK</span>`;
@@ -1768,31 +1791,7 @@ async function printSpbDetail() {
   }
 }
 
-// ---------- PRINT PREVIEW: tampilkan struk di jendela baru untuk dicek dulu sebelum dicetak ----------
-function printPreviewSpbDetail() {
-  const noSpb = document.getElementById("mdNoSpb").innerText;
-  const line = document.getElementById("mdLine").innerText;
-  const pic = document.getElementById("mdPic").innerText;
-  const tglCetak = new Date().toLocaleString('id-ID');
-
-  const items = [];
-  document.querySelectorAll("#modalTableBody tr").forEach(tr => {
-    const tds = tr.querySelectorAll("td");
-    if (tds.length >= 5) {
-      items.push({ kode: tds[1].innerText, nama: tds[2].innerText, qty: tds[3].innerText, satuan: tds[4].innerText });
-    }
-  });
-
-  buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, false);
-}
-
 function printSpbDetailFallbackWindow(noSpb, line, pic, items, tglCetak) {
-  buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, true);
-}
-
-// autoPrint=true -> langsung buka dialog print browser (perilaku lama tombol "Print Struk")
-// autoPrint=false -> hanya preview, ada tombol "Cetak Sekarang" manual di dalam jendela
-function buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, autoPrint) {
   let rows = "";
   let totalJenis = items.length;
   items.forEach(it => {
@@ -1837,19 +1836,9 @@ function buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, autoPrint) {
         .footer { margin-top: 10px; font-size: 10px; }
         .signature { margin-top: 10px; font-size: 10px; }
         .signature-box { border-bottom: 1px solid #000; height: 30px; margin-top: 4px; }
-        .preview-toolbar { display:flex; gap:8px; margin-bottom:12px; }
-        .preview-toolbar button { flex:1; font-family:'Segoe UI', Tahoma, sans-serif; font-size:12px; font-weight:600; padding:8px 6px; border:none; border-radius:6px; cursor:pointer; color:#fff; }
-        .btn-cetak { background:#0284c7; }
-        .btn-tutup { background:#64748b; }
-        @media print { .preview-toolbar { display:none !important; } }
       </style>
     </head>
     <body>
-      ${autoPrint ? "" : `
-      <div class="preview-toolbar">
-        <button class="btn-cetak" onclick="window.print()">🖨️ Cetak Sekarang</button>
-        <button class="btn-tutup" onclick="window.close()">Tutup</button>
-      </div>`}
       <div class="header center">
         <h2>PT ARGAPURA</h2>
         <p>Formulir Permintaan Barang</p>
@@ -1881,7 +1870,7 @@ function buildSpbReceiptWindow(noSpb, line, pic, items, tglCetak, autoPrint) {
   win.document.close();
   win.onload = function() {
     win.focus();
-    if (autoPrint) win.print();
+    win.print();
   };
 }
 
@@ -1930,14 +1919,6 @@ function simpanBarangMasuk() {
 function renderBudgetControl() {
   const tbody = document.getElementById("budgetControlBody"); if(!tbody) return; tbody.innerHTML = "";
   const note = document.getElementById("budgetControlNote");
-
-  const lastUpdateEl = document.getElementById("budgetControlLastUpdate");
-  if (lastUpdateEl) {
-    const now = new Date();
-    const tglJam = now.toLocaleDateString('id-ID', { day:'2-digit', month:'long', year:'numeric' }) + ", " + now.toLocaleTimeString('id-ID', { hour:'2-digit', minute:'2-digit', second:'2-digit' });
-    lastUpdateEl.innerText = `Terakhir diperbarui: ${tglJam}`;
-  }
-
   let rows = [];
   MEMORY.masterData.forEach(m => {
     for (const dept in SECTION_MAP) {
@@ -2282,25 +2263,38 @@ function hitungSisaStok(barcode, minStock) {
     }
   });
   let status = "Stok Aman";
-  if(sisa <= Number(minStock || 0)) status = "Reorder Limit";
-  if(sisa <= 0) status = "HABIS";
-  return { sisa, status };
+  let priority = 2; // 0 = HABIS, 1 = Reorder Limit, 2 = Aman (sama seperti urutan di renderStock())
+  if(sisa <= Number(minStock || 0)) { status = "Reorder Limit"; priority = 1; }
+  if(sisa <= 0) { status = "HABIS"; priority = 0; }
+  return { sisa, status, priority };
 }
 
 function downloadStockExcel() {
   if(MEMORY.masterData.length === 0) return alert("Tidak ada data master barang untuk diexport!");
-  const dataExport = MEMORY.masterData.map(m => {
-    const r = hitungSisaStok(m.barcode, m.minStock);
-    return {
-      "Kode Barang": m.barcode,
-      "Nama Barang": m.nama,
-      "Kategori": m.kategori || "-",
-      "Sisa Stok": r.sisa,
-      "Satuan": m.satuan || "-",
-      "Min Stock": m.minStock || 0,
-      "Status Kondisi": r.status
-    };
-  });
+
+  // Urutan export DISAMAKAN PERSIS dengan urutan tabel di layar menu Sisa Stok:
+  // HABIS di atas, lalu Reorder Limit, lalu Stok Aman, dan di dalam kelompok yang sama
+  // diurutkan dari sisa stok paling sedikit ke paling banyak (lihat renderStock()).
+  const dataExport = MEMORY.masterData
+    .map(m => {
+      const r = hitungSisaStok(m.barcode, m.minStock);
+      return {
+        priority: r.priority,
+        sisa: r.sisa,
+        row: {
+          "Kode Barang": m.barcode,
+          "Nama Barang": m.nama,
+          "Kategori": m.kategori || "-",
+          "Sisa Stok": r.sisa,
+          "Satuan": m.satuan || "-",
+          "Min Stock": m.minStock || 0,
+          "Status Kondisi": r.status
+        }
+      };
+    })
+    .sort((a, b) => a.priority - b.priority || a.sisa - b.sisa)
+    .map(x => x.row);
+
   const ws = XLSX.utils.json_to_sheet(dataExport);
   ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:12},{wch:10},{wch:10},{wch:16}];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Sisa Stok");
