@@ -1386,8 +1386,16 @@ function updateSectionDropdown() {
 
 function generateNoSPB() {
   const now = new Date(); const yr = now.getFullYear(); const rm = getRomanMonth(now.getMonth());
-  let currentCounter = 0; MEMORY.spbList.forEach(x => { if(x.tanggal && new Date(x.tanggal).getFullYear() === yr) currentCounter++; });
-  document.getElementById("spbNomor").value = `${String(currentCounter + 1).padStart(4, '0')}/${rm}/${yr}/HR-GA`;
+  let maxCounter = 0;
+  MEMORY.spbList.forEach(x => {
+    const nomor = x.nomorSpb || x.noSpb || x.NoSpb || "";
+    const tglObj = x.tanggal ? new Date(x.tanggal) : null;
+    if (nomor && tglObj && tglObj.getFullYear() === yr) {
+      const match = String(nomor).match(/^(\d+)\//);
+      if (match) { const n = parseInt(match[1], 10); if (n > maxCounter) maxCounter = n; }
+    }
+  });
+  document.getElementById("spbNomor").value = `${String(maxCounter + 1).padStart(4, '0')}/${rm}/${yr}/HR-GA`;
 }
 
 function getKategoriDariKode(kode) {
@@ -1601,7 +1609,6 @@ function hapusItemKeranjang(index) {
 }
 
 function simpanSPBOpen() {
-  const noSpb = document.getElementById("spbNomor").value;
   const dept = document.getElementById("spbDepartment").value;
   const line = document.getElementById("spbLine").value;
   const pic = document.getElementById("spbPic").value.trim();
@@ -1610,13 +1617,16 @@ function simpanSPBOpen() {
   if(keranjangItems.length === 0) return alert("Keranjang FPB masih kosong!");
 
   showLoading(true, "Menyimpan Dokumen FPB ke Cloud...");
-  const payload = { nomorSpb: noSpb, department: dept, line: line, pic: pic, items: keranjangItems };
+  // PENTING: nomorSpb TIDAK dikirim lagi dari sini. Nomor FPB sekarang 100% digenerate
+  // di backend (Code.gs) dengan LockService supaya tidak mungkin ada 2 FPB dengan nomor
+  // yang sama walau dua user menyimpan FPB hampir bersamaan (race condition).
+  const payload = { department: dept, line: line, pic: pic, items: keranjangItems };
 
   fetch(`${BASE_CLOUD_URL}?target=simpanSPB`, { method: "POST", body: JSON.stringify(payload) })
     .then(res => res.json())
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
-        showDoneMessage(`FPB ${noSpb} Berhasil Disimpan dengan Status OPEN!`);
+        showDoneMessage(`FPB ${resObj.nomorSpb} Berhasil Disimpan dengan Status OPEN!`);
         document.getElementById("spbPic").value = "";
         keranjangItems = [];
         renderKeranjang();
