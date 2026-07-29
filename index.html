@@ -222,7 +222,24 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           <p style="font-size:13px; color:#64748b; margin-top:4px; margin-bottom:0;">Berikut ringkasan aktivitas FPB & stok HR-GA bulan <span id="dashCurrentMonth">-</span>.</p>
         </div>
 
-        <div class="row">
+        <div class="card" style="margin-top:15px;">
+          <div class="row" style="align-items:flex-end; margin-top:0;">
+            <div style="flex:1; min-width:150px;" class="input-group">
+              <label>Dari Tanggal (Input FPB)</label>
+              <input type="date" id="dashTglDari" onchange="renderDashboardAll()">
+            </div>
+            <div style="flex:1; min-width:150px;" class="input-group">
+              <label>Sampai Tanggal (Input FPB)</label>
+              <input type="date" id="dashTglSampai" onchange="renderDashboardAll()">
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+              <button class="btn-small" style="background:#64748b" onclick="resetDashboardFilter()">Reset ke Bulan Ini</button>
+            </div>
+          </div>
+          <p id="dashFilterNote" style="font-size:12px; color:#94a3b8; margin-top:8px; margin-bottom:0;"></p>
+        </div>
+
+        <div class="row" style="margin-top:15px;">
           <div class="stat-card">
             <div class="stat-label">Total FPB <span id="lblBulanFpb"></span></div>
             <div class="stat-value" id="statTotalFpb">0</div>
@@ -440,7 +457,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <div id="stok" class="tab-content">
         <div class="card">
           <div class="row">
-            <button class="btn-small admin-only" style="background:#475569" onclick="downloadStockExcel()">Download Sisa Stok (Excel)</button>
+            <button class="btn-small" style="background:#475569" onclick="downloadStockExcel()">Download Sisa Stok (Excel)</button>
             <select id="filterKategori" onchange="renderStock()" style="max-width:220px;"><option value="">-- Semua Kategori --</option></select>
             <input id="searchStock" placeholder="Cari Nama / Kode" oninput="renderStock()" style="max-width:300px;">
           </div>
@@ -1129,9 +1146,7 @@ function fetchDatabaseAll() {
         renderBudgetControl();
         updateJatahInfoHint();
         renderUsersTable();
-        renderDashboardTopSpbDept();
-        renderDashboardTopKeluar();
-        renderDashboardStats();
+        renderDashboardAll();
       } else { alert("Gagal memuat database cloud: " + resObj.message); }
     })
     .catch(err => alert("Kesalahan Jaringan: " + err))
@@ -1139,9 +1154,37 @@ function fetchDatabaseAll() {
 }
 
 // ---------- DASHBOARD ANALITIK ----------
+function getDashboardFilterRange() {
+  const dariEl = document.getElementById("dashTglDari");
+  const sampaiEl = document.getElementById("dashTglSampai");
+  const dari = dariEl ? dariEl.value : "";
+  const sampai = sampaiEl ? sampaiEl.value : "";
+  return { dari, sampai, active: !!(dari || sampai) };
+}
+
+function resetDashboardFilter() {
+  document.getElementById("dashTglDari").value = "";
+  document.getElementById("dashTglSampai").value = "";
+  renderDashboardAll();
+}
+
+function renderDashboardAll() {
+  renderDashboardTopSpbDept();
+  renderDashboardTopKeluar();
+  renderDashboardStats();
+}
+
 function renderDashboardTopSpbDept() {
+  const { dari, sampai, active } = getDashboardFilterRange();
   const tally = {};
   (MEMORY.spbList || []).forEach(spb => {
+    if(active) {
+      const rawTgl = spb.tanggal || spb.Tanggal;
+      if(!rawTgl) return;
+      const tglStr = new Date(rawTgl).toISOString().split('T')[0];
+      if(dari && tglStr < dari) return;
+      if(sampai && tglStr > sampai) return;
+    }
     const dept = spb.department || spb.Department || "-";
     const nomorSpbAktif = spb.nomorSpb || spb.noSpb || spb.NoSpb || "-";
     if(!tally[dept]) tally[dept] = { totalFpb: 0, totalQty: 0, nomorList: [] };
@@ -1180,15 +1223,24 @@ function renderDashboardTopSpbDept() {
 }
 
 function renderDashboardStats() {
+  const { dari, sampai, active } = getDashboardFilterRange();
   const now = new Date();
   const bln = now.getMonth(); const thn = now.getFullYear();
-  const labelBulan = `${BULAN_INDO[bln]} ${thn}`;
+  const labelBulan = active ? "Periode Dipilih" : `${BULAN_INDO[bln]} ${thn}`;
 
   let totalFpbBulanIni = 0, totalQtyBulanIni = 0;
   const tallyDept = {};
   (MEMORY.spbList || []).forEach(spb => {
-    const d = spb.tanggal ? new Date(spb.tanggal) : null;
-    if(!d || d.getMonth() !== bln || d.getFullYear() !== thn) return;
+    const rawTgl = spb.tanggal || spb.Tanggal;
+    if(!rawTgl) return;
+    const d = new Date(rawTgl);
+    if(active) {
+      const tglStr = d.toISOString().split('T')[0];
+      if(dari && tglStr < dari) return;
+      if(sampai && tglStr > sampai) return;
+    } else {
+      if(d.getMonth() !== bln || d.getFullYear() !== thn) return;
+    }
     totalFpbBulanIni += 1;
     const dept = spb.department || spb.Department || "-";
     let qtySpb = 0;
@@ -1220,12 +1272,26 @@ function renderDashboardStats() {
   setText("statTotalQty", totalQtyBulanIni);
   setText("statTopDept", topDeptEntry ? topDeptEntry[0] : "-");
   setText("statReorder", reorderCount);
+
+  const note = document.getElementById("dashFilterNote");
+  if(note) {
+    note.innerText = active
+      ? `Menampilkan data FPB dari ${dari || "awal data"} sampai ${sampai || "sekarang"}.`
+      : `Menampilkan data bulan berjalan (${labelBulan}). Pilih tanggal di atas untuk melihat periode lain.`;
+  }
 }
 
 function renderDashboardTopKeluar() {
+  const { dari, sampai, active } = getDashboardFilterRange();
   const tally = {};
   (MEMORY.transaksi || []).forEach(t => {
     if(t.jenis !== "Keluar") return;
+    if(active) {
+      if(!t.tanggal) return;
+      const tglStr = new Date(t.tanggal).toISOString().split('T')[0];
+      if(dari && tglStr < dari) return;
+      if(sampai && tglStr > sampai) return;
+    }
     if(!tally[t.kode]) tally[t.kode] = { nama: t.nama, totalQty: 0, satuan: t.satuan };
     tally[t.kode].totalQty += Number(t.qty || 0);
   });
