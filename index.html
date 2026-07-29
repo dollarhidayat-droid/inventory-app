@@ -342,9 +342,23 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <!-- ================= MONITORING FPB ================= -->
       <div id="monitoring" class="tab-content">
         <div class="card">
-          <div class="row" style="margin-bottom:5px;">
-            <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
+          <div class="row" style="margin-bottom:5px; align-items:flex-end;">
+            <div style="flex:1; min-width:150px;" class="input-group">
+              <label>Dari Tanggal (Input FPB)</label>
+              <input type="date" id="monTglDari" onchange="renderSpbReport()">
+            </div>
+            <div style="flex:1; min-width:150px;" class="input-group">
+              <label>Sampai Tanggal (Input FPB)</label>
+              <input type="date" id="monTglSampai" onchange="renderSpbReport()">
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+              <button class="btn-small" style="background:#64748b" onclick="resetMonitoringFilter()">Reset Filter</button>
+            </div>
+            <div style="display:flex; align-items:flex-end;">
+              <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
+            </div>
           </div>
+          <p id="monFilterNote" style="font-size:12px; color:#94a3b8; margin-top:0;"></p>
           <div style="overflow-x:auto">
             <table>
               <thead><tr style="background:#f1f5f9"><th>Tanggal Pembuatan</th><th>Nomor FPB</th><th>Department</th><th>Line / Dept</th><th>PIC Pemohon</th><th>Jumlah Jenis</th><th>Status Validasi</th></tr></thead>
@@ -414,7 +428,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
           </div>
           <div style="overflow-x:auto">
             <table>
-              <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
+              <thead><tr style="background:#f1f5f9"><th>Kode Barang</th><th>Nama Barang</th><th>Section / Line</th><th>Batas Max</th><th>Aktual Pakai</th><th>Status Efisiensi</th><th>Tanggal Perubahan</th><th class="admin-only" style="width:100px;">Aksi</th></tr></thead>
               <tbody id="budgetControlBody"></tbody>
             </table>
           </div>
@@ -679,7 +693,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
 <script>
 const BASE_CLOUD_URL = "https://script.google.com/macros/s/AKfycbxDGYGBCl5rCarC8REaFpYhtIDlNiFd9KVbjwFpZeyax0LrqkuFbCB1MhsemKqbsaco6g/exec";
 
-let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, stockAwal: {}, users: [], settings: {} };
+let MEMORY = { masterData: [], spbList: [], transaksi: [], budgetLimits: {}, budgetLimitsMeta: {}, stockAwal: {}, users: [], settings: {} };
 let keranjangItems = [];
 let currentSelectedSpbNo = "";
 let currentRole = null;
@@ -1070,6 +1084,24 @@ function showLoading(sts, txt = "Sinkronisasi Data Google Sheets...") {
 function showDoneMessage(msg){ const div = document.getElementById("doneMsg"); div.innerText = msg; setTimeout(() => { div.innerText = "" }, 3000); }
 function getRomanMonth(m) { return ["I","II","III","IV","V","VI","VII","VIII","IX","X","XI","XII"][m]; }
 
+// ---------- BUDGET LIMIT META (tanggal perubahan terakhir per item/line) ----------
+// Catatan: backend Code.gs saat ini belum mengirim field ini lewat target=loadAll.
+// Sebagai fallback, tanggal perubahan disimpan juga di localStorage browser supaya
+// tetap muncul walau di-refresh. Jika suatu saat backend menambahkan field
+// "budgetLimitsMeta" pada response loadAll, data dari backend akan otomatis dipakai
+// (lebih diutamakan) dan akan sinkron di semua device/akun.
+function normalizeMemory() {
+  if(!MEMORY.budgetLimitsMeta) MEMORY.budgetLimitsMeta = {};
+  try {
+    const localMeta = JSON.parse(localStorage.getItem('budgetLimitsMetaLocal') || '{}');
+    MEMORY.budgetLimitsMeta = Object.assign({}, localMeta, MEMORY.budgetLimitsMeta);
+  } catch(e) { /* abaikan jika localStorage tidak tersedia */ }
+}
+
+function persistBudgetLimitsMetaLocal() {
+  try { localStorage.setItem('budgetLimitsMetaLocal', JSON.stringify(MEMORY.budgetLimitsMeta || {})); } catch(e) {}
+}
+
 window.onload = function() {
   applyCompanyLogo();
   updatePrinterStatusUI();
@@ -1077,7 +1109,7 @@ window.onload = function() {
   tryAutoReconnectPrinter();
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
-    .then(resObj => { if(resObj.status === "SUCCESS") { MEMORY = resObj.data; applyCompanyLogo(); } });
+    .then(resObj => { if(resObj.status === "SUCCESS") { MEMORY = resObj.data; normalizeMemory(); applyCompanyLogo(); } });
 };
 
 function fetchDatabaseAll() {
@@ -1087,6 +1119,7 @@ function fetchDatabaseAll() {
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
         MEMORY = resObj.data;
+        normalizeMemory();
         applyCompanyLogo();
         generateNoSPB();
         renderSpbReport();
@@ -1533,6 +1566,9 @@ function simpanAdjustBudget() {
   .then(resObj => {
     if(resObj.status === "SUCCESS") {
       MEMORY.budgetLimits[key] = val;
+      if(!MEMORY.budgetLimitsMeta) MEMORY.budgetLimitsMeta = {};
+      MEMORY.budgetLimitsMeta[key] = { timestamp: new Date().toISOString(), oleh: currentActiveName || currentUsername || "-" };
+      persistBudgetLimitsMetaLocal();
       showDoneMessage("Limit jatah diupdate & tercatat di riwayat.");
       document.getElementById("abLimitLama").value = val;
       loadAdjustHistory(key);
@@ -1637,6 +1673,12 @@ function simpanSPBOpen() {
     .finally(() => showLoading(false));
 }
 
+function resetMonitoringFilter() {
+  document.getElementById("monTglDari").value = "";
+  document.getElementById("monTglSampai").value = "";
+  renderSpbReport();
+}
+
 function renderSpbReport() {
   const tbody = document.getElementById("spbReportBody"); 
   if(!tbody) return; 
@@ -1647,7 +1689,36 @@ function renderSpbReport() {
     return; 
   }
 
-  const sortedSpbList = [...MEMORY.spbList].sort((a, b) => {
+  const tglDariEl = document.getElementById("monTglDari");
+  const tglSampaiEl = document.getElementById("monTglSampai");
+  const tglDari = tglDariEl ? tglDariEl.value : "";
+  const tglSampai = tglSampaiEl ? tglSampaiEl.value : "";
+
+  let listTerfilter = MEMORY.spbList;
+  if(tglDari || tglSampai) {
+    listTerfilter = MEMORY.spbList.filter(x => {
+      const rawTgl = x.tanggal || x.Tanggal;
+      if(!rawTgl) return false;
+      const tglStr = new Date(rawTgl).toISOString().split('T')[0];
+      if(tglDari && tglStr < tglDari) return false;
+      if(tglSampai && tglStr > tglSampai) return false;
+      return true;
+    });
+  }
+
+  const note = document.getElementById("monFilterNote");
+  if(note) {
+    note.innerText = (tglDari || tglSampai)
+      ? `Menampilkan ${listTerfilter.length} dari ${MEMORY.spbList.length} FPB (filter periode input FPB aktif).`
+      : `Menampilkan seluruh ${MEMORY.spbList.length} FPB.`;
+  }
+
+  if(listTerfilter.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data FPB pada periode yang dipilih.</td></tr>`;
+    return;
+  }
+
+  const sortedSpbList = [...listTerfilter].sort((a, b) => {
     const tglA = new Date(a.tanggal || a.Tanggal || 0).getTime();
     const tglB = new Date(b.tanggal || b.Tanggal || 0).getTime();
     return tglB - tglA;
@@ -2035,9 +2106,14 @@ function renderBudgetControl() {
         if(sudahDiAdjust) { priority = 1; statusLabel = "OK ADJUSTMENT"; statusEff = `<span class="badge-adjusted">OK ADJUSTMENT</span>`; }
         if(aktualPakai > limitMax) { priority = 0; statusLabel = "OVER BUDGET"; statusEff = `<span class="badge-over">OVER BUDGET</span>`; }
 
+        const metaInfo = (MEMORY.budgetLimitsMeta && MEMORY.budgetLimitsMeta[key]) ? MEMORY.budgetLimitsMeta[key] : null;
+        const tglPerubahan = metaInfo && metaInfo.timestamp
+          ? new Date(metaInfo.timestamp).toLocaleString('id-ID', { dateStyle: 'medium', timeStyle: 'short' })
+          : "-";
+
         rows.push({
           priority, statusLabel,
-          kode: m.barcode, nama: m.nama, dept, line, limitMax, aktualPakai,
+          kode: m.barcode, nama: m.nama, dept, line, limitMax, aktualPakai, tglPerubahan,
           html: `<tr>
             <td>${m.barcode}</td>
             <td>${m.nama}</td>
@@ -2045,6 +2121,7 @@ function renderBudgetControl() {
             <td><strong>${limitMax}</strong></td>
             <td>${aktualPakai}</td>
             <td>${statusEff}</td>
+            <td style="white-space:nowrap; font-size:12.5px; color:#475569;">${tglPerubahan}</td>
             <td class="admin-only"><button class="btn-mini btn-warning" onclick="adjustMaxBudget('${m.barcode}', '${dept}', '${line}')">Adjust</button></td>
           </tr>`
         });
@@ -2057,7 +2134,7 @@ function renderBudgetControl() {
   window.__budgetControlAllRows = rows;
 
   const displayRows = rows.slice(0, 30);
-  tbody.innerHTML = displayRows.length ? displayRows.map(r => r.html).join("") : `<tr><td colspan="7" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
+  tbody.innerHTML = displayRows.length ? displayRows.map(r => r.html).join("") : `<tr><td colspan="8" style="text-align:center;">Belum ada record budget terpakai.</td></tr>`;
 
   if(note) {
     note.innerText = rows.length > 30
@@ -2078,10 +2155,11 @@ function downloadBudgetControlExcel() {
     "Section / Line": r.line,
     "Batas Max": r.limitMax,
     "Aktual Pakai": r.aktualPakai,
-    "Status Efisiensi": r.statusLabel
+    "Status Efisiensi": r.statusLabel,
+    "Tanggal Perubahan": r.tglPerubahan
   }));
   const ws = XLSX.utils.json_to_sheet(dataExport);
-  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16}];
+  ws['!cols'] = [{wch:14},{wch:30},{wch:16},{wch:20},{wch:12},{wch:12},{wch:16},{wch:20}];
   const wb = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(wb, ws, "Budget Kontrol");
   XLSX.writeFile(wb, `Budget_Kontrol_${new Date().toISOString().split('T')[0]}.xlsx`);
 }
@@ -2093,6 +2171,7 @@ function refreshBudgetControl() {
     .then(resObj => {
       if(resObj.status === "SUCCESS") {
         MEMORY = resObj.data;
+        normalizeMemory();
         renderBudgetControl();
         showDoneMessage("Data Budget Kontrol berhasil di-refresh.");
       } else { alert("Gagal me-refresh: " + resObj.message); }
