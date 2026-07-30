@@ -56,6 +56,12 @@ tr:hover {background-color:#f8fafc}
 .input-group { text-align: left; margin-bottom: 20px; }
 .input-group label { font-size: 13px; font-weight: 600; color: #475569; }
 
+/* LOGIN STATUS NOTE (baru: indikator proses load data akun) */
+#loginStatusNote { text-align:center; font-size:12.5px; font-weight:600; margin-top:-6px; margin-bottom:16px; min-height:16px; }
+#loginStatusNote.loading { color:#b45309; }
+#loginStatusNote.error { color:#b91c1c; }
+#loginStatusNote.ready { color:#15803d; }
+
 /* STATUS PILL (topbar) */
 .status-pill{display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#15803d; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
 .status-pill .dot{width:7px; height:7px; border-radius:50%; background:#22c55e; box-shadow:0 0 0 3px rgba(34,197,94,0.25); animation:pulseDot 1.6s infinite;}
@@ -157,6 +163,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <h2>Inventory Stok HR-GA</h2>
       <p>PT ARGAPURA</p>
     </div>
+    <p id="loginStatusNote" class="loading">Memuat data akun dari server...</p>
     <div class="input-group">
       <label>Username</label>
       <input id="loginUser" placeholder="Masukkan username">
@@ -165,7 +172,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <label>Password</label>
       <input id="loginPass" type="password" placeholder="Masukkan password">
     </div>
-    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
+    <button id="btnDoLogin" onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
   </div>
 </div>
 
@@ -721,6 +728,14 @@ let abCurrentKode = "";
 let abCurrentDept = "";
 let abCurrentLine = "";
 
+// ---------- FIX LOGIN GAGAL "TERKADANG" ----------
+// Sebelumnya, form login sudah bisa diklik walau data akun (MEMORY.users) dari
+// Google Sheets belum selesai di-download (fetch bersifat asinkron & Apps Script
+// kadang lambat/cold-start). Jika user sempat klik "Masuk" sebelum data akun
+// tiba, MEMORY.users masih kosong -> selalu dianggap "Username/Password salah"
+// walau sebenarnya benar. isUserDataReady dipakai untuk mencegah kondisi ini.
+let isUserDataReady = false;
+
 // ---------- PRINTER BLUETOOTH (ESC/POS via Web Bluetooth) ----------
 // UUID ditemukan lewat halaman tes koneksi (test-bluetooth-printer.html) khusus untuk printer RPP02N.
 const PRINTER_SERVICE_UUID = 'e7810a71-73ae-499d-8c15-faa9aef0c3f2';
@@ -1120,14 +1135,51 @@ function persistBudgetLimitsMetaLocal() {
   try { localStorage.setItem('budgetLimitsMetaLocal', JSON.stringify(MEMORY.budgetLimitsMeta || {})); } catch(e) {}
 }
 
+// ---------- FIX: indikator status pemuatan data akun di layar login ----------
+function setLoginStatusNote(state, message) {
+  const el = document.getElementById("loginStatusNote");
+  if(!el) return;
+  el.className = state; // 'loading' | 'ready' | 'error'
+  el.innerText = message;
+}
+
+function setLoginButtonEnabled(enabled) {
+  const btn = document.getElementById("btnDoLogin");
+  if(btn) btn.disabled = !enabled;
+}
+
 window.onload = function() {
   applyCompanyLogo();
   updatePrinterStatusUI();
   loadPrinterPrefs();
   tryAutoReconnectPrinter();
+
+  // FIX LOGIN GAGAL "TERKADANG":
+  // Tombol login tetap bisa diklik (untuk akun adminmaster yang di-hardcode),
+  // tapi login untuk akun user/admin biasa DIBLOK sampai data MEMORY.users
+  // selesai diambil dari Google Sheets. Ini mencegah kasus "Username/Password
+  // salah" padahal sebenarnya data akun belum sempat ter-download akibat
+  // Google Apps Script yang lambat/cold-start.
+  setLoginStatusNote("loading", "Memuat data akun dari server, mohon tunggu...");
+
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
-    .then(resObj => { if(resObj.status === "SUCCESS") { MEMORY = resObj.data; normalizeMemory(); applyCompanyLogo(); } });
+    .then(resObj => {
+      if(resObj.status === "SUCCESS") {
+        MEMORY = resObj.data;
+        normalizeMemory();
+        applyCompanyLogo();
+        isUserDataReady = true;
+        setLoginStatusNote("ready", "Data akun siap. Silakan login.");
+        setTimeout(() => { const el = document.getElementById("loginStatusNote"); if(el && isUserDataReady) el.innerText = ""; }, 2000);
+      } else {
+        setLoginStatusNote("error", "Gagal memuat data akun: " + resObj.message + " (coba refresh halaman)");
+      }
+    })
+    .catch(err => {
+      setLoginStatusNote("error", "Gagal terhubung ke server. Silakan refresh halaman & cek koneksi internet.");
+      console.error("Gagal loadAll saat window.onload:", err);
+    });
 };
 
 function fetchDatabaseAll() {
@@ -1139,6 +1191,7 @@ function fetchDatabaseAll() {
         MEMORY = resObj.data;
         normalizeMemory();
         applyCompanyLogo();
+        isUserDataReady = true;
         generateNoSPB();
         renderSpbReport();
         tampilMaster();
@@ -1324,7 +1377,22 @@ function doLogin(){
     masukSistem(); return;
   }
 
-  const matchUser = MEMORY.users.find(x => String(x.username).toLowerCase() === uInput && String(x.password) === pInput);
+  // FIX: cegah login user/admin biasa selama data akun dari cloud belum siap.
+  // Tanpa pengecekan ini, MEMORY.users bisa masih [] (kosong) saat user
+  // sempat login lebih cepat dari selesainya fetch di window.onload, sehingga
+  // login SELALU dianggap gagal walau username/password sudah benar.
+  if(!isUserDataReady) {
+    alert("Data akun masih dimuat dari server, mohon tunggu beberapa detik lalu coba login lagi.");
+    return;
+  }
+
+  // .trim() ditambahkan pada username & password saat pencocokan untuk
+  // mengantisipasi ada spasi tak sengaja ikut ter-copy saat data diisi lewat
+  // Google Sheets (penyebab lain login gagal pada akun tertentu secara acak).
+  const matchUser = MEMORY.users.find(x =>
+    String(x.username).trim().toLowerCase() === uInput &&
+    String(x.password).trim() === pInput
+  );
   
   if(matchUser) {
     currentRole = matchUser.role;
