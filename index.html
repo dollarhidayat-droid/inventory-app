@@ -45,6 +45,7 @@ tr:hover {background-color:#f8fafc}
 .badge-adjusted{background:#ffedd5;color:#c2410c;padding:4px 8px;border-radius:6px;font-weight:bold;font-size:12px}
 .badge-open {background:#ffedd5; color:#c2410c; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 .badge-done {background:#dcfce7; color:#15803d; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
+.badge-cancel {background:#fee2e2; color:#b91c1c; padding:4px 10px; border-radius:12px; font-weight:bold; font-size:12px; display:inline-block;}
 
 /* LOGIN OVERLAY */
 #loginOverlay {position: fixed; inset: 0; background: linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); display: flex; align-items: center; justify-content: center; z-index: 999; padding:16px;}
@@ -55,12 +56,6 @@ tr:hover {background-color:#f8fafc}
 .login-header p { margin: 5px 0 20px 0; color: #64748b; font-size: 14px; font-weight: 600; }
 .input-group { text-align: left; margin-bottom: 20px; }
 .input-group label { font-size: 13px; font-weight: 600; color: #475569; }
-
-/* LOGIN STATUS NOTE (baru: indikator proses load data akun) */
-#loginStatusNote { text-align:center; font-size:12.5px; font-weight:600; margin-top:-6px; margin-bottom:16px; min-height:16px; }
-#loginStatusNote.loading { color:#b45309; }
-#loginStatusNote.error { color:#b91c1c; }
-#loginStatusNote.ready { color:#15803d; }
 
 /* STATUS PILL (topbar) */
 .status-pill{display:inline-flex; align-items:center; gap:6px; background:#dcfce7; color:#15803d; font-weight:700; font-size:11.5px; padding:5px 12px; border-radius:20px; text-transform:uppercase; letter-spacing:0.4px;}
@@ -163,7 +158,6 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <h2>Inventory Stok HR-GA</h2>
       <p>PT ARGAPURA</p>
     </div>
-    <p id="loginStatusNote" class="loading">Memuat data akun dari server...</p>
     <div class="input-group">
       <label>Username</label>
       <input id="loginUser" placeholder="Masukkan username">
@@ -172,7 +166,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
       <label>Password</label>
       <input id="loginPass" type="password" placeholder="Masukkan password">
     </div>
-    <button id="btnDoLogin" onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
+    <button onclick="doLogin()" style="width:100%; padding:12px; font-size:15px; font-weight:600; margin-top:10px; background:#10b981;">Masuk Ke Sistem</button>
   </div>
 </div>
 
@@ -376,8 +370,14 @@ tr:nth-child(even) { background-color: #fcfdfe; }
               <label>Sampai Tanggal (Input FPB)</label>
               <input type="date" id="monTglSampai" onchange="renderSpbReport()">
             </div>
+            <div style="flex:1; min-width:170px;" class="input-group">
+              <label>Department</label>
+              <select id="monFilterDept" onchange="renderSpbReport()">
+                <option value="">-- Semua Department --</option>
+              </select>
+            </div>
             <div style="display:flex; align-items:flex-end;">
-              <button class="btn-small" style="background:#64748b" onclick="resetMonitoringFilter()">Reset Filter</button>
+              <button class="btn-small" style="background:linear-gradient(180deg,#0b1120 0%,#1e3a8a 55%,#2563eb 100%); color:#fff;" onclick="resetMonitoringFilter()">Reset Filter</button>
             </div>
             <div style="display:flex; align-items:flex-end;">
               <button class="btn-small" style="background:#0284c7" onclick="openSpbExportModal()">Export FPB ke Excel (Filter Department/Tanggal/Status)</button>
@@ -609,6 +609,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
     </div>
     <div style="display:flex; gap:10px; margin-bottom:15px;">
       <button id="btnEksekusiSelesai" class="btn-success btn-small" disabled>SELESAI & SERAHKAN BARANG (PROSES DONE)</button>
+      <button id="btnBatalkanSpb" class="btn-danger btn-small" style="display:none;" onclick="batalkanSpb()">BATALKAN FPB (CANCEL)</button>
       <button id="btnPrintSpb" class="btn-small" style="background:#0284c7; display:none;" onclick="printSpbDetail()">Print FPB</button>
       <button id="btnPrintPreviewSpb" class="btn-small" style="background:#64748b; display:none;" onclick="printSpbDetailPreview()">Print Preview</button>
     </div>
@@ -690,6 +691,7 @@ tr:nth-child(even) { background-color: #fcfdfe; }
         <option value="">-- Semua Status --</option>
         <option value="OPEN">OPEN</option>
         <option value="DONE">DONE</option>
+        <option value="CANCEL">CANCEL</option>
       </select>
     </div>
     <button class="btn-success" style="width:100%; padding:12px; margin-top:10px;" onclick="downloadSpbExcelFiltered()">Download Excel (Ringkasan + Detail Item)</button>
@@ -727,14 +729,6 @@ let currentUsername = "";
 let abCurrentKode = "";
 let abCurrentDept = "";
 let abCurrentLine = "";
-
-// ---------- FIX LOGIN GAGAL "TERKADANG" ----------
-// Sebelumnya, form login sudah bisa diklik walau data akun (MEMORY.users) dari
-// Google Sheets belum selesai di-download (fetch bersifat asinkron & Apps Script
-// kadang lambat/cold-start). Jika user sempat klik "Masuk" sebelum data akun
-// tiba, MEMORY.users masih kosong -> selalu dianggap "Username/Password salah"
-// walau sebenarnya benar. isUserDataReady dipakai untuk mencegah kondisi ini.
-let isUserDataReady = false;
 
 // ---------- PRINTER BLUETOOTH (ESC/POS via Web Bluetooth) ----------
 // UUID ditemukan lewat halaman tes koneksi (test-bluetooth-printer.html) khusus untuk printer RPP02N.
@@ -1135,51 +1129,14 @@ function persistBudgetLimitsMetaLocal() {
   try { localStorage.setItem('budgetLimitsMetaLocal', JSON.stringify(MEMORY.budgetLimitsMeta || {})); } catch(e) {}
 }
 
-// ---------- FIX: indikator status pemuatan data akun di layar login ----------
-function setLoginStatusNote(state, message) {
-  const el = document.getElementById("loginStatusNote");
-  if(!el) return;
-  el.className = state; // 'loading' | 'ready' | 'error'
-  el.innerText = message;
-}
-
-function setLoginButtonEnabled(enabled) {
-  const btn = document.getElementById("btnDoLogin");
-  if(btn) btn.disabled = !enabled;
-}
-
 window.onload = function() {
   applyCompanyLogo();
   updatePrinterStatusUI();
   loadPrinterPrefs();
   tryAutoReconnectPrinter();
-
-  // FIX LOGIN GAGAL "TERKADANG":
-  // Tombol login tetap bisa diklik (untuk akun adminmaster yang di-hardcode),
-  // tapi login untuk akun user/admin biasa DIBLOK sampai data MEMORY.users
-  // selesai diambil dari Google Sheets. Ini mencegah kasus "Username/Password
-  // salah" padahal sebenarnya data akun belum sempat ter-download akibat
-  // Google Apps Script yang lambat/cold-start.
-  setLoginStatusNote("loading", "Memuat data akun dari server, mohon tunggu...");
-
   fetch(`${BASE_CLOUD_URL}?target=loadAll`)
     .then(res => res.json())
-    .then(resObj => {
-      if(resObj.status === "SUCCESS") {
-        MEMORY = resObj.data;
-        normalizeMemory();
-        applyCompanyLogo();
-        isUserDataReady = true;
-        setLoginStatusNote("ready", "Data akun siap. Silakan login.");
-        setTimeout(() => { const el = document.getElementById("loginStatusNote"); if(el && isUserDataReady) el.innerText = ""; }, 2000);
-      } else {
-        setLoginStatusNote("error", "Gagal memuat data akun: " + resObj.message + " (coba refresh halaman)");
-      }
-    })
-    .catch(err => {
-      setLoginStatusNote("error", "Gagal terhubung ke server. Silakan refresh halaman & cek koneksi internet.");
-      console.error("Gagal loadAll saat window.onload:", err);
-    });
+    .then(resObj => { if(resObj.status === "SUCCESS") { MEMORY = resObj.data; normalizeMemory(); applyCompanyLogo(); } });
 };
 
 function fetchDatabaseAll() {
@@ -1191,7 +1148,6 @@ function fetchDatabaseAll() {
         MEMORY = resObj.data;
         normalizeMemory();
         applyCompanyLogo();
-        isUserDataReady = true;
         generateNoSPB();
         renderSpbReport();
         tampilMaster();
@@ -1377,22 +1333,7 @@ function doLogin(){
     masukSistem(); return;
   }
 
-  // FIX: cegah login user/admin biasa selama data akun dari cloud belum siap.
-  // Tanpa pengecekan ini, MEMORY.users bisa masih [] (kosong) saat user
-  // sempat login lebih cepat dari selesainya fetch di window.onload, sehingga
-  // login SELALU dianggap gagal walau username/password sudah benar.
-  if(!isUserDataReady) {
-    alert("Data akun masih dimuat dari server, mohon tunggu beberapa detik lalu coba login lagi.");
-    return;
-  }
-
-  // .trim() ditambahkan pada username & password saat pencocokan untuk
-  // mengantisipasi ada spasi tak sengaja ikut ter-copy saat data diisi lewat
-  // Google Sheets (penyebab lain login gagal pada akun tertentu secara acak).
-  const matchUser = MEMORY.users.find(x =>
-    String(x.username).trim().toLowerCase() === uInput &&
-    String(x.password).trim() === pInput
-  );
+  const matchUser = MEMORY.users.find(x => String(x.username).toLowerCase() === uInput && String(x.password) === pInput);
   
   if(matchUser) {
     currentRole = matchUser.role;
@@ -1808,9 +1749,19 @@ function simpanSPBOpen() {
     .finally(() => showLoading(false));
 }
 
+function populateMonitoringDeptFilter() {
+  const deptSelect = document.getElementById("monFilterDept");
+  if(!deptSelect || deptSelect.options.length > 1) return;
+  Object.keys(SECTION_MAP).forEach(dept => {
+    const opt = document.createElement("option"); opt.value = dept; opt.textContent = dept; deptSelect.appendChild(opt);
+  });
+}
+
 function resetMonitoringFilter() {
   document.getElementById("monTglDari").value = "";
   document.getElementById("monTglSampai").value = "";
+  const deptEl = document.getElementById("monFilterDept");
+  if(deptEl) deptEl.value = "";
   renderSpbReport();
 }
 
@@ -1818,7 +1769,9 @@ function renderSpbReport() {
   const tbody = document.getElementById("spbReportBody"); 
   if(!tbody) return; 
   tbody.innerHTML = "";
-  
+
+  populateMonitoringDeptFilter();
+
   if(!MEMORY.spbList || MEMORY.spbList.length === 0) { 
     tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;">Tidak ada data FPB.</td></tr>`; 
     return; 
@@ -1826,25 +1779,33 @@ function renderSpbReport() {
 
   const tglDariEl = document.getElementById("monTglDari");
   const tglSampaiEl = document.getElementById("monTglSampai");
+  const deptFilterEl = document.getElementById("monFilterDept");
   const tglDari = tglDariEl ? tglDariEl.value : "";
   const tglSampai = tglSampaiEl ? tglSampaiEl.value : "";
+  const deptFilter = deptFilterEl ? deptFilterEl.value : "";
 
   let listTerfilter = MEMORY.spbList;
-  if(tglDari || tglSampai) {
+  if(tglDari || tglSampai || deptFilter) {
     listTerfilter = MEMORY.spbList.filter(x => {
       const rawTgl = x.tanggal || x.Tanggal;
-      if(!rawTgl) return false;
-      const tglStr = new Date(rawTgl).toISOString().split('T')[0];
-      if(tglDari && tglStr < tglDari) return false;
-      if(tglSampai && tglStr > tglSampai) return false;
+      if(tglDari || tglSampai) {
+        if(!rawTgl) return false;
+        const tglStr = new Date(rawTgl).toISOString().split('T')[0];
+        if(tglDari && tglStr < tglDari) return false;
+        if(tglSampai && tglStr > tglSampai) return false;
+      }
+      if(deptFilter) {
+        const spbDept = x.department || x.Department || "-";
+        if(spbDept !== deptFilter) return false;
+      }
       return true;
     });
   }
 
   const note = document.getElementById("monFilterNote");
   if(note) {
-    note.innerText = (tglDari || tglSampai)
-      ? `Menampilkan ${listTerfilter.length} dari ${MEMORY.spbList.length} FPB (filter periode input FPB aktif).`
+    note.innerText = (tglDari || tglSampai || deptFilter)
+      ? `Menampilkan ${listTerfilter.length} dari ${MEMORY.spbList.length} FPB (filter aktif).`
       : `Menampilkan seluruh ${MEMORY.spbList.length} FPB.`;
   }
 
@@ -1864,6 +1825,8 @@ function renderSpbReport() {
     
     const badge = x.status === "DONE" 
       ? `<span class="badge-done" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">DONE</span>` 
+      : x.status === "CANCEL"
+      ? `<span class="badge-cancel" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">CANCEL</span>`
       : `<span class="badge-open" style="cursor:pointer" onclick="openSpbDetailModal('${nomorSpbAktif}')">OPEN</span>`;
     
     let tgl = "-";
@@ -1896,11 +1859,14 @@ function openSpbDetailModal(noSpb) {
   document.getElementById("mdPic").innerText = matchSpb.pic || matchSpb.Pic || matchSpb.PIC || "-";
   
   const bSelesai = document.getElementById("btnEksekusiSelesai");
+  const bBatal = document.getElementById("btnBatalkanSpb");
   const bPrint = document.getElementById("btnPrintSpb");
   const bPrintPreview = document.getElementById("btnPrintPreviewSpb");
   const hint = document.getElementById("checkHint");
   const badgeModal = document.getElementById("mdStatusBadge");
-  badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>` : `<span class="badge-open">OPEN</span>`;
+  badgeModal.innerHTML = matchSpb.status === "DONE" ? `<span class="badge-done">DONE</span>`
+    : matchSpb.status === "CANCEL" ? `<span class="badge-cancel">CANCEL</span>`
+    : `<span class="badge-open">OPEN</span>`;
   
   const tbody = document.getElementById("modalTableBody"); tbody.innerHTML = "";
   let itemsAktif = matchSpb.items || [];
@@ -1911,7 +1877,10 @@ function openSpbDetailModal(noSpb) {
 
   itemsAktif.forEach((it) => {
     const isDone = matchSpb.status === "DONE";
-    const chk = isDone ? `<span style="color:#15803d; font-weight:bold;">OK</span>` : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
+    const isCancel = matchSpb.status === "CANCEL";
+    const chk = isDone ? `<span style="color:#15803d; font-weight:bold;">OK</span>`
+      : isCancel ? `<span style="color:#b91c1c; font-weight:bold;">DIBATALKAN</span>`
+      : `<input type="checkbox" class="chk-verify" onchange="evaluasiCheckboxModal()">`;
     tbody.innerHTML += `<tr>
       <td style="text-align:center;">${chk}</td>
       <td><strong>${it.kode || it.kodeBarang}</strong></td>
@@ -1925,11 +1894,19 @@ function openSpbDetailModal(noSpb) {
 
   if (matchSpb.status === "DONE") {
     bSelesai.style.display = "none";
+    bBatal.style.display = "none";
     bPrint.style.display = "inline-flex";
     bPrintPreview.style.display = "inline-flex";
     hint.style.display = "none";
+  } else if (matchSpb.status === "CANCEL") {
+    bSelesai.style.display = "none";
+    bBatal.style.display = "none";
+    bPrint.style.display = "none";
+    bPrintPreview.style.display = "none";
+    hint.style.display = "none";
   } else {
     bSelesai.style.display = "inline-flex";
+    bBatal.style.display = "inline-flex";
     bPrint.style.display = "none";
     bPrintPreview.style.display = "none";
     hint.style.display = "block";
@@ -1962,6 +1939,7 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
 
       document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-done">DONE</span>`;
       document.getElementById("btnEksekusiSelesai").style.display = "none";
+      document.getElementById("btnBatalkanSpb").style.display = "none";
       document.getElementById("btnPrintSpb").style.display = "inline-flex";
       document.getElementById("btnPrintPreviewSpb").style.display = "inline-flex";
       document.getElementById("checkHint").style.display = "none";
@@ -1972,6 +1950,42 @@ document.getElementById("btnEksekusiSelesai").onclick = function() {
   })
   .finally(() => showLoading(false));
 };
+
+// ---------- Batalkan FPB (hanya bisa dilakukan selama status masih OPEN) ----------
+function batalkanSpb() {
+  const matchSpb = MEMORY.spbList.find(x => (x.nomorSpb === currentSelectedSpbNo || x.noSpb === currentSelectedSpbNo || x.NoSpb === currentSelectedSpbNo));
+  if(matchSpb && matchSpb.status === "DONE") {
+    alert("FPB yang sudah berstatus DONE tidak dapat dibatalkan.");
+    return;
+  }
+  if(!confirm(`Apakah Anda yakin ingin membatalkan FPB ${currentSelectedSpbNo}? Status akan diubah menjadi CANCEL dan tidak dapat diproses/diserahkan lagi.`)) return;
+  showLoading(true, "Membatalkan FPB di cloud...");
+
+  fetch(`${BASE_CLOUD_URL}?target=batalkanSPB`, {
+    method: "POST",
+    body: JSON.stringify({ nomorSpb: currentSelectedSpbNo })
+  })
+  .then(res => res.json())
+  .then(resObj => {
+    if(resObj.status === "SUCCESS") {
+      showDoneMessage(`FPB ${currentSelectedSpbNo} berhasil dibatalkan (CANCEL).`);
+      if(matchSpb) matchSpb.status = "CANCEL";
+      fetchDatabaseAll();
+
+      document.getElementById("mdStatusBadge").innerHTML = `<span class="badge-cancel">CANCEL</span>`;
+      document.getElementById("btnEksekusiSelesai").style.display = "none";
+      document.getElementById("btnBatalkanSpb").style.display = "none";
+      document.getElementById("btnPrintSpb").style.display = "none";
+      document.getElementById("btnPrintPreviewSpb").style.display = "none";
+      document.getElementById("checkHint").style.display = "none";
+      document.querySelectorAll(".chk-verify").forEach(chk => {
+        chk.closest("td").innerHTML = `<span style="color:#b91c1c; font-weight:bold;">DIBATALKAN</span>`;
+      });
+      renderSpbReport();
+    } else { alert("Gagal membatalkan FPB: " + resObj.message); }
+  })
+  .finally(() => showLoading(false));
+}
 
 // ---------- Ambil data item FPB yang sedang tampil di modal verifikasi ----------
 function ambilDataSpbUntukCetak() {
